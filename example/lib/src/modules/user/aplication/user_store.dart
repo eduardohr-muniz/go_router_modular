@@ -1,0 +1,3 @@
+class UserStore {
+  String name = '';
+}
