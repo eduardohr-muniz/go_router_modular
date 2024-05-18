@@ -9,6 +9,7 @@ abstract class Module {
 
   List<GoRoute> configureRoutes(Injector injector, {String modulePath = ''}) {
     List<GoRoute> result = [];
+    RouteManager().registerBindsAppModule(this);
 
     result.addAll(routes.map((route) {
       return GoRoute(
@@ -22,6 +23,7 @@ abstract class Module {
         pageBuilder: route.pageBuilder != null ? (context, state) => route.pageBuilder!(context, state) : null,
         parentNavigatorKey: route.parentNavigatorKey,
         redirect: route.redirect != null ? (context, state) => route.redirect!(context, state) : null,
+
         onExit: route.onExit != null
             ? (context, state) {
                 final completer = Completer();

@@ -5,11 +5,18 @@ class RouteManager {
   static final RouteManager _instance = RouteManager._internal();
   final Map<Module, Set<String>> _registeredModules = {};
   final Map<Type, int> _bindReferences = {};
+  Module? _appModule;
 
   RouteManager._internal();
 
   factory RouteManager() {
     return _instance;
+  }
+
+  void registerBindsAppModule(Module module) {
+    if (_appModule != null) return;
+    _appModule = module;
+    registerBindsIfNeeded(module);
   }
 
   void registerBindsIfNeeded(Module module) {
@@ -25,19 +32,22 @@ class RouteManager {
   }
 
   void unregisterBinds(Module module) {
-    if (!_registeredModules.containsKey(module)) return;
-    if (_registeredModules[module]?.isNotEmpty ?? true) return;
+    if (_appModule != null && module == _appModule!) return;
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (!_registeredModules.containsKey(module)) return;
+      if (_registeredModules[module]?.isNotEmpty ?? true) return;
 
-    for (var bind in module.binds) {
-      _decrementBindReference(bind.runtimeType);
-    }
+      for (var bind in module.binds) {
+        _decrementBindReference(bind.runtimeType);
+      }
 
-    _registeredModules.remove(module);
-    for (var module in module.binds) {
-      Bind.unregisterType(module.instance.runtimeType);
-    }
+      _registeredModules.remove(module);
+      for (var module in module.binds) {
+        Bind.unregisterType(module.instance.runtimeType);
+      }
 
-    debugPrint('❌ Dispose unused binds for module: ${module.runtimeType} | ${module.binds.toList().map((e) => e.instance.runtimeType.toString())}');
+      debugPrint('❌ Dispose unused binds for module: ${module.runtimeType} | ${module.binds.toList().map((e) => e.instance.runtimeType.toString())}');
+    });
   }
 
   void _incrementBindReference(Type type) {
