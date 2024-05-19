@@ -207,7 +207,14 @@ To build a URI with query parameters, you can use the Uri class from the Dart st
 context.go(Uri(path: '/users/123', queryParameters: {'filter': 'abc'}).toString());
 ```
 For a more complete example go to [open go_router documentation](https://pub.dev/documentation/go_router/latest/topics/Get%20started-topic.html)
-.. 
+
+## Contributions
+
+<a href="https://github.com/eduardohr-muniz/go_router_modular/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=eduardohr-muniz/go_router_modular" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
 
 
 
