@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class RouteManager {
-  static final RouteManager _instance = RouteManager._internal();
+  static final RouteManager _instance = RouteManager._();
   final Map<Module, Set<String>> _registeredModules = {};
   final Map<Type, int> _bindReferences = {};
   Module? _appModule;
 
-  RouteManager._internal();
+  RouteManager._();
 
   factory RouteManager() {
     return _instance;
@@ -28,7 +28,7 @@ class RouteManager {
     }
 
     _registeredModules.addAll({module: {}});
-    debugPrint('✅ Registered binds for module: ${module.runtimeType} | ${module.binds.toList().map((e) => e.instance.runtimeType.toString())}');
+    log('INJECTED: ${module.runtimeType} BINDS: ${module.binds.toList().map((e) => e.instance.runtimeType.toString())}', name: "💉");
   }
 
   void unregisterBinds(Module module) {
@@ -46,7 +46,7 @@ class RouteManager {
         Bind.unregisterType(module.instance.runtimeType);
       }
 
-      debugPrint('❌ Dispose unused binds for module: ${module.runtimeType} | ${module.binds.toList().map((e) => e.instance.runtimeType.toString())}');
+      log('DISPOSED: ${module.runtimeType} BINDS: ${module.binds.toList().map((e) => e.instance.runtimeType.toString())}', name: "🗑️");
     });
   }
 
