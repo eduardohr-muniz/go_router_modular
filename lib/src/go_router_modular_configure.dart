@@ -8,7 +8,7 @@ class GoRouterModular {
   GoRouterModular._();
 
   // ignore: prefer_typing_uninitialized_variables
-  static late final _router;
+  static GoRouter? _router;
   static late bool debugLogDiagnostics;
   static GoRouter configure({
     required Module appModule,
@@ -30,6 +30,7 @@ class GoRouterModular {
     String? restorationScopeId,
     bool requestFocus = true,
   }) {
+    if (_router != null) return _router!;
     _router = GoRouter(
       routes: appModule.configureRoutes(Injector()),
       initialLocation: initialLocation,
@@ -50,6 +51,6 @@ class GoRouterModular {
       routerNeglect: routerNeglect,
     );
     debugLogDiagnostics = debugLogDiagnostics;
-    return _router;
+    return _router!;
   }
 }
