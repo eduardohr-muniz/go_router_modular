@@ -10,13 +10,13 @@ With GoRouter Modular, you can easily organize your application into independent
 
 Simplify your Flutter app development and accelerate your workflow with GoRouter Modular.
 
-```css
-⚠️ **Attention:** Every dependency when placed in a bind must be typed for correct operation.
+```dart
+⚠️ **Attention**
+//Every dependency when placed in a BIND must be TYPED for correct operation.
 Example:
 
-✅ Bind.singleton<HomeController>((i) => HomeController())
-
-❌ Bind.singleton((i) => HomeController())
+✅  Bind.singleton<HomeController>((i) => HomeController())
+❌  Bind.singleton((i) => HomeController())
 ```
 
 ## Installation
