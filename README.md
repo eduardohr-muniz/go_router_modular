@@ -1,5 +1,5 @@
 
-# GoRouter Modular
+# 🧩 GoRouter Modular 💉
 ## Simplifying modules dependency injections💉
 css
 GoRouter Modular simplifies Flutter development by implementing a modular architecture.
@@ -13,7 +13,9 @@ Simplify your Flutter app development and accelerate your workflow with GoRouter
 ```css
 ⚠️ **Attention:** Every dependency when placed in a bind must be typed for correct operation.
 Example:
+
 ✅ Bind.singleton<HomeController>((i) => HomeController())
+
 ❌ Bind.singleton((i) => HomeController())
 ```
 
@@ -26,9 +28,10 @@ flutter pub add go_router_modular
 ```css
 📁 src
    📁 modules
-      📄 home_controller.dart
-      📄 home_page.dart
-      📄 home_module.dart
+      📁 home
+         📄 home_controller.dart
+         📄 home_page.dart
+         📄 home_module.dart
    📄 app_module.dart
    📄 app_widget.dart
 📄 main.dart
