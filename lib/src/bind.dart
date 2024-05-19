@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Bind<T> {
-  final T Function(Injector) factoryFunction;
+  final T Function(Injector i) factoryFunction;
   final bool isSingleton;
   final bool isLazy;
   T? _instance;
@@ -36,16 +36,14 @@ class Bind<T> {
 
   static void unregister<T>(Bind<T> bind) {
     if (T.toString() == "Object") return;
-    // print("Unregistering bind for ${T.toString()}");
     _bindsMap.remove(T);
   }
 
   static void unregisterType(Type type) {
-    // print("Unregistering bind for $type");
     _bindsMap.remove(type);
   }
 
-  static Bind<T> find<T>() {
+  static Bind<T> _find<T>() {
     var bind = _bindsMap[T] as Bind<T>?;
 
     if (bind == null) {
@@ -54,29 +52,25 @@ class Bind<T> {
     return bind;
   }
 
-  static T get<T>() => find<T>().instance;
+  static T get<T>() => _find<T>().instance;
 
   static Bind<T> create<T>(T Function(Injector i) factoryFunction) {
     final bind = Bind<T>(factoryFunction, isSingleton: false, isLazy: true);
-    // register<T>(bind);
     return bind;
   }
 
   static Bind<T> singleton<T>(T Function(Injector i) factoryFunction) {
     final bind = Bind<T>(factoryFunction, isSingleton: true, isLazy: false);
-    // register<T>(bind);
     return bind;
   }
 
   static Bind<T> lazySingleton<T>(T Function(Injector i) factoryFunction) {
     final bind = Bind<T>(factoryFunction, isSingleton: true, isLazy: true);
-    // register<T>(bind);
     return bind;
   }
 
   static Bind<T> factory<T>(T Function(Injector i) factoryFunction) {
     final bind = Bind<T>(factoryFunction, isSingleton: false, isLazy: true);
-    // register<T>(bind);
     return bind;
   }
 }
@@ -87,7 +81,7 @@ class Injector {
 
 extension BindContextExtension on BuildContext {
   T read<T>() {
-    final bind = Bind.find<T>();
+    final bind = Bind._find<T>();
     return bind.instance;
   }
 }
