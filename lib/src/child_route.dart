@@ -10,7 +10,6 @@ class ChildRoute {
   final GlobalKey<NavigatorState>? parentNavigatorKey;
   final FutureOr<String?> Function(BuildContext, GoRouterState)? redirect;
   final FutureOr<bool> Function(BuildContext, GoRouterState)? onExit;
-  final List<RouteBase> routes;
 
   ChildRoute(
     this.path, {
@@ -20,6 +19,5 @@ class ChildRoute {
     this.parentNavigatorKey,
     this.redirect,
     this.onExit,
-    this.routes = const [],
   });
 }
