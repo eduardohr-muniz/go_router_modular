@@ -145,7 +145,7 @@ To retrieve a bind, we have two options:
 ```dart
 final homeController = context.read<HomeController>();
 // or
-final homeController = Bing.get<HomeController>();
+final homeController = Bind.get<HomeController>();
 ```
 # Rotas
 The route control is handled by our beloved go_router. The only thing that changes is that we leave the route configurations to the module. You can follow the go_router documentation for navigation.
