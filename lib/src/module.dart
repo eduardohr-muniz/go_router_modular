@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:go_router_modular/go_router_modular.dart';
 
 abstract class Module {
-  List<Module> get imports => const [];
-  List<Bind<Object>> binds = const [];
+  // List<Module> get imports => const [];
+  List<Bind<Object>> get binds => const [];
   List<ChildRoute> get routes => const [];
   List<ModuleRoute> get moduleRoutes => const [];
 
@@ -16,6 +16,7 @@ abstract class Module {
         path: _buildPath(modulePath + route.path), // Remover / do final
         name: route.name,
         builder: (context, state) {
+          // if (imports.isNotEmpty) imports.map((e) => RouteManager().registerBindsIfNeeded(e)).toList();
           RouteManager().registerBindsIfNeeded(this);
           RouteManager().registerRoute(state.uri.toString(), this);
           return route.builder(context, state, injector);
@@ -42,7 +43,6 @@ abstract class Module {
                 RouteManager().unregisterBinds(this);
                 return true;
               },
-        routes: route.routes,
       );
     }).toList());
 
