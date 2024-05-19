@@ -21,7 +21,7 @@ flutter pub add go_router_modular
 This will add a line like this to your package's pubspec.yaml (and run an implicit flutter pub get):
 dependencies:
 ```bash
-go_router_modular: ^0.0.12
+go_router_modular: ^0.0.13
 ```
 # Start
 1. Create an app_module.dart
@@ -161,7 +161,7 @@ final homeController = Bind.get<HomeController>();
 Route control is done by our beloved go_router. The only thing that changes is that we leave the route configurations for the module to use **ChildRoute**, it will have the same structure as GoRoute, you can find an example below.
 You can follow the go_router documentation for navigation. [open go_router documentation](https://pub.dev/documentation/go_router/latest/topics/Get%20started-topic.html)
 
-The child route is equivalent to GoRoute(). You may notice that they will have the same parameters.
+The **ChildRoute()** is equivalent to **GoRoute()**. You may notice that they will have the same parameters.
 
  > Note that every initial route of your module must start with "/" only.
 
