@@ -2,16 +2,15 @@ import 'dart:async';
 import 'package:go_router_modular/go_router_modular.dart';
 
 abstract class Module {
-  // List<Module> get imports => const [];
+  List<Module> get imports => const [];
   List<Bind<Object>> get binds => const [];
-  List<ChildRoute> get routes => const [];
-  List<ModuleRoute> get moduleRoutes => const [];
+  List<ModularRoute> get routes => const [];
 
   List<GoRoute> configureRoutes(Injector injector, {String modulePath = ''}) {
     List<GoRoute> result = [];
     RouteManager().registerBindsAppModule(this);
 
-    result.addAll(routes.map((route) {
+    result.addAll(routes.whereType<ChildRoute>().map((route) {
       return GoRoute(
         path: _buildPath(modulePath + route.path), // Remover / do final
         name: route.name,
@@ -19,7 +18,7 @@ abstract class Module {
           // if (imports.isNotEmpty) imports.map((e) => RouteManager().registerBindsIfNeeded(e)).toList();
           RouteManager().registerBindsIfNeeded(this);
           RouteManager().registerRoute(state.uri.toString(), this);
-          return route.builder(context, state, injector);
+          return route.child(context, state, injector);
         },
         pageBuilder: route.pageBuilder != null ? (context, state) => route.pageBuilder!(context, state) : null,
         parentNavigatorKey: route.parentNavigatorKey,
@@ -46,7 +45,7 @@ abstract class Module {
       );
     }).toList());
 
-    for (var module in moduleRoutes) {
+    for (var module in routes.whereType<ModuleRoute>()) {
       result.addAll(
         module.module.configureRoutes(injector, modulePath: _buildPath(modulePath + module.path)),
       );
