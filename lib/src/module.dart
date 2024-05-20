@@ -12,7 +12,7 @@ abstract class Module {
 
     result.addAll(routes.whereType<ChildRoute>().map((route) {
       return GoRoute(
-        path: _buildPath(modulePath + route.path), // Remover / do final
+        path: _buildPath(modulePath + route.path),
         name: route.name,
         builder: (context, state) {
           // if (imports.isNotEmpty) imports.map((e) => RouteManager().registerBindsIfNeeded(e)).toList();
@@ -23,7 +23,6 @@ abstract class Module {
         pageBuilder: route.pageBuilder != null ? (context, state) => route.pageBuilder!(context, state) : null,
         parentNavigatorKey: route.parentNavigatorKey,
         redirect: route.redirect != null ? (context, state) => route.redirect!(context, state) : null,
-
         onExit: route.onExit != null
             ? (context, state) {
                 final completer = Completer();
