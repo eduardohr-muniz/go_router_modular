@@ -43,16 +43,27 @@ class Bind<T> {
     _bindsMap.remove(type);
   }
 
-  static Bind<T> _find<T>() {
-    var bind = _bindsMap[T] as Bind<T>?;
+  static T _find<T>() {
+    var bind = _bindsMap[T];
 
     if (bind == null) {
-      throw Exception('Bind not found for type ${T.toString()}');
+      for (var entry in _bindsMap.entries) {
+        if (entry.value.instance is T) {
+          bind = Bind<T>((injector) => entry.value.instance, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy);
+          // _bindsMap[entry.key] = bind;
+          break;
+        }
+      }
+
+      if (bind == null) {
+        throw Exception('Bind not found for type ${T.toString()}');
+      }
     }
-    return bind;
+
+    return bind.instance as T;
   }
 
-  static T get<T>() => _find<T>().instance;
+  static T get<T>() => _find<T>();
 
   static Bind<T> create<T>(T Function(Injector i) factoryFunction) {
     final bind = Bind<T>(factoryFunction, isSingleton: false, isLazy: true);
@@ -82,6 +93,6 @@ class Injector {
 extension BindContextExtension on BuildContext {
   T read<T>() {
     final bind = Bind._find<T>();
-    return bind.instance;
+    return bind;
   }
 }
