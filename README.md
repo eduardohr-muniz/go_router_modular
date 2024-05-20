@@ -56,7 +56,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) usePathUrlStrategy();
 
-  GoRouterModular.configure(appModule: AppModule()) // Configure GoRouterModular
+  Modular.configure(appModule: AppModule(), initialRoute: "/"); // Configure Modular
 
   runApp(AppWidget()); // Define AppWidget
 }
@@ -73,7 +73,7 @@ class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router( // Use MaterialApp.router
-      routerConfig: GoRouterModular.routerConfig, // Define Router config
+      routerConfig: Modular.routerConfig, // Define Router config
       title: 'Modular GoRoute Example',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -97,7 +97,7 @@ class AppModule extends Module {
         Bind.singleton<AuthController>((i) => AuthController()), // define binds global in app_module
       ];
   @override
-  List<ModuleRoute> get moduleRoutes => [ // define modules
+  List<ModularRoute> get routes => [ // define modules
         ModuleRoute("/", module: HomeModule()),
       ];
 }
@@ -130,13 +130,9 @@ class HomeModule extends Module {
   @override
   List<Bind<Object>> get binds => [
          Bind.singleton<HomeController>((i) => HomeController()), // DEFINE BINDS FOR MODULE
+         Bind.factory<IUserRepository>((i) => UserRepository()),
       ];
 
-  @override
-  List<ChildRoute> get routes => [
-        ChildRoute('/', name: "home", builder: (context, state, i) => const HomePage()), // define routes
-        ChildRoute('/config', name: "config", builder: (context, state, i) => const ConfigPage()),
-      ];
 }
 ```
 ## Injecting a Dependency Globally
@@ -152,9 +148,11 @@ class AppModule extends Module {
 ```
 
 ## Retrieve a Bind
-To retrieve a bind, we have two options:
+To retrieve a bind, we have three options:
 ```dart
 final homeController = context.read<HomeController>();
+// or
+final homeController = Modular.get<HomeController>();
 // or
 final homeController = Bind.get<HomeController>();
 ```
@@ -171,9 +169,10 @@ Ex: Routes
 class HomeModule extends Module {
  
   @override
-  List<ChildRoute> get routes => [
+    List<ModularRoute> get routes => [
         ChildRoute('/', name: "home", builder: (context, state, i) => const HomePage()), // define routes
         ChildRoute('/config', name: "config", builder: (context, state, i) => const ConfigPage()),
+        ChildRoute('/info_product/:id', name: "info_product", builder: (context, state, i) => const InfoProductPage(id: state.pathParameters['id']!)),
       ];
 }
 ```
@@ -184,9 +183,11 @@ Your module can also have submodules.
 class AppModule extends Module {
  
   @override
-  List<ModuleRoute> get moduleRoutes => [ // define modules
+    List<ModularRoute> get routes => [ // define modules
         ModuleRoute("/", module: HomeModule()),
         ModuleRoute("/user", module: UserModule()),
+        
+        ChildRoute('/splash', name: "splash", builder: (context, state, i) => const SplashPage()),
       ];
 }
 ```
