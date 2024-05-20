@@ -6,4 +6,5 @@ export 'src/module_route.dart';
 export 'src/module.dart';
 export 'src/route_manager.dart';
 export 'src/go_router_modular_configure.dart';
+export 'src/i_modular_route.dart';
 export 'package:go_router/go_router.dart' hide GoRouter;
