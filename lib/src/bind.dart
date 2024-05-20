@@ -34,12 +34,12 @@ class Bind<T> {
     _bindsMap[type] = bind;
   }
 
-  static void unregister<T>(Bind<T> bind) {
+  static void dispose<T>(Bind<T> bind) {
     if (T.toString() == "Object") return;
     _bindsMap.remove(T);
   }
 
-  static void unregisterType(Type type) {
+  static void disposeByType(Type type) {
     _bindsMap.remove(type);
   }
 
@@ -64,11 +64,6 @@ class Bind<T> {
   }
 
   static T get<T>() => _find<T>();
-
-  static Bind<T> create<T>(T Function(Injector i) factoryFunction) {
-    final bind = Bind<T>(factoryFunction, isSingleton: false, isLazy: true);
-    return bind;
-  }
 
   static Bind<T> singleton<T>(T Function(Injector i) factoryFunction) {
     final bind = Bind<T>(factoryFunction, isSingleton: true, isLazy: false);
