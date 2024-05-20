@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class GoRouterModular {
   GoRouterModular._();
+  static GoRouter get routerConfig {
+    assert(_router != null, 'Add GoRouterModular.configure in main.dart');
+    return _router!;
+  }
 
-  // ignore: prefer_typing_uninitialized_variables
   static GoRouter? _router;
   static late bool debugLogDiagnostics;
   static GoRouter configure({
