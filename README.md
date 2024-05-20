@@ -21,7 +21,7 @@ flutter pub add go_router_modular
 This will add a line like this to your package's pubspec.yaml (and run an implicit flutter pub get):
 dependencies:
 ```bash
-go_router_modular: ^0.0.13
+go_router_modular: ^0.0.14
 ```
 # Start
 1. Create an app_module.dart
@@ -54,9 +54,10 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
   if (kIsWeb) usePathUrlStrategy();
-  
+
+  GoRouterModular.configure(appModule: AppModule()) // Configure GoRouterModular
+
   runApp(AppWidget()); // Define AppWidget
 }
 ```
@@ -72,7 +73,7 @@ class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router( // Use MaterialApp.router
-      routerConfig: GoRouterModular.configure(appModule: AppModule()), // Configure AppModule
+      routerConfig: GoRouterModular.routerConfig, // Define Router config
       title: 'Modular GoRoute Example',
       theme: ThemeData(
         primarySwatch: Colors.blue,
