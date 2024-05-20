@@ -1,12 +1,11 @@
 import 'package:go_router_modular/go_router_modular.dart';
 
-class ModuleRoute {
-  final String path;
+class ModuleRoute extends ModularRoute {
   final Module module;
   final String? name;
 
   ModuleRoute(
-    this.path, {
+    super.route, {
     required this.module,
     this.name,
   });
