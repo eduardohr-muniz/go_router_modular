@@ -27,8 +27,24 @@ class RouteManager {
       Bind.register(bind);
     }
 
+    if (module.imports.isNotEmpty) {
+      for (var module in module.imports) {
+        for (var bind in module.binds) {
+          _incrementBindReference(bind.runtimeType);
+          Bind.register(bind);
+        }
+      }
+    }
+
     _registeredModules.addAll({module: {}});
-    log('INJECTED: ${module.runtimeType} BINDS: ${module.binds.toList().map((e) => e.instance.runtimeType.toString())}', name: "💉");
+    if (Modular.debugLogDiagnostics) {
+      log(
+          'INJECTED: ${module.runtimeType} BINDS: ${[
+            ...module.binds.toList().map((e) => e.instance.runtimeType.toString()),
+            ...module.imports.map((e) => e.binds.toList().map((e) => e.instance.runtimeType.toString()).toList())
+          ]}',
+          name: "💉");
+    }
   }
 
   void unregisterBinds(Module module) {
@@ -41,12 +57,37 @@ class RouteManager {
         _decrementBindReference(bind.runtimeType);
       }
 
-      _registeredModules.remove(module);
-      for (var module in module.binds) {
-        Bind.unregisterType(module.instance.runtimeType);
+      if (module.imports.isNotEmpty) {
+        for (var module in module.imports) {
+          for (var bind in module.binds) {
+            if (_appModule?.binds.contains(bind) ?? false) continue;
+            _decrementBindReference(bind.runtimeType);
+          }
+        }
       }
 
-      log('DISPOSED: ${module.runtimeType} BINDS: ${module.binds.toList().map((e) => e.instance.runtimeType.toString())}', name: "🗑️");
+      _registeredModules.remove(module);
+      for (var bind in module.binds) {
+        Bind.disposeByType(bind.instance.runtimeType);
+      }
+
+      if (module.imports.isNotEmpty) {
+        for (var module in module.imports) {
+          for (var bind in module.binds) {
+            if ((_appModule?.binds.where((element) => element.instance.runtimeType == bind.instance.runtimeType).isNotEmpty ?? false)) continue;
+            Bind.disposeByType(bind.instance.runtimeType);
+          }
+        }
+      }
+
+      if (Modular.debugLogDiagnostics) {
+        log(
+            'DISPOSED: ${module.runtimeType} BINDS: ${[
+              ...module.binds.toList().map((e) => e.instance.runtimeType.toString()),
+              ...module.imports.map((e) => e.binds.toList().map((e) => e.instance.runtimeType.toString()).toList())
+            ]}',
+            name: "🗑️");
+      }
     });
   }
 
@@ -63,7 +104,7 @@ class RouteManager {
       _bindReferences[type] = (_bindReferences[type] ?? 1) - 1;
       if (_bindReferences[type] == 0) {
         _bindReferences.remove(type);
-        Bind.unregisterType(type);
+        Bind.disposeByType(type);
       }
     }
   }
