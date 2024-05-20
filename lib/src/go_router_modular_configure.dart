@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
+typedef Modular = GoRouterModular;
+
 class GoRouterModular {
   GoRouterModular._();
   static GoRouter get routerConfig {
@@ -11,11 +13,24 @@ class GoRouterModular {
     return _router!;
   }
 
+  static bool get debugLogDiagnostics {
+    assert(_debugLogDiagnostics != null, 'Add GoRouterModular.configure in main.dart');
+    return _debugLogDiagnostics!;
+  }
+
   static GoRouter? _router;
-  static late bool debugLogDiagnostics;
+
+  static bool? _debugLogDiagnostics;
+
+  static T get<T>() => Bind.get<T>();
+
+  static getCurrentPathOf(BuildContext context) => GoRouterState.of(context).path ?? '';
+
+  static GoRouterState stateOf(BuildContext context) => GoRouterState.of(context);
+
   static GoRouter configure({
     required Module appModule,
-    String initialLocation = '/',
+    required String initialRoute,
     bool debugLogDiagnostics = true,
     Codec<Object?, Object?>? extraCodec,
     void Function(BuildContext, GoRouterState, GoRouter)? onException,
@@ -34,9 +49,10 @@ class GoRouterModular {
     bool requestFocus = true,
   }) {
     if (_router != null) return _router!;
+    _debugLogDiagnostics = debugLogDiagnostics;
     _router = GoRouter(
       routes: appModule.configureRoutes(Injector()),
-      initialLocation: initialLocation,
+      initialLocation: initialRoute,
       debugLogDiagnostics: debugLogDiagnosticsGoRouter,
       errorBuilder: errorBuilder,
       errorPageBuilder: errorPageBuilder,
