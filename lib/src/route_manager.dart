@@ -49,9 +49,8 @@ class RouteManager {
 
   void unregisterBinds(Module module) {
     if (_appModule != null && module == _appModule!) return;
-    Future.delayed(const Duration(milliseconds: 200), () {
+    Future.delayed(const Duration(milliseconds: 500), () {
       if (!_registeredModules.containsKey(module)) return;
-      if (_registeredModules[module]?.isNotEmpty ?? true) return;
 
       for (var bind in module.binds) {
         _decrementBindReference(bind.runtimeType);
