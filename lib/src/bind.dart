@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router_modular/src/injector.dart';
 
 class Bind<T> {
   final T Function(Injector i) factoryFunction;
@@ -79,10 +80,6 @@ class Bind<T> {
     final bind = Bind<T>(factoryFunction, isSingleton: false, isLazy: true);
     return bind;
   }
-}
-
-class Injector {
-  T get<T>() => Bind.get<T>();
 }
 
 extension BindContextExtension on BuildContext {
