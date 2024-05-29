@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 
 class PageOne extends StatelessWidget {
   const PageOne({super.key});
@@ -8,7 +9,7 @@ class PageOne extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.red,
       appBar: AppBar(
-        title: const Text('Page1'),
+        title: Text('Page1, path = ${Modular.stateOf(context).path}'),
       ),
       body: Container(),
     );

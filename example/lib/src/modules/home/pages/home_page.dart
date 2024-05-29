@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: () {
-                  context.pushNamed('user');
+                  context.push('/user');
                 },
                 child: const Text("Go User")),
             ElevatedButton(

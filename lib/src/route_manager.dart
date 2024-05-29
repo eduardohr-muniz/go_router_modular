@@ -3,7 +3,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class RouteManager {
   static final RouteManager _instance = RouteManager._();
-  final Map<Module, Set<String>> _registeredModules = {};
+  final Map<Module, Set<String>> _activeRoutes = {};
   final Map<Type, int> _bindReferences = {};
   Module? _appModule;
 
@@ -20,28 +20,29 @@ class RouteManager {
   }
 
   void registerBindsIfNeeded(Module module) {
-    if (_registeredModules.containsKey(module)) return;
+    if (_activeRoutes.containsKey(module)) return;
 
     for (var bind in module.binds) {
-      _incrementBindReference(bind.runtimeType);
+      _incrementBindReference(bind.instance.runtimeType);
       Bind.register(bind);
     }
 
     if (module.imports.isNotEmpty) {
-      for (var module in module.imports) {
-        for (var bind in module.binds) {
-          _incrementBindReference(bind.runtimeType);
+      for (var importedModule in module.imports) {
+        for (var bind in importedModule.binds) {
+          _incrementBindReference(bind.instance.runtimeType);
           Bind.register(bind);
         }
       }
     }
 
-    _registeredModules.addAll({module: {}});
+    _activeRoutes[module] = {};
+
     if (Modular.debugLogDiagnostics) {
       log(
           'INJECTED: ${module.runtimeType} BINDS: ${[
-            ...module.binds.toList().map((e) => e.instance.runtimeType.toString()),
-            ...module.imports.map((e) => e.binds.toList().map((e) => e.instance.runtimeType.toString()).toList())
+            ...module.binds.map((e) => e.instance.runtimeType.toString()),
+            ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
           ]}',
           name: "💉");
     }
@@ -49,45 +50,32 @@ class RouteManager {
 
   void unregisterBinds(Module module) {
     if (_appModule != null && module == _appModule!) return;
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!_registeredModules.containsKey(module)) return;
 
-      for (var bind in module.binds) {
-        _decrementBindReference(bind.runtimeType);
-      }
+    if (_activeRoutes[module]?.isNotEmpty ?? false) return;
 
-      if (module.imports.isNotEmpty) {
-        for (var module in module.imports) {
-          for (var bind in module.binds) {
-            if (_appModule?.binds.contains(bind) ?? false) continue;
-            _decrementBindReference(bind.runtimeType);
-          }
+    for (var bind in module.binds) {
+      _decrementBindReference(bind.instance.runtimeType);
+    }
+
+    if (module.imports.isNotEmpty) {
+      for (var importedModule in module.imports) {
+        for (var bind in importedModule.binds) {
+          if (_appModule?.binds.contains(bind) ?? false) continue;
+          _decrementBindReference(bind.instance.runtimeType);
         }
       }
+    }
 
-      _registeredModules.remove(module);
-      for (var bind in module.binds) {
-        Bind.disposeByType(bind.instance.runtimeType);
-      }
+    _activeRoutes.remove(module);
 
-      if (module.imports.isNotEmpty) {
-        for (var module in module.imports) {
-          for (var bind in module.binds) {
-            if ((_appModule?.binds.where((element) => element.instance.runtimeType == bind.instance.runtimeType).isNotEmpty ?? false)) continue;
-            Bind.disposeByType(bind.instance.runtimeType);
-          }
-        }
-      }
-
-      if (Modular.debugLogDiagnostics) {
-        log(
-            'DISPOSED: ${module.runtimeType} BINDS: ${[
-              ...module.binds.toList().map((e) => e.instance.runtimeType.toString()),
-              ...module.imports.map((e) => e.binds.toList().map((e) => e.instance.runtimeType.toString()).toList())
-            ]}',
-            name: "🗑️");
-      }
-    });
+    if (Modular.debugLogDiagnostics) {
+      log(
+          'DISPOSED: ${module.runtimeType} BINDS: ${[
+            ...module.binds.map((e) => e.instance.runtimeType.toString()),
+            ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
+          ]}',
+          name: "🗑️");
+    }
   }
 
   void _incrementBindReference(Type type) {
@@ -109,13 +97,13 @@ class RouteManager {
   }
 
   void registerRoute(String route, Module module) {
-    _registeredModules.putIfAbsent(module, () => {});
-    _registeredModules[module]!.add(route);
+    _activeRoutes.putIfAbsent(module, () => {});
+    _activeRoutes[module]?.add(route);
   }
 
   void unregisterRoute(String route, Module module) {
-    _registeredModules[module]?.remove(route);
-    if (_registeredModules[module]?.isEmpty ?? false) {
+    _activeRoutes[module]?.remove(route);
+    if (_activeRoutes[module]?.isEmpty ?? true) {
       unregisterBinds(module);
     }
   }

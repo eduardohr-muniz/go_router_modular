@@ -8,4 +8,5 @@ export 'src/route_manager.dart';
 export 'src/go_router_modular_configure.dart';
 export 'src/i_modular_route.dart';
 export 'src/page_transition_enum.dart';
+export 'src/route_outlet.dart';
 export 'package:go_router/go_router.dart' hide GoRouter;

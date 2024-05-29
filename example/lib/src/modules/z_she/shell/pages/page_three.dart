@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 
 class PageThree extends StatelessWidget {
   const PageThree({super.key});
@@ -8,7 +9,7 @@ class PageThree extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.blue,
       appBar: AppBar(
-        title: const Text('Pagina 3'),
+        title: Text('Pagina 3,  path = ${Modular.stateOf(context).path}'),
       ),
       body: Container(),
     );

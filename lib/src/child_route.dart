@@ -4,6 +4,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/injector.dart';
 
 class ChildRoute extends ModularRoute {
+  final String path;
   final Widget Function(BuildContext context, GoRouterState state, Injector i) child;
   final String? name;
   final Page<dynamic> Function(BuildContext, GoRouterState)? pageBuilder;
@@ -12,7 +13,7 @@ class ChildRoute extends ModularRoute {
   final FutureOr<bool> Function(BuildContext, GoRouterState)? onExit;
   final PageTransition pageTransition;
 
-  ChildRoute(super.path,
+  ChildRoute(this.path,
       {required this.child,
       this.name,
       this.pageBuilder,

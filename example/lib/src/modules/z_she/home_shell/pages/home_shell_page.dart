@@ -17,14 +17,13 @@ class HomeShellPage extends StatefulWidget {
 }
 
 class _HomeShellPageState extends State<HomeShellPage> {
-  // late final store = context.read<UserStore>();
-  // late final auth = Modular.get<AuthStore>();
+  late final store = context.read<UserStore>();
   late final auth = Modular.get<AuthStore>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Olá 👋 ${Modular.stateOf(context).path}'),
+        title: Text('Olá 👋, path = ${Modular.stateOf(context).path}'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

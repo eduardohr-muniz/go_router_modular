@@ -1,5 +1,5 @@
-import 'package:example/src/modules/shell/pages/page_one.dart';
-import 'package:example/src/modules/shell/pages/page_two.dart';
+import 'package:example/src/modules/z_she/shell/pages/page_one.dart';
+import 'package:example/src/modules/z_she/shell/pages/page_two.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class ShellModule extends Module {

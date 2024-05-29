@@ -1,7 +1,7 @@
-import 'package:example/src/modules/home_shell/pages/home_shell_page.dart';
-import 'package:example/src/modules/shell/pages/page_one.dart';
-import 'package:example/src/modules/shell/pages/page_three.dart';
-import 'package:example/src/modules/shell/pages/page_two.dart';
+import 'package:example/src/modules/z_she/home_shell/pages/home_shell_page.dart';
+import 'package:example/src/modules/z_she/shell/pages/page_one.dart';
+import 'package:example/src/modules/z_she/shell/pages/page_three.dart';
+import 'package:example/src/modules/z_she/shell/pages/page_two.dart';
 import 'package:example/src/modules/user/aplication/teste.dart';
 import 'package:example/src/modules/user/aplication/user_store.dart';
 import 'package:example/src/modules/user/user_module.dart';
