@@ -98,6 +98,7 @@ abstract class Module {
   void _unregister(String path, [Module? module]) {
     Future.delayed(const Duration(milliseconds: 500), () {
       RouteManager().unregisterRoute(path, module ?? this);
+      // RouteManager().unregisterBinds(module ?? this);
     });
   }
 
