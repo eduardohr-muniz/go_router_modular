@@ -1,9 +1,7 @@
-import 'package:example/src/modules/auth/auth_store.dart';
-import 'package:example/src/modules/home/home_module.dart';
-import 'package:example/src/modules/z_she/home_shell/home_shell_module.dart';
-import 'package:example/src/modules/z_she/shell/pages/page_one.dart';
+import 'package:example/src/core/routes.dart';
+import 'package:example/src/menu_module.dart';
+import 'package:example/src/modules/auth/auth_module.dart';
 import 'package:example/src/modules/user/user_module.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
@@ -13,13 +11,21 @@ class AppModule extends Module {
   //       ModuleRoute("/teste", module: rHomeShellModule),
   //       // ModuleRoute("/user/", module: UserModule()),
   //     ];
+  // @override
+  // List<ModularRoute> get routes => [
+  //       // ChildRoute(
+  //       //   "/auth",
+  //       //   child: (context, state, i) => const Text("Centre"),
+  //       // ),
+  //       ModuleRoute(Routes.home.moduleR, module: HomeModule()),
+  //       // ModuleRoute("/user", module: UserModule()),
+  //     ];
+
   @override
   List<ModularRoute> get routes => [
-        // ChildRoute(
-        //   "/auth",
-        //   child: (context, state, i) => const Text("Centre"),
-        // ),
-        ModuleRoute("/", module: HomeModule()),
-        // ModuleRoute("/user", module: UserModule()),
+        ModuleRoute(Routes.slpash.moduleR, module: AuthModule()),
+        ModuleRoute("/menu", module: MenuModule()),
+        // ModuleRoute(Routes.order.moduleR, module: OrderModule()),
+        ModuleRoute(Routes.name.moduleR, module: UserModule()),
       ];
 }

@@ -38,6 +38,7 @@ abstract class Module {
   List<GoRoute> _createModuleRoutes(Injector injector, String modulePath, bool topLevel) {
     return routes.whereType<ModuleRoute>().map((module) {
       final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => route.path == '/').firstOrNull;
+
       return GoRoute(
         path: _normalizePath(module.path, topLevel),
         name: childRoute?.name ?? module.name,
@@ -45,7 +46,7 @@ abstract class Module {
         routes: module.module.configureRoutes(injector, modulePath: module.path),
         parentNavigatorKey: childRoute?.parentNavigatorKey,
         redirect: childRoute?.redirect,
-        onExit: (context, state) => _handleRouteExit(context, state, childRoute!, module.module),
+        onExit: (context, state) => childRoute == null ? Future.value(true) : _handleRouteExit(context, state, childRoute, module.module),
       );
     }).toList();
   }
@@ -85,8 +86,12 @@ abstract class Module {
     final onExit = route.onExit?.call(context, state) ?? Future.value(true);
     completer.complete(onExit);
     return completer.future.then((exit) {
-      if (exit) _unregister(state.uri.toString(), module);
-      return exit;
+      try {
+        if (exit) _unregister(state.uri.toString(), module);
+        return exit;
+      } catch (_) {
+        return false;
+      }
     });
   }
 
@@ -96,10 +101,12 @@ abstract class Module {
   }
 
   void _unregister(String path, [Module? module]) {
-    Future.delayed(const Duration(milliseconds: 500), () {
-      RouteManager().unregisterRoute(path, module ?? this);
-      // RouteManager().unregisterBinds(module ?? this);
-    });
+    Future.delayed(
+      const Duration(milliseconds: 500),
+      () {
+        RouteManager().unregisterRoute(path, module ?? this);
+      },
+    );
   }
 
   String _buildPath(String path) {

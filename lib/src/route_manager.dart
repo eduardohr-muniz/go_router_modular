@@ -21,20 +21,8 @@ class RouteManager {
 
   void registerBindsIfNeeded(Module module) {
     if (_activeRoutes.containsKey(module)) return;
-
-    for (var bind in module.binds) {
-      _incrementBindReference(bind.instance.runtimeType);
-      Bind.register(bind);
-    }
-
-    if (module.imports.isNotEmpty) {
-      for (var importedModule in module.imports) {
-        for (var bind in importedModule.binds) {
-          _incrementBindReference(bind.instance.runtimeType);
-          Bind.register(bind);
-        }
-      }
-    }
+    List<Bind<Object>> allBinds = [...module.binds, ...module.imports.map((e) => e.binds).expand((e) => e)];
+    _recursiveRegisterBinds(allBinds);
 
     _activeRoutes[module] = {};
 
@@ -45,6 +33,28 @@ class RouteManager {
             ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
           ]}',
           name: "💉");
+    }
+  }
+
+  void _recursiveRegisterBinds(List<Bind<Object>> binds) {
+    if (binds.isEmpty) return;
+    List<Bind<Object>> queueBinds = [];
+
+    for (var bind in binds) {
+      try {
+        _incrementBindReference(bind.instance.runtimeType);
+        Bind.register(bind);
+      } catch (e) {
+        queueBinds.add(bind);
+      }
+    }
+    if (queueBinds.length < binds.length) {
+      _recursiveRegisterBinds(queueBinds);
+    } else if (queueBinds.isNotEmpty) {
+      for (var bind in queueBinds) {
+        _incrementBindReference(bind.instance.runtimeType);
+        Bind.register(bind);
+      }
     }
   }
 

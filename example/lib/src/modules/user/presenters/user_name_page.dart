@@ -20,7 +20,7 @@ class _UserNamePageState extends State<UserNamePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Olá 👋, ${store.name} ${widget.name} ${store.teste.getName()}'),
+        title: Text('Olá 👋, ${store.name} ${widget.name} ${store.name} ${store.teste.getName()}'),
       ),
       body: Container(),
     );

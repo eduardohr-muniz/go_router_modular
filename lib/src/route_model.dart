@@ -1,32 +1,33 @@
-class RouteModularModel {
+import 'package:go_router_modular/go_router_modular.dart';
+
+class RouteModel {
   String moduleR;
   String childR;
   String route;
   List<String>? params;
-  Duration? d;
-
-  RouteModularModel({
+  PageTransition pageTransition;
+  RouteModel({
     required this.moduleR,
     required this.childR,
     required this.route,
     this.params,
-    this.d = const Duration(milliseconds: 700),
+    this.pageTransition = PageTransition.fade,
   });
 
   @override
   String toString() {
-    return 'RouteModularModel(moduleR: $moduleR, childR: $childR, route: $route, params: $params, d: $d)';
+    return 'RouteModularModel(moduleR: $moduleR, childR: $childR, route: $route, params: $params, )';
   }
 
-  String go({List<String> params = const []}) {
+  String go([List<String> params = const []]) {
     return _buildPath(route) + params.map((e) => "/$e").join("");
   }
 
-  static RouteModularModel buildRoute({required String module, required String routeName, List<String> params = const []}) {
+  static RouteModel build({required String module, required String routeName, List<String> params = const []}) {
     final module_ = "/$module";
     final childRoute = "/${routeName == module ? "" : "$routeName/"}";
     final args_ = params.map((e) => ":$e").join("/");
-    return RouteModularModel(
+    return RouteModel(
         route: _buildPath("$module_${routeName == module ? "/" : childRoute}"),
         moduleR: _buildPath("$module_${module == "/" ? "" : "/"}"),
         childR: _buildPath(childRoute + args_),
@@ -41,11 +42,4 @@ class RouteModularModel {
     if (path == '/') return path;
     return path.substring(0, path.length - 1);
   }
-}
-
-void main() {
-  final home = RouteModularModel.buildRoute(module: "/home/", routeName: "/home/");
-  final config = RouteModularModel.buildRoute(module: "/home/config/", routeName: "teste/", params: ["id"]);
-  print(home.go(params: ['dudu']));
-  print(config);
 }

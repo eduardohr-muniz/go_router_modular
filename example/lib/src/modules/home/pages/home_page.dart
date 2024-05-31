@@ -11,8 +11,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final store = context.read<UserStore>();
-  late final auth = Modular.get<AuthStore>();
+  // late final store = context.read<UserStore>();
+  // late final auth = Modular.get<AuthStore>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,11 +23,11 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            TextFormField(
-              initialValue: store.name,
-              decoration: const InputDecoration(labelText: "Name"),
-              onChanged: (value) => store.name = value,
-            ),
+            // TextFormField(
+            //   initialValue: store.name,
+            //   decoration: const InputDecoration(labelText: "Name"),
+            //   onChanged: (value) => store.name = value,
+            // ),
             const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: () {
@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> {
                 child: const Text("Go User")),
             ElevatedButton(
                 onPressed: () {
-                  print(auth.verify);
+                  // print(auth.verify);
                 },
                 child: const Text("get auth bind"))
           ],
