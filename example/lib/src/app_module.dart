@@ -2,6 +2,7 @@ import 'package:example/src/core/routes.dart';
 import 'package:example/src/menu_module.dart';
 import 'package:example/src/modules/auth/auth_module.dart';
 import 'package:example/src/modules/user/user_module.dart';
+import 'package:example/src/modules/z_she/home_shell/home_shell_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
@@ -23,9 +24,10 @@ class AppModule extends Module {
 
   @override
   List<ModularRoute> get routes => [
-        ModuleRoute(Routes.slpash.moduleR, module: AuthModule()),
-        ModuleRoute("/menu", module: MenuModule()),
+        // ModuleRoute(Routes.slpash.moduleR, module: AuthModule()),
+        ModuleRoute(Routes.menu.moduleR, module: MenuModule()),
+        ModuleRoute("/", module: HomeShellModule()),
         // ModuleRoute(Routes.order.moduleR, module: OrderModule()),
-        ModuleRoute(Routes.name.moduleR, module: UserModule()),
+        // ModuleRoute(Routes.name.moduleR, module: UserModule()),
       ];
 }

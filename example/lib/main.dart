@@ -19,7 +19,7 @@ void main() {
 
   Modular.configure(
     appModule: AppModule(),
-    initialRoute: Routes.cartProduct.go(["1", "dudu"]),
+    initialRoute: "/",
   );
   runApp(const AppWidget());
 }

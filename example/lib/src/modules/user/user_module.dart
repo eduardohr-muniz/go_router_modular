@@ -55,12 +55,13 @@
 // }
 import 'package:example/src/core/routes.dart';
 import 'package:example/src/modules/auth/auth_module.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class UserModule extends Module {
   @override
   List<ModularRoute> get routes => [
-        ChildRoute("/", child: (context, state, i) => const PageTeste("/ user")),
+        ChildRoute("/", child: (context, state, i) => const PageTeste("/user")),
         ChildRoute(Routes.name.childR, child: (context, state, i) => const PageTeste("name")),
         ChildRoute(Routes.phone.childR, child: (context, state, i) => const PageTeste("phone")),
         ChildRoute(Routes.phoneConfirm.childR, child: (context, state, i) => const PageTeste("phone")),

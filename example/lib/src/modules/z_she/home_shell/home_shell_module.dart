@@ -16,7 +16,7 @@ class HomeShellModule extends Module {
   @override
   List<ModularRoute> get routes => [
         ShellModularRoute(builder: (context, state, child) => HomeShellPage(shellChild: child), routes: [
-          ChildRoute("/", child: (context, state, i) => const PageOne()),
+          ChildRoute("/config", child: (context, state, i) => const PageOne()),
           ChildRoute("/two", child: (context, state, i) => const PageTwo()),
           ChildRoute("/three", child: (context, state, i) => const PageThree()),
           ModuleRoute("/user", module: UserModule()),
