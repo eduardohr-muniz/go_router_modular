@@ -164,7 +164,7 @@ The **ChildRoute()** is equivalent to **GoRoute()**. You may notice that they wi
 
  > Note that every initial route of your module must start with "/" only.
 
-Ex: Routes
+### ChildRoutes
 ```dart
 class HomeModule extends Module {
  
@@ -191,6 +191,64 @@ class AppModule extends Module {
       ];
 }
 ```
+
+### ShellRoutes
+
+ShellModularRoute would be the equivalent of FLutter Modular's RouteOutlet
+With it you can have a navigation window within a page. It is widely used in menu construction, where you change the options and only the screen changes.
+
+ > Here's the doc if you want to go deeper > [open go_router ShellRoute documentation](https://pub.dev/documentation/go_router/latest/go_router/ShellRoute-class.html)
+```dart
+class HomeShellModule extends Module {
+ 
+  @override
+  List<ModularRoute> get routes => [
+        ShellModularRoute(builder: (context, state, child) => ShellPageExample(shellChild: child),  routes:[
+          ChildRoute("/config", child: (context, state, i) => const ConfigPage()),
+          ChildRoute("/user", child: (context, state, i) => const UserPage()),
+          ChildRoute("/orders", child: (context, state, i) => const OrdersPage()),
+        ],
+      ),
+      ];
+}
+
+```
+### ShellPageExample 
+```dart
+class ShellPageExample extends StatefulWidget {
+  final Widget shellChild; // Request a child WIDGET to be rendered in the shell
+  const ShellPageExample({super.key, required this.shellChild});
+
+  @override
+  State<ShellPageExample> createState() => _ShellPageExampleState();
+}
+
+class _ShellPageExampleState extends State<ShellPageExample> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(children: [
+        Expanded(child: widget.shellChild), // Your routes will be re-rendered here
+        Row(
+          children: [
+            IconButton(
+                onPressed: () {
+                  context.go("/home");
+                },
+                icon: const Icon(Icons.home)),
+            IconButton(
+                onPressed: () {
+                  context.go("/config");
+                },
+                icon: const Icon(Icons.settings)),
+          ],
+        ),
+      ]),
+    );
+  }
+}
+```
+
 ## Go directly to a destination example
 Navigating to a destination in GoRouter will replace the current stack of screens with the screens configured to be displayed for the destination route. To change to a new screen, call context.go() with a URL:
 ```dart

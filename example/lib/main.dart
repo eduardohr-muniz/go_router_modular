@@ -1,18 +1,25 @@
 import 'package:example/src/app_module.dart';
 import 'package:example/src/app_widget.dart';
+import 'package:example/src/core/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
-final injector = Injector();
+// final injector = Injector();
 
-final router = GoRouter(
-  initialLocation: '/',
-  routes: AppModule().configureRoutes(injector),
-);
+// final router = GoRouter(
+//   initialLocation: '/',
+//   routes: AppModule().configureRoutes(injector),
+// );
 
 void main() {
   // WidgetsFlutterBinding.ensureInitialized();
-  // setUrlStrategy(const PathUrlStrategy());
+  // ignore: prefer_const_constructors
+  setUrlStrategy(PathUrlStrategy());
 
-  runApp(AppWidget(router: router));
+  Modular.configure(
+    appModule: AppModule(),
+    initialRoute: "/",
+  );
+  runApp(const AppWidget());
 }
