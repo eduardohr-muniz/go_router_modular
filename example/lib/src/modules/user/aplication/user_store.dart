@@ -1,3 +1,8 @@
+import 'package:example/src/modules/user/aplication/i_teste.dart';
+
 class UserStore {
-  String name = '';
+  final ITeste teste;
+  String name = 'Ordenação';
+
+  UserStore(this.teste);
 }

@@ -29,7 +29,7 @@ class GoRouterModular {
 
   static GoRouterState stateOf(BuildContext context) => GoRouterState.of(context);
 
-  static GoRouter configure({
+  static Future<FutureOr<GoRouter>> configure({
     required Module appModule,
     required String initialRoute,
     bool debugLogDiagnostics = true,
@@ -48,11 +48,12 @@ class GoRouterModular {
     GlobalKey<NavigatorState>? navigatorKey,
     String? restorationScopeId,
     bool requestFocus = true,
-  }) {
+  }) async {
     if (_router != null) return _router!;
     _debugLogDiagnostics = debugLogDiagnostics;
+    GoRouter.optionURLReflectsImperativeAPIs = true;
     _router = GoRouter(
-      routes: appModule.configureRoutes(Injector()),
+      routes: appModule.configureRoutes(Injector(), topLevel: true),
       initialLocation: initialRoute,
       debugLogDiagnostics: debugLogDiagnosticsGoRouter,
       errorBuilder: errorBuilder,
