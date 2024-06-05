@@ -75,3 +75,17 @@ class GoRouterModular {
     return _router!;
   }
 }
+
+extension GoRouterExtension on BuildContext {
+  String? getPathParam(String param) {
+    return GoRouterState.of(this).pathParameters[param];
+  }
+
+  String? get getPath {
+    return GoRouterState.of(this).path;
+  }
+
+  GoRouterState get state {
+    return GoRouterState.of(this);
+  }
+}
