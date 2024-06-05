@@ -4,12 +4,14 @@ class RouteModel {
   String moduleR;
   String childR;
   String route;
+  String name;
   List<String>? params;
   PageTransition pageTransition;
   RouteModel({
     required this.moduleR,
     required this.childR,
     required this.route,
+    this.name = '',
     this.params,
     this.pageTransition = PageTransition.fade,
   });
@@ -19,8 +21,12 @@ class RouteModel {
     return 'RouteModularModel(moduleR: $moduleR, childR: $childR, route: $route, params: $params, )';
   }
 
-  String go([List<String> params = const []]) {
-    return _buildPath(route) + params.map((e) => "/$e").join("");
+  String buildPath({List<String> subParams = const [], List<String> params = const []}) {
+    // Adiciona os parâmetros entre moduleR e childR
+    String paramPath = params.map((e) => "/$e").join("");
+    String subParamPath = subParams.map((e) => "/$e").join("");
+    int indexChildR = childR.contains("/:") ? childR.indexOf("/:") : childR.length;
+    return _buildPath(moduleR + subParamPath + childR.substring(0, indexChildR) + paramPath);
   }
 
   static RouteModel build({required String module, required String routeName, List<String> params = const []}) {
@@ -31,7 +37,19 @@ class RouteModel {
         route: _buildPath("$module_${routeName == module ? "/" : childRoute}"),
         moduleR: _buildPath("$module_${module == "/" ? "" : "/"}"),
         childR: _buildPath(childRoute + args_),
+        name: _extractName(routeName),
         params: params);
+  }
+
+  static String _extractName(String path) {
+    final regex = RegExp(r'^/([^/]+)/?');
+    final match = regex.firstMatch(path);
+
+    if (match != null && match.groupCount >= 1) {
+      return match.group(1)!;
+    }
+
+    return '';
   }
 
   static String _buildPath(String path) {
