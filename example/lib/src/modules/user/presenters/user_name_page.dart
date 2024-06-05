@@ -16,6 +16,7 @@ class UserNamePage extends StatefulWidget {
 
 class _UserNamePageState extends State<UserNamePage> {
   late final store = Bind.get<UserStore>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

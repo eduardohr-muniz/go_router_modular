@@ -18,8 +18,12 @@ class RouteModularModel {
     return 'RouteModularModel(moduleR: $moduleR, childR: $childR, route: $route, params: $params, d: $d)';
   }
 
-  String go({List<String> params = const []}) {
-    return _buildPath(route) + params.map((e) => "/$e").join("");
+  String buildPath({List<String> subParams = const [], List<String> params = const []}) {
+    // Adiciona os parâmetros entre moduleR e childR
+    String paramPath = params.map((e) => "/$e").join("");
+    String subParamPath = subParams.map((e) => "/$e").join("");
+    int indexChildR = childR.contains("/:") ? childR.indexOf("/:") : childR.length;
+    return _buildPath(moduleR + subParamPath + childR.substring(0, indexChildR) + paramPath);
   }
 
   static RouteModularModel buildRoute({required String module, required String routeName, List<String> params = const []}) {
@@ -44,8 +48,10 @@ class RouteModularModel {
 }
 
 void main() {
-  final home = RouteModularModel.buildRoute(module: "/home/", routeName: "/home/");
+  final menu = RouteModularModel.buildRoute(module: "/menu", routeName: "/:id", params: ['id']);
+  final teste = RouteModularModel.buildRoute(module: "/menu", routeName: "teste");
   final config = RouteModularModel.buildRoute(module: "/home/config/", routeName: "teste/", params: ["id"]);
-  print(home.go(params: ['dudu']));
-  print(config);
+  print(menu.buildPath(params: ['dudu'], subParams: ["oi"]));
+  print(teste.buildPath(subParams: ["oi"]));
+  // print(config);
 }

@@ -55,17 +55,31 @@
 // }
 import 'package:example/src/core/routes.dart';
 import 'package:example/src/modules/auth/auth_module.dart';
+import 'package:example/src/modules/user/aplication/teste.dart';
+import 'package:example/src/modules/user/aplication/user_store.dart';
+import 'package:example/src/modules/user/presenters/user_name_page.dart';
+import 'package:example/src/modules/user/presenters/user_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class UserModule extends Module {
   @override
+  List<Bind<Object>> get binds => [
+        Bind.singleton((i) => UserStore(i.get())),
+        Bind.factory((i) => Teste()),
+      ];
+  @override
   List<ModularRoute> get routes => [
-        ChildRoute("/", child: (context, state, i) => const PageTeste("/user")),
-        ChildRoute(Routes.name.childR, child: (context, state, i) => const PageTeste("name")),
-        ChildRoute(Routes.phone.childR, child: (context, state, i) => const PageTeste("phone")),
-        ChildRoute(Routes.phoneConfirm.childR, child: (context, state, i) => const PageTeste("phone")),
-        ChildRoute(Routes.searchAddress.childR, child: (context, state, i) => const PageTeste("Search address")),
-        ChildRoute(Routes.addressNickname.childR, child: (context, state, i) => const PageTeste("address nickname")),
+        ChildRoute(Routes.user.childR, child: (context, state, i) => const UserPage()),
+        ChildRoute(
+          Routes.userName.childR,
+          child: (context, state, i) => UserNamePage(name: state.pathParameters['name']!),
+        )
+        // ChildRoute("/", child: (context, state, i) => const PageTeste("/user")),
+        // ChildRoute(Routes.name.childR, child: (context, state, i) => const PageTeste("name")),
+        // ChildRoute(Routes.phone.childR, child: (context, state, i) => const PageTeste("phone")),
+        // ChildRoute(Routes.phoneConfirm.childR, child: (context, state, i) => const PageTeste("phone")),
+        // ChildRoute(Routes.searchAddress.childR, child: (context, state, i) => const PageTeste("Search address")),
+        // ChildRoute(Routes.addressNickname.childR, child: (context, state, i) => const PageTeste("address nickname")),
       ];
 }

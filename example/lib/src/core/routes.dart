@@ -19,4 +19,9 @@ class Routes {
   static final RouteModel paymentQrcode = RouteModel.build(module: '/menu', routeName: '/payment_qrcode/:teste');
   //order
   static final RouteModel order = RouteModel.build(module: '/order', routeName: '/order');
+
+  static final RouteModel home = RouteModel.build(module: '/', routeName: '/');
+
+  static final RouteModel user = RouteModel.build(module: '/user', routeName: '/');
+  static final RouteModel userName = RouteModel.build(module: '/user', routeName: '/user_name', params: ['name']);
 }

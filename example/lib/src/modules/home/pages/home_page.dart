@@ -1,3 +1,4 @@
+import 'package:example/src/core/routes.dart';
 import 'package:example/src/modules/auth/auth_store.dart';
 import 'package:example/src/modules/user/aplication/user_store.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // late final store = context.read<UserStore>();
-  // late final auth = Modular.get<AuthStore>();
+  late final auth = Modular.get<UserStore>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,12 +32,12 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: () {
-                  context.push('/user');
+                  context.push(Routes.user.route);
                 },
                 child: const Text("Go User")),
             ElevatedButton(
                 onPressed: () {
-                  // print(auth.verify);
+                  print(auth.teste.getName());
                 },
                 child: const Text("get auth bind"))
           ],
