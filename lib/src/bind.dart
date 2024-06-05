@@ -29,8 +29,8 @@ class Bind<T> {
       _bindsMap[type] = bind;
       return;
     }
-    Bind<T> b = _bindsMap[type] as Bind<T>;
-    if (b.isLazy || b.isSingleton) return;
+    Bind<T> existingBind = _bindsMap[type] as Bind<T>;
+    if (existingBind.isLazy || existingBind.isSingleton) return;
 
     _bindsMap[type] = bind;
   }
@@ -51,7 +51,7 @@ class Bind<T> {
       for (var entry in _bindsMap.entries) {
         if (entry.value.instance is T) {
           bind = Bind<T>((injector) => entry.value.instance, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy);
-          // _bindsMap[entry.key] = bind;
+          _bindsMap[T] = bind; // Atualiza o mapa com o novo Bind encontrado
           break;
         }
       }
