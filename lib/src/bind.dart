@@ -66,18 +66,18 @@ class Bind<T> {
 
   static T get<T>() => _find<T>();
 
-  static Bind<T> singleton<T>(T Function(Injector i) factoryFunction) {
-    final bind = Bind<T>(factoryFunction, isSingleton: true, isLazy: false);
+  static Bind<T> singleton<T>(T Function(Injector i) builder) {
+    final bind = Bind<T>(builder, isSingleton: true, isLazy: false);
     return bind;
   }
 
-  static Bind<T> lazySingleton<T>(T Function(Injector i) factoryFunction) {
-    final bind = Bind<T>(factoryFunction, isSingleton: true, isLazy: true);
+  static Bind<T> lazySingleton<T>(T Function(Injector i) builder) {
+    final bind = Bind<T>(builder, isSingleton: true, isLazy: true);
     return bind;
   }
 
-  static Bind<T> factory<T>(T Function(Injector i) factoryFunction) {
-    final bind = Bind<T>(factoryFunction, isSingleton: false, isLazy: true);
+  static Bind<T> factory<T>(T Function(Injector i) builder) {
+    final bind = Bind<T>(builder, isSingleton: false, isLazy: false);
     return bind;
   }
 }

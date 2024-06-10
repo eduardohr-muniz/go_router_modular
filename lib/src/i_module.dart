@@ -120,7 +120,7 @@ abstract class Module {
         configRouteManager: () {
           _register(state.uri.toString());
         },
-        pageTransition: route.pageTransition,
+        pageTransition: route.pageTransition ?? Modular.getDefaultPageTransition,
       ),
     );
   }

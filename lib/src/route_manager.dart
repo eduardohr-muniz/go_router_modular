@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class RouteManager {
@@ -6,6 +7,7 @@ class RouteManager {
   final Map<Module, Set<String>> _activeRoutes = {};
   final Map<Type, int> _bindReferences = {};
   Module? _appModule;
+  List<Type> bindsToDispose = [];
 
   RouteManager._();
 
@@ -63,6 +65,15 @@ class RouteManager {
 
     if (_activeRoutes[module]?.isNotEmpty ?? false) return;
 
+    if (Modular.debugLogDiagnostics) {
+      log(
+          'DISPOSED: ${module.runtimeType} BINDS: ${[
+            ...module.binds.map((e) => e.instance.runtimeType.toString()),
+            ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
+          ]}',
+          name: "🗑️");
+    }
+
     for (var bind in module.binds) {
       _decrementBindReference(bind.instance.runtimeType);
     }
@@ -75,17 +86,10 @@ class RouteManager {
         }
       }
     }
+    bindsToDispose.map((type) => Bind.disposeByType(type)).toList();
+    bindsToDispose.clear();
 
     _activeRoutes.remove(module);
-
-    if (Modular.debugLogDiagnostics) {
-      log(
-          'DISPOSED: ${module.runtimeType} BINDS: ${[
-            ...module.binds.map((e) => e.instance.runtimeType.toString()),
-            ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
-          ]}',
-          name: "🗑️");
-    }
   }
 
   void _incrementBindReference(Type type) {
@@ -101,7 +105,7 @@ class RouteManager {
       _bindReferences[type] = (_bindReferences[type] ?? 1) - 1;
       if (_bindReferences[type] == 0) {
         _bindReferences.remove(type);
-        Bind.disposeByType(type);
+        bindsToDispose.add(type);
       }
     }
   }

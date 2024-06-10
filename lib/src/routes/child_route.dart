@@ -7,18 +7,20 @@ class ChildRoute extends ModularRoute {
   final String path;
   final Widget Function(BuildContext context, GoRouterState state, Injector i) child;
   final String? name;
-  final Page<dynamic> Function(BuildContext, GoRouterState)? pageBuilder;
+  final Page<dynamic> Function(BuildContext context, GoRouterState state)? pageBuilder;
   final GlobalKey<NavigatorState>? parentNavigatorKey;
-  final FutureOr<String?> Function(BuildContext, GoRouterState)? redirect;
-  final FutureOr<bool> Function(BuildContext, GoRouterState)? onExit;
-  final PageTransition pageTransition;
+  final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
+  final FutureOr<bool> Function(BuildContext context, GoRouterState state)? onExit;
+  final PageTransition? pageTransition;
 
-  ChildRoute(this.path,
-      {required this.child,
-      this.name,
-      this.pageBuilder,
-      this.parentNavigatorKey,
-      this.redirect,
-      this.onExit,
-      this.pageTransition = PageTransition.fade});
+  ChildRoute(
+    this.path, {
+    required this.child,
+    this.name,
+    this.pageBuilder,
+    this.parentNavigatorKey,
+    this.redirect,
+    this.onExit,
+    this.pageTransition,
+  });
 }

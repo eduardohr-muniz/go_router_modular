@@ -19,9 +19,16 @@ class GoRouterModular {
     return _debugLogDiagnostics!;
   }
 
+  static PageTransition get getDefaultPageTransition {
+    assert(_pageTansition != null, 'Add GoRouterModular.configure in main.dart');
+    return _pageTansition!;
+  }
+
   static GoRouter? _router;
 
   static bool? _debugLogDiagnostics;
+
+  static PageTransition? _pageTansition;
 
   static T get<T>() => Bind.get<T>();
 
@@ -48,8 +55,10 @@ class GoRouterModular {
     GlobalKey<NavigatorState>? navigatorKey,
     String? restorationScopeId,
     bool requestFocus = true,
+    PageTransition pageTransition = PageTransition.fade,
   }) async {
     if (_router != null) return _router!;
+    _pageTansition = pageTransition;
     _debugLogDiagnostics = debugLogDiagnostics;
     GoRouter.optionURLReflectsImperativeAPIs = true;
     _router = GoRouter(
