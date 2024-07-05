@@ -1,7 +1,6 @@
 import 'package:example/src/modules/auth/auth_store.dart';
 import 'package:example/src/modules/user/aplication/user_store.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 import 'package:go_router_modular/go_router_modular.dart';
 

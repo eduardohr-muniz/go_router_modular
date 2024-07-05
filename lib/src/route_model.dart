@@ -49,7 +49,7 @@ class RouteModel {
       return match.group(1)!;
     }
 
-    return '';
+    return path;
   }
 
   static String _buildPath(String path) {
