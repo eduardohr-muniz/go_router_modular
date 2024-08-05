@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router_modular/src/injector.dart';
 
 class Bind<T> {
@@ -78,13 +77,6 @@ class Bind<T> {
 
   static Bind<T> factory<T>(T Function(Injector i) builder) {
     final bind = Bind<T>(builder, isSingleton: false, isLazy: false);
-    return bind;
-  }
-}
-
-extension BindContextExtension on BuildContext {
-  T read<T>() {
-    final bind = Bind._find<T>();
     return bind;
   }
 }

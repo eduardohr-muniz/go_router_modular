@@ -1,6 +1,7 @@
 library go_router_modular;
 
 export 'src/bind.dart';
+export 'src/context_extension.dart';
 export 'src/go_router_modular_configure.dart';
 export 'src/i_module.dart';
 export 'src/injector.dart';
