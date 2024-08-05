@@ -6,7 +6,6 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class MenuModule extends Module {
   @override
-  // TODO: implement binds
   List<Bind<Object>> get binds => [];
   @override
   List<ModularRoute> get routes => [
@@ -28,7 +27,7 @@ class PageMenu extends StatelessWidget {
       appBar: AppBar(
         title: Text(param),
       ),
-      body: Container(
+      body: SizedBox(
         child: ElevatedButton(
             onPressed: () {
               context.push(Routes.paymentQrcode.route);

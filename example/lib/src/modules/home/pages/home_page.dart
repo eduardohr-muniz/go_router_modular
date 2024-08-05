@@ -1,5 +1,6 @@
+import 'dart:developer';
+
 import 'package:example/src/core/routes.dart';
-import 'package:example/src/modules/auth/auth_store.dart';
 import 'package:example/src/modules/user/aplication/user_store.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
@@ -37,7 +38,7 @@ class _HomePageState extends State<HomePage> {
                 child: const Text("Go User")),
             ElevatedButton(
                 onPressed: () {
-                  print(auth.teste.getName());
+                  log(auth.teste.getName());
                 },
                 child: const Text("get auth bind"))
           ],

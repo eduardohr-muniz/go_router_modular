@@ -1,5 +1,4 @@
 import 'package:example/src/core/routes.dart';
-import 'package:example/src/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -18,7 +17,7 @@ class _UserPageState extends State<UserPage> {
       appBar: AppBar(
         title: const Text('Passe para proxima pagina '),
       ),
-      body: Container(
+      body: SizedBox(
         child: Center(
           child: ElevatedButton(
               onPressed: () {

@@ -1,6 +1,4 @@
 import 'package:example/src/core/routes.dart';
-import 'package:example/src/modules/auth/auth_store.dart';
-import 'package:example/src/modules/user/aplication/teste.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -24,8 +22,8 @@ class PageTeste extends StatelessWidget {
       appBar: AppBar(
         title: Text(label + (productId ?? "")),
       ),
-      body: Container(
-        child: const Text("Olá"),
+      body: const SizedBox(
+        child: Text("Olá"),
       ),
     );
   }

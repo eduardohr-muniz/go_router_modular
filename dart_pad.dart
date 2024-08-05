@@ -56,21 +56,5 @@
 //   // print(config);
 // }
 
-import 'dart:async';
 
-void main() {
-  late Timer timer;
-  int seconds = 5;
 
-  scheadule() {
-    while (seconds <= 5 && seconds != 1) {
-      timer = Timer(Duration(seconds: seconds), () {
-        print("Oi Murilo");
-      });
-      Future.delayed(const Duration(seconds: 1), () {
-        seconds--;
-        print(seconds);
-      });
-    }
-  }
-}

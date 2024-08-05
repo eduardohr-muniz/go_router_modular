@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class RouteManager {
