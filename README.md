@@ -21,7 +21,7 @@ flutter pub add go_router_modular
 This will add a line like this to your package's pubspec.yaml (and run an implicit flutter pub get):
 dependencies:
 ```bash
-go_router_modular: ^1.0.5
+go_router_modular: ^1.0.6
 ```
 # Start
 1. Create an app_module.dart
