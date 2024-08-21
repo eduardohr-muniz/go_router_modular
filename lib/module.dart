@@ -52,9 +52,9 @@ abstract class Module {
 
   List<RouteBase> _createShellRoutes(Injector injector, bool topLevel) {
     return routes.whereType<ShellModularRoute>().map((shellRoute) {
-      if (shellRoute.routes.whereType<ChildRoute>().where((element) => element.path == '/').isNotEmpty) {
-        throw Exception('ShellModularRoute cannot contain ChildRoute with path "/"');
-      }
+      // if (shellRoute.routes.whereType<ChildRoute>().where((element) => element.path == '/').isNotEmpty) {
+      //   throw Exception('ShellModularRoute cannot contain ChildRoute with path "/"');
+      // }
       return ShellRoute(
         builder: (context, state, child) => shellRoute.builder!(context, state, child),
         pageBuilder: shellRoute.pageBuilder != null ? (context, state, child) => shellRoute.pageBuilder!(context, state, child) : null,
