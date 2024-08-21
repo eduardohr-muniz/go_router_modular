@@ -13,4 +13,4 @@ export 'routes/child_route.dart';
 export 'routes/i_modular_route.dart';
 export 'routes/module_route.dart';
 export 'routes/shell_modular_route.dart';
-export 'package:go_router/go_router.dart' hide GoRouter;
+export 'package:go_router/go_router.dart' hide GoRouter hide ShellRoute;
