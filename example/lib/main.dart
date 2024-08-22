@@ -1,6 +1,5 @@
 import 'package:example/src/app_module.dart';
 import 'package:example/src/app_widget.dart';
-import 'package:example/src/modules/shell/home_shell/home_shell_module.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -20,9 +19,8 @@ void main() {
 
   Modular.configure(
     navigatorKey: navigatorKey,
-    appModule: HomeShellModule(),
+    appModule: AppModule(),
     initialRoute: "/",
-    debugLogDiagnostics: true,
     debugLogDiagnosticsGoRouter: true,
   );
   runApp(const AppWidget());
