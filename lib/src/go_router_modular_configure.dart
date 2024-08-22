@@ -1,8 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/bind.dart';
+import 'package:go_router_modular/src/injector.dart';
+import 'package:go_router_modular/src/module.dart';
+
+import 'package:go_router_modular/src/page_transition_enum.dart';
 
 typedef Modular = GoRouterModular;
 

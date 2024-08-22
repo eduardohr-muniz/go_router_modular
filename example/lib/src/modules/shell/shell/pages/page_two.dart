@@ -9,7 +9,7 @@ class PageTwo extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.yellow,
       appBar: AppBar(
-        title: Text('Pagina 2,  path = ${Modular.stateOf(context).path}'),
+        title: Text('Pagina-2,  path = ${Modular.stateOf(context).path}'),
       ),
       body: Container(),
     );

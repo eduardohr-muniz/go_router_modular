@@ -1,7 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/bind.dart';
+import 'package:go_router_modular/src/go_router_modular_configure.dart';
+import 'package:go_router_modular/src/injector.dart';
+import 'package:go_router_modular/src/route_manager.dart';
+import 'package:go_router_modular/src/routes/child_route.dart';
+import 'package:go_router_modular/src/routes/i_modular_route.dart';
+import 'package:go_router_modular/src/routes/module_route.dart';
+import 'package:go_router_modular/src/routes/shell_modular_route.dart';
+import 'package:go_router_modular/src/transition.dart';
 
 abstract class Module {
   List<Module> get imports => const [];
@@ -19,35 +27,43 @@ abstract class Module {
     return result;
   }
 
+  GoRoute _createChild(Injector injector, ChildRoute childRoute, bool topLevel) {
+    return GoRoute(
+      path: _normalizePath(childRoute.path, topLevel),
+      name: childRoute.name,
+      builder: (context, state) => _buildRouteChild(context, state, childRoute, injector),
+      pageBuilder: childRoute.pageBuilder != null
+          ? (context, state) => childRoute.pageBuilder!(context, state)
+          : (context, state) => _buildCustomTransitionPage(context, state, childRoute, injector),
+      parentNavigatorKey: childRoute.parentNavigatorKey,
+      redirect: childRoute.redirect,
+      onExit: (context, state) => _handleRouteExit(context, state, childRoute, this),
+    );
+  }
+
   List<GoRoute> _createChildRoutes(Injector injector, bool topLevel) {
     return routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) != '/').map((route) {
-      return GoRoute(
-        path: _normalizePath(route.path, topLevel),
-        name: route.name,
-        builder: (context, state) => _buildRouteChild(context, state, route, injector),
-        pageBuilder: route.pageBuilder != null
-            ? (context, state) => route.pageBuilder!(context, state)
-            : (context, state) => _buildCustomTransitionPage(context, state, route, injector),
-        parentNavigatorKey: route.parentNavigatorKey,
-        redirect: route.redirect,
-        onExit: (context, state) => _handleRouteExit(context, state, route, this),
-      );
+      return _createChild(injector, route, topLevel);
     }).toList();
+  }
+
+  GoRoute _createModule(Injector injector, ModuleRoute module, String modulePath, bool topLevel) {
+    final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').firstOrNull;
+
+    return GoRoute(
+      path: _normalizePath(module.path + (childRoute?.path ?? ""), topLevel),
+      name: childRoute?.name ?? module.name,
+      builder: (context, state) => _buildModuleChild(context, state, module, childRoute, injector),
+      routes: module.module.configureRoutes(injector, modulePath: module.path, topLevel: false),
+      parentNavigatorKey: childRoute?.parentNavigatorKey,
+      redirect: childRoute?.redirect,
+      onExit: (context, state) => childRoute == null ? Future.value(true) : _handleRouteExit(context, state, childRoute, module.module),
+    );
   }
 
   List<GoRoute> _createModuleRoutes(Injector injector, String modulePath, bool topLevel) {
     return routes.whereType<ModuleRoute>().map((module) {
-      final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').firstOrNull;
-
-      return GoRoute(
-        path: _normalizePath(module.path + (childRoute?.path ?? ""), topLevel),
-        name: childRoute?.name ?? module.name,
-        builder: (context, state) => _buildModuleChild(context, state, module, childRoute, injector),
-        routes: module.module.configureRoutes(injector, modulePath: module.path, topLevel: false),
-        parentNavigatorKey: childRoute?.parentNavigatorKey,
-        redirect: childRoute?.redirect,
-        onExit: (context, state) => childRoute == null ? Future.value(true) : _handleRouteExit(context, state, childRoute, module.module),
-      );
+      return _createModule(injector, module, modulePath, topLevel);
     }).toList();
   }
 
@@ -59,27 +75,17 @@ abstract class Module {
       return ShellRoute(
         builder: (context, state, child) => shellRoute.builder!(context, state, child),
         pageBuilder: shellRoute.pageBuilder != null ? (context, state, child) => shellRoute.pageBuilder!(context, state, child) : null,
+        redirect: shellRoute.redirect,
+        navigatorKey: shellRoute.navigatorKey,
+        observers: shellRoute.observers,
+        parentNavigatorKey: shellRoute.parentNavigatorKey,
+        restorationScopeId: shellRoute.restorationScopeId,
         routes: shellRoute.routes
             .map((route) {
               if (route is ChildRoute) {
-                return GoRoute(
-                  path: _normalizePath(route.path, topLevel),
-                  name: route.name,
-                  builder: (context, state) => _buildRouteChild(context, state, route, injector),
-                  pageBuilder: route.pageBuilder != null
-                      ? (context, state) => route.pageBuilder!(context, state)
-                      : (context, state) => _buildCustomTransitionPage(context, state, route, injector),
-                  parentNavigatorKey: route.parentNavigatorKey,
-                  redirect: route.redirect,
-                  onExit: (context, state) => _handleRouteExit(context, state, route, this),
-                );
+                return _createChild(injector, route, topLevel);
               } else if (route is ModuleRoute) {
-                return GoRoute(
-                  path: _normalizePath(route.path, topLevel),
-                  name: route.name,
-                  builder: (context, state) => _buildModuleChild(context, state, route, null, injector),
-                  routes: route.module.configureRoutes(injector, modulePath: route.path, topLevel: false),
-                );
+                return _createModule(injector, route, route.path, topLevel);
               }
               return null;
             })

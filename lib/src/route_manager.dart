@@ -1,5 +1,7 @@
 import 'dart:developer';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/bind.dart';
+import 'package:go_router_modular/src/go_router_modular_configure.dart';
+import 'package:go_router_modular/src/module.dart';
 
 class RouteManager {
   static final RouteManager _instance = RouteManager._();

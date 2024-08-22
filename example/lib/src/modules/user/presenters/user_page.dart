@@ -21,7 +21,7 @@ class _UserPageState extends State<UserPage> {
         child: Center(
           child: ElevatedButton(
               onPressed: () {
-                context.push(Routes.userName.buildPath(params: ["Dudu"]));
+                context.go(Routes.userName.buildPath(params: ["Dudu"]));
               },
               child: const Text("Go User name")),
         ),

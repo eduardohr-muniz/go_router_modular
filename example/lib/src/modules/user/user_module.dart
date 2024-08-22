@@ -53,6 +53,7 @@
 //         ),
 //       ];
 // }
+import 'package:example/main.dart';
 import 'package:example/src/core/routes.dart';
 import 'package:example/src/modules/user/aplication/teste.dart';
 import 'package:example/src/modules/user/aplication/user_store.dart';
@@ -71,6 +72,7 @@ class UserModule extends Module {
         ChildRoute(Routes.user.childR, child: (context, state, i) => const UserPage()),
         ChildRoute(
           Routes.userName.childR,
+          parentNavigatorKey: navigatorKey,
           child: (context, state, i) => UserNamePage(name: state.pathParameters['name']!),
         )
         // ChildRoute("/", child: (context, state, i) => const PageTeste("/user")),

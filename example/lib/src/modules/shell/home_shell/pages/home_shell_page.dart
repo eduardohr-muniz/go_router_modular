@@ -1,7 +1,7 @@
 import 'package:example/src/modules/auth/auth_store.dart';
+import 'package:example/src/modules/shell/home_shell/home_shell_module.dart';
 import 'package:example/src/modules/user/aplication/user_store.dart';
 import 'package:flutter/material.dart';
-
 import 'package:go_router_modular/go_router_modular.dart';
 
 class HomeShellPage extends StatefulWidget {
@@ -26,16 +26,31 @@ class _HomeShellPageState extends State<HomeShellPage> {
         Expanded(child: widget.shellChild), // Your routes will be re-rendered here
         Row(
           children: [
-            IconButton(
-                onPressed: () {
-                  context.go("/home");
-                },
-                icon: const Icon(Icons.home)),
-            IconButton(
-                onPressed: () {
-                  context.go("/config");
-                },
-                icon: const Icon(Icons.settings)),
+            ElevatedButton(
+              child: const Text('page 1'),
+              onPressed: () {
+                context.go("/");
+              },
+            ),
+            ElevatedButton(
+              child: const Text('page 2'),
+              onPressed: () {
+                context.go("/page-2");
+              },
+            ),
+            ElevatedButton(
+              child: const Text('page 3'),
+              onPressed: () {
+                context.go("/page-3");
+                isLoggedin = true;
+              },
+            ),
+            ElevatedButton(
+              child: const Text('user'),
+              onPressed: () {
+                context.go("/user");
+              },
+            ),
           ],
         ),
       ]),
