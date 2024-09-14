@@ -1,3 +1,3 @@
 class AuthStore {
-  String verify = "ok";
+  String hello = "Hello";
 }

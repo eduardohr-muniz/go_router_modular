@@ -118,7 +118,7 @@ class RouteManager {
 
   void unregisterRoute(String route, Module module) {
     _activeRoutes[module]?.remove(route);
-    if (_activeRoutes[module]?.isEmpty ?? true) {
+    if (_activeRoutes[module] != null && _activeRoutes[module]!.isEmpty) {
       unregisterBinds(module);
     }
   }

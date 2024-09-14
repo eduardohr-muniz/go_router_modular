@@ -21,7 +21,7 @@ flutter pub add go_router_modular
 This will add a line like this to your package's pubspec.yaml (and run an implicit flutter pub get):
 dependencies:
 ```bash
-go_router_modular: ^1.0.8
+go_router_modular: ^2.0.0
 ```
 # Start
 1. Create an app_module.dart
@@ -170,9 +170,9 @@ class HomeModule extends Module {
  
   @override
     List<ModularRoute> get routes => [
-        ChildRoute('/', name: "home", builder: (context, state, i) => const HomePage()), // define routes
-        ChildRoute('/config', name: "config", builder: (context, state, i) => const ConfigPage()),
-        ChildRoute('/info_product/:id', name: "info_product", builder: (context, state, i) => const InfoProductPage(id: state.pathParameters['id']!)),
+        ChildRoute('/', name: "home", builder: (context, state) => const HomePage()), // define routes
+        ChildRoute('/config', name: "config", builder: (context, state) => const ConfigPage()),
+        ChildRoute('/info_product/:id', name: "info_product", builder: (context, state) => const InfoProductPage(id: state.pathParameters['id']!)),
       ];
 }
 ```
@@ -187,7 +187,7 @@ class AppModule extends Module {
         ModuleRoute("/", module: HomeModule()),
         ModuleRoute("/user", module: UserModule()),
         
-        ChildRoute('/splash', name: "splash", builder: (context, state, i) => const SplashPage()),
+        ChildRoute('/splash', name: "splash", builder: (context, state) => const SplashPage()),
       ];
 }
 ```
@@ -204,9 +204,9 @@ class HomeShellModule extends Module {
   @override
   List<ModularRoute> get routes => [
         ShellModularRoute(builder: (context, state, child) => ShellPageExample(shellChild: child),  routes:[
-          ChildRoute("/config", child: (context, state, i) => const ConfigPage()),
-          ChildRoute("/user", child: (context, state, i) => const UserPage()),
-          ChildRoute("/orders", child: (context, state, i) => const OrdersPage()),
+          ChildRoute("/config", child: (context, state) => const ConfigPage()),
+          ChildRoute("/user", child: (context, state) => const UserPage()),
+          ChildRoute("/orders", child: (context, state) => const OrdersPage()),
         ],
       ),
       ];

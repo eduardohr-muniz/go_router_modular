@@ -1,14 +1,14 @@
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/page_transition_enum.dart';
 
-class RouteModel {
+class RouteModularModel {
   String moduleR;
   String childR;
   String route;
   String name;
   List<String>? params;
   PageTransition pageTransition;
-  RouteModel({
+  RouteModularModel({
     required this.moduleR,
     required this.childR,
     required this.route,
@@ -30,11 +30,11 @@ class RouteModel {
     return _buildPath(moduleR + subParamPath + childR.substring(0, indexChildR) + paramPath);
   }
 
-  static RouteModel build({required String module, required String routeName, List<String> params = const []}) {
+  static RouteModularModel build({required String module, required String routeName, List<String> params = const []}) {
     final module_ = "/$module";
     final childRoute = "/${routeName == module ? "" : "$routeName/"}";
     final args_ = params.map((e) => ":$e").join("/");
-    return RouteModel(
+    return RouteModularModel(
         route: _buildPath("$module_${routeName == module ? "/" : childRoute}"),
         moduleR: _buildPath("$module_${module == "/" ? "" : "/"}"),
         childR: _buildPath(childRoute + args_),

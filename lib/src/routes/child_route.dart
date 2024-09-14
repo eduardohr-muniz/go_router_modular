@@ -4,7 +4,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class ChildRoute extends ModularRoute {
   final String path;
-  final Widget Function(BuildContext context, GoRouterState state, Injector i) child;
+  final Widget Function(BuildContext context, GoRouterState state) child;
   final String? name;
   final Page<dynamic> Function(BuildContext context, GoRouterState state)? pageBuilder;
   final GlobalKey<NavigatorState>? parentNavigatorKey;

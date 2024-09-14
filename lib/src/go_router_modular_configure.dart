@@ -1,12 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/bind.dart';
-import 'package:go_router_modular/src/injector.dart';
 import 'package:go_router_modular/src/module.dart';
-
 import 'package:go_router_modular/src/page_transition_enum.dart';
 
 typedef Modular = GoRouterModular;
@@ -66,7 +63,7 @@ class GoRouterModular {
     _debugLogDiagnostics = debugLogDiagnostics;
     GoRouter.optionURLReflectsImperativeAPIs = true;
     _router = GoRouter(
-      routes: appModule.configureRoutes(Injector(), topLevel: true),
+      routes: appModule.configureRoutes(topLevel: true),
       initialLocation: initialRoute,
       debugLogDiagnostics: debugLogDiagnosticsGoRouter,
       errorBuilder: errorBuilder,

@@ -1,30 +1,18 @@
 import 'package:example/src/core/routes.dart';
-import 'package:flutter/material.dart';
+import 'package:example/src/modules/auth/auth_store.dart';
+import 'package:example/src/modules/auth/pages/login_page.dart';
+import 'package:example/src/modules/auth/pages/splash_page.dart';
+
 import 'package:go_router_modular/go_router_modular.dart';
 
 class AuthModule extends Module {
   @override
-  List<ModularRoute> get routes => [
-        ChildRoute(Routes.slpash.childR, child: (context, state, i) => const PageTeste("Splash")),
-        ChildRoute(Routes.login.childR, child: (context, state, i) => const PageTeste("Login")),
+  List<Bind<Object>> get binds => [
+        Bind.singleton((i) => AuthStore()),
       ];
-}
-
-class PageTeste extends StatelessWidget {
-  final String label;
-  final String? productId;
-
-  const PageTeste(this.label, {this.productId, super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(label + (productId ?? "")),
-      ),
-      body: const SizedBox(
-        child: Text("Olá"),
-      ),
-    );
-  }
+  List<ModularRoute> get routes => [
+        ChildRoute(Routes.slpash.childR, name: 'auth', child: (context, state) => const SplashPage()),
+        ChildRoute(Routes.login.childR, name: Routes.login.name, child: (context, state) => const LoginPage()),
+      ];
 }
