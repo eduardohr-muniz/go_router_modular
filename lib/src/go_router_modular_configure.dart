@@ -134,7 +134,7 @@ class GoRouterModular {
     String? restorationScopeId,
     bool requestFocus = true,
     PageTransition pageTransition = PageTransition.fade,
-    int delayDisposeMilliseconds = 150,
+    int delayDisposeMilliseconds = 1000,
   }) async {
     if (_router != null) return _router!;
     _pageTansition = pageTransition;
@@ -142,8 +142,8 @@ class GoRouterModular {
     GoRouter.optionURLReflectsImperativeAPIs = true;
 
     assert(
-      delayDisposeMilliseconds > 49,
-      '❌ delayDisposeMilliseconds must be at least 50ms - Check `go_router_modular main.dart`.',
+      delayDisposeMilliseconds > 500,
+      '❌ delayDisposeMilliseconds must be at least 500ms - Check `go_router_modular main.dart`.',
     );
     setModularDelayDisposeMiliseconds(delayDisposeMilliseconds);
 

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:go_router_modular/src/bind.dart';
+import 'package:go_router_modular/src/delay_dispose.dart';
 import 'package:go_router_modular/src/go_router_modular_configure.dart';
 import 'package:go_router_modular/src/module.dart';
 
@@ -116,10 +118,16 @@ class RouteManager {
     _activeRoutes[module]?.add(route);
   }
 
+  Timer? _timer;
+
   void unregisterRoute(String route, Module module) {
     _activeRoutes[module]?.remove(route);
-    if (_activeRoutes[module] != null && _activeRoutes[module]!.isEmpty) {
-      unregisterBinds(module);
-    }
+    _timer?.cancel();
+    _timer = Timer(Duration(milliseconds: modularDelayDisposeMilisenconds), () {
+      if (_activeRoutes[module] != null && _activeRoutes[module]!.isEmpty) {
+        unregisterBinds(module);
+      }
+      _timer?.cancel();
+    });
   }
 }

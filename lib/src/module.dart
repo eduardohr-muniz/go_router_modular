@@ -2,9 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/bind.dart';
-import 'package:go_router_modular/src/delay_dispose.dart';
 import 'package:go_router_modular/src/go_router_modular_configure.dart';
-
 import 'package:go_router_modular/src/route_manager.dart';
 import 'package:go_router_modular/src/routes/child_route.dart';
 import 'package:go_router_modular/src/routes/i_modular_route.dart';
@@ -166,12 +164,7 @@ abstract class Module {
   }
 
   void _unregister(String path, {Module? module}) {
-    Future.delayed(
-      Duration(milliseconds: modularDelayDisposeMilisenconds),
-      () {
-        RouteManager().unregisterRoute(path, module ?? this);
-      },
-    );
+    RouteManager().unregisterRoute(path, module ?? this);
   }
 
   String _buildPath(String path) {
