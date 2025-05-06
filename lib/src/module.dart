@@ -320,7 +320,6 @@ abstract class Module {
 
     _modules.clear();
     _moduleLastAccess.clear();
-    RouteManager().dispose();
   }
 
   String _buildPath(String path) {
