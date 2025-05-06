@@ -18,16 +18,19 @@ class RouteManager {
     return _instance;
   }
 
-  void registerBindsAppModule(Module module) {
+  Future<void> registerBindsAppModule(Module module) async {
     if (_appModule != null) return;
     _appModule = module;
-    registerBindsIfNeeded(module);
+    await registerBindsIfNeeded(module);
   }
 
-  void registerBindsIfNeeded(Module module) {
+  Future<void> registerBindsIfNeeded(Module module) async {
     if (_activeRoutes.containsKey(module)) return;
-    List<Bind<Object>> allBinds = [...module.binds, ...module.imports.map((e) => e.binds).expand((e) => e)];
-    _recursiveRegisterBinds(allBinds);
+    List<Bind<Object>> allBinds = [
+      ...module.binds,
+      ...module.imports.map((e) => e.binds).expand((e) => e)
+    ];
+    await _recursiveRegisterBinds(allBinds);
 
     _activeRoutes[module] = {};
 
@@ -35,30 +38,31 @@ class RouteManager {
       log(
           'INJECTED: ${module.runtimeType} BINDS: ${[
             ...module.binds.map((e) => e.instance.runtimeType.toString()),
-            ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
+            ...module.imports.map((e) =>
+                e.binds.map((e) => e.instance.runtimeType.toString()).toList())
           ]}',
           name: "💉");
     }
   }
 
-  void _recursiveRegisterBinds(List<Bind<Object>> binds) {
+  Future<void> _recursiveRegisterBinds(List<Bind<Object>> binds) async {
     if (binds.isEmpty) return;
     List<Bind<Object>> queueBinds = [];
 
     for (var bind in binds) {
       try {
         _incrementBindReference(bind.instance.runtimeType);
-        Bind.register(bind);
+        await Bind.register(bind);
       } catch (e) {
         queueBinds.add(bind);
       }
     }
     if (queueBinds.length < binds.length) {
-      _recursiveRegisterBinds(queueBinds);
+      await _recursiveRegisterBinds(queueBinds);
     } else if (queueBinds.isNotEmpty) {
       for (var bind in queueBinds) {
         _incrementBindReference(bind.instance.runtimeType);
-        Bind.register(bind);
+        await Bind.register(bind);
       }
     }
   }
@@ -72,7 +76,8 @@ class RouteManager {
       log(
           'DISPOSED: ${module.runtimeType} BINDS: ${[
             ...module.binds.map((e) => e.instance.runtimeType.toString()),
-            ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
+            ...module.imports.map((e) =>
+                e.binds.map((e) => e.instance.runtimeType.toString()).toList())
           ]}',
           name: "🗑️");
     }

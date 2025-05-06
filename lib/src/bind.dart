@@ -21,7 +21,7 @@ class Bind<T> {
 
   static final Map<Type, Bind> _bindsMap = {};
 
-  static void register<T>(Bind<T> bind) {
+  static Future<void> register<T>(Bind<T> bind) async {
     final type = bind.instance.runtimeType;
 
     if (!_bindsMap.containsKey(type)) {
@@ -49,7 +49,8 @@ class Bind<T> {
     if (bind == null) {
       for (var entry in _bindsMap.entries) {
         if (entry.value.instance is T) {
-          bind = Bind<T>((injector) => entry.value.instance, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy);
+          bind = Bind<T>((injector) => entry.value.instance,
+              isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy);
           _bindsMap[T] = bind; // Atualiza o mapa com o novo Bind encontrado
           break;
         }
