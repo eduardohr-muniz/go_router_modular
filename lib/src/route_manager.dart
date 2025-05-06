@@ -9,8 +9,12 @@ class RouteManager {
   static final RouteManager _instance = RouteManager._();
   final Map<Module, Set<String>> _activeRoutes = {};
   final Map<Type, int> _bindReferences = {};
+  final Map<Module, Timer> _disposeTimers = {};
   Module? _appModule;
   List<Type> bindsToDispose = [];
+  final Map<String, Module> _routes = {};
+  final Map<String, DateTime> _routeLastAccess = {};
+  static const _routeTimeout = Duration(minutes: 30);
 
   RouteManager._();
 
@@ -118,21 +122,46 @@ class RouteManager {
     }
   }
 
-  void registerRoute(String route, Module module) {
-    _activeRoutes.putIfAbsent(module, () => {});
-    _activeRoutes[module]?.add(route);
+  void _cleanupRoutes() {
+    final now = DateTime.now();
+    _routeLastAccess.removeWhere((path, lastAccess) {
+      if (now.difference(lastAccess) > _routeTimeout) {
+        _routes.remove(path);
+        return true;
+      }
+      return false;
+    });
   }
 
-  Timer? _timer;
+  void registerRoute(String path, Module module) {
+    _cleanupRoutes();
 
-  void unregisterRoute(String route, Module module) {
-    _activeRoutes[module]?.remove(route);
-    _timer?.cancel();
-    _timer = Timer(Duration(milliseconds: modularDelayDisposeMilisenconds), () {
-      if (_activeRoutes[module] != null && _activeRoutes[module]!.isEmpty) {
-        unregisterBinds(module);
-      }
-      _timer?.cancel();
-    });
+    if (path.isEmpty) {
+      throw ArgumentError('Path cannot be empty');
+    }
+
+    if (_routes.containsKey(path)) {
+      throw StateError('Route $path already registered');
+    }
+
+    _routes[path] = module;
+    _routeLastAccess[path] = DateTime.now();
+  }
+
+  void unregisterRoute(String path) {
+    _routes.remove(path);
+    _routeLastAccess.remove(path);
+  }
+
+  void dispose() {
+    for (var timer in _disposeTimers.values) {
+      timer.cancel();
+    }
+    _disposeTimers.clear();
+    _activeRoutes.clear();
+    _bindReferences.clear();
+    bindsToDispose.clear();
+    _routes.clear();
+    _routeLastAccess.clear();
   }
 }

@@ -5,6 +5,7 @@ class Bind<T> {
   final bool isSingleton;
   final bool isLazy;
   T? _instance;
+  Type? _type;
 
   Bind(
     this.factoryFunction, {
@@ -12,9 +13,24 @@ class Bind<T> {
     this.isLazy = true,
   });
 
+  Type get type {
+    if (_type == null) {
+      try {
+        _type = factoryFunction(Injector()).runtimeType;
+      } catch (e) {
+        throw Exception('Failed to determine type for Bind: $e');
+      }
+    }
+    return _type!;
+  }
+
   T get instance {
     if (_instance == null || !isSingleton) {
-      _instance = factoryFunction(Injector());
+      try {
+        _instance = factoryFunction(Injector());
+      } catch (e) {
+        throw Exception('Failed to create instance: $e');
+      }
     }
     return _instance!;
   }
@@ -22,16 +38,23 @@ class Bind<T> {
   static final Map<Type, Bind> _bindsMap = {};
 
   static Future<void> register<T>(Bind<T> bind) async {
-    final type = bind.instance.runtimeType;
+    try {
+      final type = bind.type;
 
-    if (!_bindsMap.containsKey(type)) {
+      if (!_bindsMap.containsKey(type)) {
+        _bindsMap[type] = bind;
+        return;
+      }
+
+      Bind<T> existingBind = _bindsMap[type] as Bind<T>;
+      if (existingBind.isLazy || existingBind.isSingleton) {
+        return;
+      }
+
       _bindsMap[type] = bind;
-      return;
+    } catch (e) {
+      throw Exception('Failed to register bind: $e');
     }
-    Bind<T> existingBind = _bindsMap[type] as Bind<T>;
-    if (existingBind.isLazy || existingBind.isSingleton) return;
-
-    _bindsMap[type] = bind;
   }
 
   static void dispose<T>(Bind<T> bind) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/bind.dart';
@@ -64,9 +65,14 @@ abstract class Module {
   FutureOr<String?> Function(BuildContext, GoRouterState) _createRedirect(
       ChildRoute childRoute) {
     return (context, state) async {
-      await _register(path: state.uri.toString());
+      final path = state.uri.toString();
+      await _register(path: path);
+
       if (childRoute.redirect != null) {
-        return await childRoute.redirect!(context, state);
+        final redirectPath = await childRoute.redirect!(context, state);
+        if (redirectPath != null) {
+          return redirectPath;
+        }
       }
       return null;
     };
@@ -113,10 +119,14 @@ abstract class Module {
   FutureOr<String?> Function(BuildContext, GoRouterState) _createModuleRedirect(
       ModuleRoute module, ChildRoute? childRoute) {
     return (context, state) async {
-      await _register(path: state.uri.toString(), module: module.module);
+      final path = state.uri.toString();
+      await _register(path: path, module: module.module);
+
       if (childRoute?.redirect != null) {
-        // ignore: use_build_context_synchronously
-        return await childRoute!.redirect!(context, state);
+        final redirectPath = await childRoute!.redirect!(context, state);
+        if (redirectPath != null) {
+          return redirectPath;
+        }
       }
       return null;
     };
@@ -244,14 +254,73 @@ abstract class Module {
     }
   }
 
+  final Map<String, Module> _modules = {};
+  final Map<String, DateTime> _moduleLastAccess = {};
+  static const _moduleTimeout = Duration(minutes: 30);
+
+  void _cleanupModules() {
+    final now = DateTime.now();
+    _moduleLastAccess.removeWhere((path, lastAccess) {
+      if (now.difference(lastAccess) > _moduleTimeout) {
+        _modules.remove(path);
+        return true;
+      }
+      return false;
+    });
+  }
+
   Future<void> _register({required String path, Module? module}) async {
-    await RouteManager().registerBindsIfNeeded(module ?? this);
-    if (path == '/') return;
-    RouteManager().registerRoute(path, module ?? this);
+    _cleanupModules();
+
+    if (module != null) {
+      _modules[path] = module;
+      _moduleLastAccess[path] = DateTime.now();
+    }
+
+    final currentModule = _modules[path];
+    if (currentModule != null) {
+      await currentModule.registerBindsIfNeeded();
+    }
+  }
+
+  void _disposeModule(Module module) {
+    if (Modular.debugLogDiagnostics) {
+      log(
+          'DISPOSED: ${module.runtimeType} BINDS: ${[
+            ...module.binds.map((e) => e.instance.runtimeType.toString()),
+            ...module.imports.map((e) =>
+                e.binds.map((e) => e.instance.runtimeType.toString()).toList())
+          ]}',
+          name: "🗑️");
+    }
+    module.dispose();
   }
 
   void _unregister(String path, {Module? module}) {
-    RouteManager().unregisterRoute(path, module ?? this);
+    final moduleToUnregister = module ?? this;
+    RouteManager().unregisterRoute(path);
+
+    if (_modules.containsKey(path)) {
+      _modules.remove(path);
+      _moduleLastAccess.remove(path);
+
+      if (moduleToUnregister != this) {
+        _disposeModule(moduleToUnregister);
+      }
+    }
+  }
+
+  void dispose() {
+    for (var entry in _modules.entries) {
+      final module = entry.value;
+      if (module != this) {
+        _disposeModule(module);
+      }
+    }
+
+    _modules.clear();
+    _moduleLastAccess.clear();
+    RouteManager().dispose();
   }
 
   String _buildPath(String path) {
@@ -261,5 +330,9 @@ abstract class Module {
     path = path.replaceAll(RegExp(r'/+'), '/');
     if (path == '/') return path;
     return path.substring(0, path.length - 1);
+  }
+
+  Future<void> registerBindsIfNeeded() async {
+    await RouteManager().registerBindsIfNeeded(this);
   }
 }
