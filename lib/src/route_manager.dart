@@ -1,106 +1,90 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:developer' as dev;
 import 'package:go_router_modular/src/bind.dart';
-import 'package:go_router_modular/src/delay_dispose.dart';
-import 'package:go_router_modular/src/go_router_modular_configure.dart';
 import 'package:go_router_modular/src/module.dart';
 
 class RouteManager {
-  static final RouteManager _instance = RouteManager._();
+  static final RouteManager _instance = RouteManager._internal();
+  factory RouteManager() => _instance;
+  RouteManager._internal();
+
   final Map<Module, Set<String>> _activeRoutes = {};
+  final Map<Type, Bind<Object>> _bindInstances = {};
   final Map<Type, int> _bindReferences = {};
   Module? _appModule;
-  List<Type> bindsToDispose = [];
-
-  RouteManager._();
-
-  factory RouteManager() {
-    return _instance;
-  }
+  Timer? _disposeTimer;
 
   void registerBindsAppModule(Module module) {
     if (_appModule != null) return;
     _appModule = module;
+    dev.log(
+        '💉 App Module Injected forever: [${module.binds.map((b) => b.runtimeType.toString())}]',
+        name: 'GO_ROUTER_MODULAR');
     registerBindsIfNeeded(module);
   }
 
   void registerBindsIfNeeded(Module module) {
     if (_activeRoutes.containsKey(module)) return;
-    List<Bind<Object>> allBinds = [...module.binds, ...module.imports.map((e) => e.binds).expand((e) => e)];
-    _recursiveRegisterBinds(allBinds);
+
+    final binds = [...module.binds, ...module.imports.expand((e) => e.binds)];
+    for (final bind in binds) {
+      final type = bind.instance.runtimeType;
+      _bindInstances[type] = bind;
+      _incrementBindReference(type);
+      Bind.register(bind);
+    }
 
     _activeRoutes[module] = {};
-
-    if (Modular.debugLogDiagnostics) {
-      log(
-          'INJECTED: ${module.runtimeType} BINDS: ${[
-            ...module.binds.map((e) => e.instance.runtimeType.toString()),
-            ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
-          ]}',
-          name: "💉");
-    }
+    dev.log(
+        'INJECTED: ${module.runtimeType} BINDS: ${[
+          ...module.binds.map((e) => e.instance.runtimeType.toString()),
+          ...module.imports.map((e) =>
+              e.binds.map((e) => e.instance.runtimeType.toString()).toList())
+        ]}',
+        name: "💉 GO_ROUTER_MODULAR");
   }
 
-  void _recursiveRegisterBinds(List<Bind<Object>> binds) {
-    if (binds.isEmpty) return;
-    List<Bind<Object>> queueBinds = [];
-
-    for (var bind in binds) {
-      try {
-        _incrementBindReference(bind.instance.runtimeType);
-        Bind.register(bind);
-      } catch (e) {
-        queueBinds.add(bind);
-      }
-    }
-    if (queueBinds.length < binds.length) {
-      _recursiveRegisterBinds(queueBinds);
-    } else if (queueBinds.isNotEmpty) {
-      for (var bind in queueBinds) {
-        _incrementBindReference(bind.instance.runtimeType);
-        Bind.register(bind);
-      }
-    }
+  void registerRoute(String path, Module module) {
+    _activeRoutes.putIfAbsent(module, () => {}).add(path);
   }
 
-  void unregisterBinds(Module module) {
-    if (_appModule != null && module == _appModule!) return;
+  void unregisterRoute(String path, Module module) {
+    _activeRoutes[module]?.remove(path);
+    _scheduleDispose(module);
+  }
 
-    if (_activeRoutes[module]?.isNotEmpty ?? false) return;
+  void handleRouteChange(String path) {}
 
-    if (Modular.debugLogDiagnostics) {
-      log(
-          'DISPOSED: ${module.runtimeType} BINDS: ${[
-            ...module.binds.map((e) => e.instance.runtimeType.toString()),
-            ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
-          ]}',
-          name: "🗑️");
-    }
+  void _scheduleDispose(Module module) {
+    if (_appModule == module) return;
 
-    for (var bind in module.binds) {
+    final activeRoutes = _activeRoutes[module];
+    if (activeRoutes?.isNotEmpty ?? false) return;
+
+    _disposeTimer?.cancel();
+    _disposeTimer = Timer(const Duration(milliseconds: 300), () {
+      if (_activeRoutes[module]?.isEmpty ?? false) {
+        _disposeModule(module);
+      }
+    });
+  }
+
+  void _disposeModule(Module module) {
+    final binds = [...module.binds, ...module.imports.expand((e) => e.binds)];
+    dev.log(
+        'DISPOSED: ${module.runtimeType} BINDS: ${[
+          ...binds.map((e) => e.instance.runtimeType.toString()),
+        ]}',
+        name: "🗑️ GO_ROUTER_MODULAR");
+
+    for (final bind in binds) {
       _decrementBindReference(bind.instance.runtimeType);
     }
-
-    if (module.imports.isNotEmpty) {
-      for (var importedModule in module.imports) {
-        for (var bind in importedModule.binds) {
-          if (_appModule?.binds.contains(bind) ?? false) continue;
-          _decrementBindReference(bind.instance.runtimeType);
-        }
-      }
-    }
-    bindsToDispose.map((type) => Bind.disposeByType(type)).toList();
-    bindsToDispose.clear();
-
     _activeRoutes.remove(module);
   }
 
   void _incrementBindReference(Type type) {
-    if (_bindReferences.containsKey(type)) {
-      _bindReferences[type] = (_bindReferences[type] ?? 0) + 1;
-    } else {
-      _bindReferences[type] = 1;
-    }
+    _bindReferences[type] = (_bindReferences[type] ?? 0) + 1;
   }
 
   void _decrementBindReference(Type type) {
@@ -108,26 +92,11 @@ class RouteManager {
       _bindReferences[type] = (_bindReferences[type] ?? 1) - 1;
       if (_bindReferences[type] == 0) {
         _bindReferences.remove(type);
-        bindsToDispose.add(type);
+        final bind = _bindInstances.remove(type);
+        if (bind != null) {
+          Bind.dispose(bind);
+        }
       }
     }
-  }
-
-  void registerRoute(String route, Module module) {
-    _activeRoutes.putIfAbsent(module, () => {});
-    _activeRoutes[module]?.add(route);
-  }
-
-  Timer? _timer;
-
-  void unregisterRoute(String route, Module module) {
-    _activeRoutes[module]?.remove(route);
-    _timer?.cancel();
-    _timer = Timer(Duration(milliseconds: modularDelayDisposeMilisenconds), () {
-      if (_activeRoutes[module] != null && _activeRoutes[module]!.isEmpty) {
-        unregisterBinds(module);
-      }
-      _timer?.cancel();
-    });
   }
 }
