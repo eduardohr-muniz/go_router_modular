@@ -24,24 +24,69 @@ class RouteManager {
   }
 
   void registerBindsIfNeeded(Module module) {
-    if (_activeRoutes.containsKey(module)) return;
+    dev.log('Registering binds for module: ${module.runtimeType}',
+        name: 'GO_ROUTER_MODULAR');
 
-    final binds = [...module.binds, ...module.imports.expand((e) => e.binds)];
+    // Sempre registra o appModule primeiro
+    if (_appModule != null && !_isModuleRegistered(_appModule!)) {
+      dev.log('Registering appModule first: ${_appModule.runtimeType}',
+          name: 'GO_ROUTER_MODULAR');
+      _registerBinds(_appModule!);
+    }
+
+    // Registra os módulos importados primeiro
+    for (final importedModule in module.imports) {
+      if (!_isModuleRegistered(importedModule)) {
+        dev.log('Registering imported module: ${importedModule.runtimeType}',
+            name: 'GO_ROUTER_MODULAR');
+        _registerBinds(importedModule);
+      }
+    }
+
+    // Por fim, registra o módulo atual
+    if (!_isModuleRegistered(module)) {
+      dev.log('Registering current module: ${module.runtimeType}',
+          name: 'GO_ROUTER_MODULAR');
+      _registerBinds(module);
+    }
+  }
+
+  bool _isModuleRegistered(Module module) {
+    final isRegistered = _activeRoutes.containsKey(module);
+    dev.log(
+        'Checking if module is registered: ${module.runtimeType} -> $isRegistered',
+        name: 'GO_ROUTER_MODULAR');
+    return isRegistered;
+  }
+
+  void _registerBinds(Module module) {
+    if (_isModuleRegistered(module)) {
+      dev.log('Module already registered: ${module.runtimeType}',
+          name: 'GO_ROUTER_MODULAR');
+      return;
+    }
+
+    final binds = module.binds;
+    if (binds.isEmpty) {
+      dev.log('No binds to register for module: ${module.runtimeType}',
+          name: 'GO_ROUTER_MODULAR');
+      return;
+    }
+
+    _activeRoutes[module] = {};
     for (final bind in binds) {
       final type = bind.instance.runtimeType;
+      dev.log('Registering bind: $type', name: 'GO_ROUTER_MODULAR');
       _bindInstances[type] = bind;
       _incrementBindReference(type);
       Bind.register(bind);
     }
 
-    _activeRoutes[module] = {};
     dev.log(
-        'INJECTED: ${module.runtimeType} BINDS: ${[
+        '💉 INJECTED: ${module.runtimeType} BINDS: ${[
           ...module.binds.map((e) => e.instance.runtimeType.toString()),
-          ...module.imports.map((e) =>
-              e.binds.map((e) => e.instance.runtimeType.toString()).toList())
         ]}',
-        name: "💉 GO_ROUTER_MODULAR");
+        name: "GO_ROUTER_MODULAR");
   }
 
   void registerRoute(String path, Module module) {
@@ -84,7 +129,11 @@ class RouteManager {
   }
 
   void _incrementBindReference(Type type) {
-    _bindReferences[type] = (_bindReferences[type] ?? 0) + 1;
+    if (!_bindReferences.containsKey(type)) {
+      _bindReferences[type] = 1;
+    } else {
+      _bindReferences[type] = (_bindReferences[type] ?? 0) + 1;
+    }
   }
 
   void _decrementBindReference(Type type) {
@@ -97,6 +146,25 @@ class RouteManager {
           Bind.dispose(bind);
         }
       }
+    }
+  }
+
+  T get<T>() {
+    final bind = _bindInstances[T];
+    if (bind == null) {
+      dev.log('Bind not found for type: $T', name: 'GO_ROUTER_MODULAR');
+      dev.log(
+          'Available binds: ${_bindInstances.keys.map((k) => k.toString())}',
+          name: 'GO_ROUTER_MODULAR');
+      throw Exception('Bind not found for type $T');
+    }
+    return bind.instance as T;
+  }
+
+  void disposeModule(Module module) {
+    final binds = module.binds;
+    for (final bind in binds) {
+      _decrementBindReference(bind.instance.runtimeType);
     }
   }
 }

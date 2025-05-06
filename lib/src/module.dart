@@ -15,26 +15,27 @@ abstract class Module {
   List<Bind<Object>> get binds => const [];
   List<ModularRoute> get routes => const [];
 
-  List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
+  List<RouteBase> configureRoutes(
+      {String modulePath = '', bool topLevel = false}) {
     List<RouteBase> result = [];
-    RouteManager().registerBindsAppModule(this);
+    if (topLevel) {
+      RouteManager().registerBindsAppModule(this);
+    }
 
     result.addAll(_createChildRoutes(topLevel: topLevel));
-    result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
+    result.addAll(
+        _createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
     result.addAll(_createShellRoutes(topLevel));
 
     return result;
   }
 
-  GoRoute _createChild({required ChildRoute childRoute, required bool topLevel}) {
+  GoRoute _createChild(
+      {required ChildRoute childRoute, required bool topLevel}) {
     return GoRoute(
       path: _normalizePath(path: childRoute.path, topLevel: topLevel),
       name: childRoute.name,
-      builder: (context, state) => _buildRouteChild(
-        context,
-        state: state,
-        route: childRoute,
-      ),
+      builder: (context, state) => childRoute.child(context, state),
       pageBuilder: childRoute.pageBuilder != null
           ? (context, state) => childRoute.pageBuilder!(context, state)
           : (context, state) => _buildCustomTransitionPage(
@@ -43,46 +44,74 @@ abstract class Module {
                 route: childRoute,
               ),
       parentNavigatorKey: childRoute.parentNavigatorKey,
-      redirect: childRoute.redirect,
-      onExit: (context, state) => _handleRouteExit(context, state: state, route: childRoute, module: this),
+      redirect: (context, state) async {
+        await Future.microtask(
+            () => RouteManager().registerBindsIfNeeded(this));
+        // ignore: use_build_context_synchronously
+        return childRoute.redirect?.call(context, state);
+      },
+      onExit: (context, state) => _handleRouteExit(context,
+          state: state, route: childRoute, module: this),
     );
   }
 
   List<GoRoute> _createChildRoutes({required bool topLevel}) {
-    return routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) != '/').map((route) {
+    return routes
+        .whereType<ChildRoute>()
+        .where((route) => adjustRoute(route.path) != '/')
+        .map((route) {
       return _createChild(childRoute: route, topLevel: topLevel);
     }).toList();
   }
 
-  GoRoute _createModule({required ModuleRoute module, required String modulePath, required bool topLevel}) {
-    final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').firstOrNull;
+  GoRoute _createModule(
+      {required ModuleRoute module,
+      required String modulePath,
+      required bool topLevel}) {
+    final childRoute = module.module.routes
+        .whereType<ChildRoute>()
+        .where((route) => adjustRoute(route.path) == '/')
+        .firstOrNull;
 
     return GoRoute(
-      path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
+      path: _normalizePath(
+          path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
-      builder: (context, state) => _buildModuleChild(context, state: state, module: module, route: childRoute),
-      routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
+      builder: (context, state) =>
+          childRoute?.child(context, state) ?? Container(),
+      routes: module.module
+          .configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
-      redirect: childRoute?.redirect,
-      onExit: (context, state) =>
-          childRoute == null ? Future.value(true) : _handleRouteExit(context, state: state, route: childRoute, module: module.module),
+      redirect: (context, state) async {
+        await Future.microtask(
+            () => RouteManager().registerBindsIfNeeded(module.module));
+        // ignore: use_build_context_synchronously
+        return childRoute?.redirect?.call(context, state);
+      },
+      onExit: (context, state) => childRoute == null
+          ? Future.value(true)
+          : _handleRouteExit(context,
+              state: state, route: childRoute, module: module.module),
     );
   }
 
-  List<GoRoute> _createModuleRoutes({required String modulePath, required bool topLevel}) {
+  List<GoRoute> _createModuleRoutes(
+      {required String modulePath, required bool topLevel}) {
     return routes.whereType<ModuleRoute>().map((module) {
-      return _createModule(module: module, modulePath: modulePath, topLevel: topLevel);
+      return _createModule(
+          module: module, modulePath: modulePath, topLevel: topLevel);
     }).toList();
   }
 
   List<RouteBase> _createShellRoutes(bool topLevel) {
     return routes.whereType<ShellModularRoute>().map((shellRoute) {
-      // if (shellRoute.routes.whereType<ChildRoute>().where((element) => element.path == '/').isNotEmpty) {
-      //   throw Exception('ShellModularRoute cannot contain ChildRoute with path "/"');
-      // }
       return ShellRoute(
-        builder: (context, state, child) => shellRoute.builder!(context, state, child),
-        pageBuilder: shellRoute.pageBuilder != null ? (context, state, child) => shellRoute.pageBuilder!(context, state, child) : null,
+        builder: (context, state, child) =>
+            shellRoute.builder!(context, state, child),
+        pageBuilder: shellRoute.pageBuilder != null
+            ? (context, state, child) =>
+                shellRoute.pageBuilder!(context, state, child)
+            : null,
         redirect: shellRoute.redirect,
         navigatorKey: shellRoute.navigatorKey,
         observers: shellRoute.observers,
@@ -91,9 +120,13 @@ abstract class Module {
         routes: shellRoute.routes
             .map((routeOrModule) {
               if (routeOrModule is ChildRoute) {
-                return _createChild(childRoute: routeOrModule, topLevel: topLevel);
+                return _createChild(
+                    childRoute: routeOrModule, topLevel: topLevel);
               } else if (routeOrModule is ModuleRoute) {
-                return _createModule(module: routeOrModule, modulePath: routeOrModule.path, topLevel: topLevel);
+                return _createModule(
+                    module: routeOrModule,
+                    modulePath: routeOrModule.path,
+                    topLevel: topLevel);
               }
               return null;
             })
@@ -120,51 +153,28 @@ abstract class Module {
     return _buildPath(path);
   }
 
-  Widget _buildRouteChild(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
-    _register(path: state.uri.toString());
-    return route.child(context, state);
-  }
-
-  Page<void> _buildCustomTransitionPage(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
+  Page<void> _buildCustomTransitionPage(BuildContext context,
+      {required GoRouterState state, required ChildRoute route}) {
     return CustomTransitionPage(
       key: state.pageKey,
       child: route.child(context, state),
       transitionsBuilder: Transition.builder(
-        configRouteManager: () {
-          _register(path: state.uri.toString());
-        },
-        pageTransition: route.pageTransition ?? Modular.getDefaultPageTransition,
+        configRouteManager: () {},
+        pageTransition:
+            route.pageTransition ?? Modular.getDefaultPageTransition,
       ),
     );
   }
 
-  Widget _buildModuleChild(BuildContext context, {required GoRouterState state, required ModuleRoute module, ChildRoute? route}) {
-    _register(path: state.uri.toString(), module: module.module);
-    return route?.child(context, state) ?? Container();
-  }
-
-  FutureOr<bool> _handleRouteExit(BuildContext context, {required GoRouterState state, required ChildRoute route, required Module module}) {
-    final completer = Completer<bool>();
-    final onExit = route.onExit?.call(context, state) ?? Future.value(true);
-    completer.complete(onExit);
-    return completer.future.then((exit) {
-      try {
-        if (exit) _unregister(state.uri.toString(), module: module);
-        return exit;
-      } catch (_) {
-        return false;
-      }
+  FutureOr<bool> _handleRouteExit(BuildContext context,
+      {required GoRouterState state,
+      required ChildRoute route,
+      required Module module}) {
+    return Future.microtask(() {
+      RouteManager().disposeModule(module);
+      // ignore: use_build_context_synchronously
+      return route.onExit?.call(context, state) ?? true;
     });
-  }
-
-  void _register({required String path, Module? module}) {
-    RouteManager().registerBindsIfNeeded(module ?? this);
-    if (path == '/') return;
-    RouteManager().registerRoute(path, module ?? this);
-  }
-
-  void _unregister(String path, {Module? module}) {
-    RouteManager().unregisterRoute(path, module ?? this);
   }
 
   String _buildPath(String path) {
