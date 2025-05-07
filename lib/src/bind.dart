@@ -1,16 +1,21 @@
 import 'package:go_router_modular/src/injector.dart';
 
+enum BindType {
+  singleton,
+  lazySingleton,
+  factory,
+}
+
 class Bind<T> {
   final T Function(Injector i) factoryFunction;
-  final bool isSingleton;
-  final bool isLazy;
+  final BindType bindType;
+
   T? _instance;
   Type? _type;
 
   Bind(
     this.factoryFunction, {
-    this.isSingleton = true,
-    this.isLazy = true,
+    this.bindType = BindType.factory,
   });
 
   Type get type {
@@ -25,14 +30,18 @@ class Bind<T> {
   }
 
   T get instance {
-    if (_instance == null || !isSingleton) {
-      try {
-        _instance = factoryFunction(Injector());
-      } catch (e) {
-        throw Exception('Failed to create instance: $e');
-      }
+    switch (bindType) {
+      case BindType.singleton:
+        _instance ??= factoryFunction(Injector());
+        return _instance!;
+
+      case BindType.lazySingleton:
+        _instance ??= factoryFunction(Injector());
+        return _instance!;
+
+      case BindType.factory:
+        return factoryFunction(Injector());
     }
-    return _instance!;
   }
 
   static final Map<Type, Bind> _bindsMap = {};
@@ -47,7 +56,8 @@ class Bind<T> {
       }
 
       Bind<T> existingBind = _bindsMap[type] as Bind<T>;
-      if (existingBind.isLazy || existingBind.isSingleton) {
+      if (existingBind.bindType == BindType.singleton ||
+          existingBind.bindType == BindType.lazySingleton) {
         return;
       }
 
@@ -73,8 +83,8 @@ class Bind<T> {
       for (var entry in _bindsMap.entries) {
         if (entry.value.instance is T) {
           bind = Bind<T>((injector) => entry.value.instance,
-              isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy);
-          _bindsMap[T] = bind; // Atualiza o mapa com o novo Bind encontrado
+              bindType: entry.value.bindType);
+          _bindsMap[T] = bind;
           break;
         }
       }
@@ -90,17 +100,17 @@ class Bind<T> {
   static T get<T>() => _find<T>();
 
   static Bind<T> singleton<T>(T Function(Injector i) builder) {
-    final bind = Bind<T>(builder, isSingleton: true, isLazy: false);
+    final bind = Bind<T>(builder, bindType: BindType.singleton);
     return bind;
   }
 
-  // static Bind<T> _lazySingleton<T>(T Function(Injector i) builder) {
-  //   final bind = Bind<T>(builder, isSingleton: true, isLazy: true);
-  //   return bind;
-  // }
+  static Bind<T> lazySingleton<T>(T Function(Injector i) builder) {
+    final bind = Bind<T>(builder, bindType: BindType.lazySingleton);
+    return bind;
+  }
 
   static Bind<T> factory<T>(T Function(Injector i) builder) {
-    final bind = Bind<T>(builder, isSingleton: false, isLazy: false);
+    final bind = Bind<T>(builder, bindType: BindType.factory);
     return bind;
   }
 }

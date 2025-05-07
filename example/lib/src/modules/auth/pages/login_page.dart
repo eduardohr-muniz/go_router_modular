@@ -1,5 +1,5 @@
 import 'package:example/src/core/routes.dart';
-import 'package:example/src/modules/auth/auth_store.dart';
+import 'package:example/src/modules/auth/viewmodels/auth_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -11,7 +11,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  late final store = context.read<AuthStore>();
+  late final store = context.read<AuthViewmodel>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
       body: Center(
         child: ElevatedButton(
             onPressed: () {
-              context.goNamed(Routes.user.name);
+              context.go(Routes.user);
             },
             child: const Text('Go user module')),
       ),

@@ -1,12 +1,27 @@
-import 'package:go_router_modular/go_router_modular.dart';
-
 class Routes {
   static const Duration d = Duration(milliseconds: 700);
+  //#PARAMS
+  static String userNameParam = 'user_name';
 
-  //Auth
-  static final RouteModularModel slpash = RouteModularModel.build(module: "/", routeName: '/');
-  static final RouteModularModel login = RouteModularModel.build(module: "/", routeName: 'login');
+  //# AUTH
+  static String authModule = "/auth";
+  static String splashRelative = "/splash";
+  static String splash = _parsePath("$authModule/$splashRelative");
 
-  static final RouteModularModel user = RouteModularModel.build(module: 'user', routeName: 'user');
-  static final RouteModularModel userName = RouteModularModel.build(module: 'user', routeName: 'user_name', params: ['name']);
+  static String loginRelative = "/login";
+  static String login = _parsePath("$authModule/$loginRelative");
+
+  //#USER
+  static String userModule = "/user";
+
+  static String userRelative = "/";
+  static String user = _parsePath("$userModule$userRelative");
+
+  static String userNameRelative = "/user_name/:$userNameParam";
+  static String userName(String name) =>
+      _parsePath("$userModule/user_name/$name");
+
+  static String _parsePath(String path) {
+    return path.replaceAll(RegExp(r'/+'), '/');
+  }
 }

@@ -7,7 +7,6 @@ export 'src/module.dart';
 export 'src/injector.dart';
 export 'src/page_transition_enum.dart';
 export 'src/route_manager.dart';
-export 'src/routes/route_model.dart';
 export 'src/transition.dart';
 export 'src/routes/child_route.dart';
 export 'src/routes/i_modular_route.dart';

@@ -12,7 +12,7 @@ void main() {
 
   Modular.configure(
     appModule: AppModule(),
-    initialRoute: Routes.slpash.route,
+    initialRoute: Routes.splash,
     debugLogDiagnosticsGoRouter: true,
   );
   runApp(const AppWidget());

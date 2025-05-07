@@ -1,3 +1,3 @@
-class AuthStore {
+class AuthViewmodel {
   String hello = "Hello";
 }

@@ -6,7 +6,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 class AppModule extends Module {
   @override
   List<ModularRoute> get routes => [
-        ModuleRoute(Routes.slpash.moduleR, module: AuthModule()),
-        ModuleRoute(Routes.user.moduleR, module: UserModule()),
+        ModuleRoute(Routes.authModule, module: AuthModule()),
+        ModuleRoute(Routes.userModule, module: UserModule()),
       ];
 }
