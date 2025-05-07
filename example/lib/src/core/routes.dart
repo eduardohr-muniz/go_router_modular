@@ -21,6 +21,22 @@ class Routes {
   static String userName(String name) =>
       _parsePath("$userModule/user_name/$name");
 
+  //#EXAMPLE
+  static String exampleModule = "/example";
+  static String exampleHome = _parsePath("$exampleModule/home");
+  static String exampleDetails = _parsePath("$exampleModule/details");
+
+  //#SHELL
+  static String shellModule = "/shell";
+  static String shellHomeRelative = "/home";
+  static String shellHome = _parsePath("$shellModule$shellHomeRelative");
+
+  static String shellConfigRelative = "/config";
+  static String shellConfig = _parsePath("$shellModule$shellConfigRelative");
+
+  static String shellProfileRelative = "/profile";
+  static String shellProfile = _parsePath("$shellModule$shellProfileRelative");
+
   static String _parsePath(String path) {
     return path.replaceAll(RegExp(r'/+'), '/');
   }

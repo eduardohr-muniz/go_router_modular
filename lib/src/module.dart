@@ -164,6 +164,10 @@ abstract class Module {
     return shellRoute.routes
         .map((routeOrModule) {
           if (routeOrModule is ChildRoute) {
+            if (adjustRoute(routeOrModule.path) == '/') {
+              throw Exception(
+                  'ShellModularRoute does not accept routes with path "/". Use a specific path like "/home" or "/index".');
+            }
             return _createChild(childRoute: routeOrModule, topLevel: topLevel);
           } else if (routeOrModule is ModuleRoute) {
             return _createModule(
