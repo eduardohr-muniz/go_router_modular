@@ -13,7 +13,9 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     Future.delayed(const Duration(seconds: 2), () {
-      context.goNamed(Routes.login.name);
+      if (mounted) {
+        context.goNamed(Routes.login.name);
+      }
     });
     super.initState();
   }

@@ -56,9 +56,6 @@ class Transition {
             turns: animation,
             child: child,
           );
-
-        default:
-          return child;
       }
     };
   }
