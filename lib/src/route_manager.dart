@@ -8,7 +8,7 @@ class RouteManager {
   static final RouteManager _instance = RouteManager._();
   final Map<Module, Set<String>> _activeRoutes = {};
   final Map<Type, int> _bindReferences = {};
-  final Map<Module, Timer> _disposeTimers = {};
+  // final Map<Module, Timer> _disposeTimers = {};
   Module? _appModule;
   List<Type> bindsToDispose = [];
   final Map<String, Module> _routes = {};
@@ -20,10 +20,10 @@ class RouteManager {
     return _instance;
   }
 
-  void _cancelAndRemoveTimer(Module module) {
-    _disposeTimers[module]?.cancel();
-    _disposeTimers.remove(module);
-  }
+  // void _cancelAndRemoveTimer(Module module) {
+  //   _disposeTimers[module]?.cancel();
+  //   _disposeTimers.remove(module);
+  // }
 
   Future<void> registerBindsAppModule(Module module) async {
     if (_appModule != null) return;
@@ -44,9 +44,7 @@ class RouteManager {
 
       allBinds = allBinds.where((bind) {
         final type = bind.instance.runtimeType;
-        final isAppModuleBind =
-            _appModule?.binds.any((b) => b.instance.runtimeType == type) ??
-                false;
+        final isAppModuleBind = _appModule?.binds.any((b) => b.instance.runtimeType == type) ?? false;
         return !_bindReferences.containsKey(type) && !isAppModuleBind;
       }).toList();
 
@@ -59,11 +57,9 @@ class RouteManager {
       if (Modular.debugLogDiagnostics) {
         final binds = [
           ...module.binds.map((e) => e.instance.runtimeType.toString()),
-          ...module.imports.map((e) =>
-              e.binds.map((e) => e.instance.runtimeType.toString()).toList())
+          ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
         ];
-        log('INJECTED: ${module.runtimeType} BINDS: ${binds.isEmpty ? "[]" : binds}',
-            name: "💉");
+        log('INJECTED: ${module.runtimeType} BINDS: ${binds.isEmpty ? "[]" : binds}', name: "💉");
       }
     } catch (e) {
       log('Error registering binds: $e', name: "⚠️");
@@ -78,9 +74,7 @@ class RouteManager {
     for (var bind in binds) {
       try {
         final type = bind.instance.runtimeType;
-        final isAppModuleBind =
-            _appModule?.binds.any((b) => b.instance.runtimeType == type) ??
-                false;
+        final isAppModuleBind = _appModule?.binds.any((b) => b.instance.runtimeType == type) ?? false;
 
         if (!_bindReferences.containsKey(type) && !isAppModuleBind) {
           _incrementBindReference(type);
@@ -97,9 +91,7 @@ class RouteManager {
       for (var bind in queueBinds) {
         try {
           final type = bind.instance.runtimeType;
-          final isAppModuleBind =
-              _appModule?.binds.any((b) => b.instance.runtimeType == type) ??
-                  false;
+          final isAppModuleBind = _appModule?.binds.any((b) => b.instance.runtimeType == type) ?? false;
 
           if (!_bindReferences.containsKey(type) && !isAppModuleBind) {
             _incrementBindReference(type);
@@ -126,15 +118,14 @@ class RouteManager {
   void unregisterRoute(String path) {
     final module = _routes[path];
     if (module != null) {
-      _cancelAndRemoveTimer(module);
+      // _cancelAndRemoveTimer(module);
       unregisterBinds(module);
     }
     _routes.remove(path);
   }
 
   void unregisterBinds(Module module) {
-    if (_appModule != null &&
-        (module == _appModule || module.imports.contains(_appModule))) {
+    if (_appModule != null && (module == _appModule || module.imports.contains(_appModule))) {
       return;
     }
     if (_activeRoutes[module]?.isNotEmpty ?? false) return;
@@ -144,9 +135,7 @@ class RouteManager {
         log(
             'DISPOSED: ${module.runtimeType} BINDS: ${[
               ...module.binds.map((e) => e.instance.runtimeType.toString()),
-              ...module.imports.map((e) => e.binds
-                  .map((e) => e.instance.runtimeType.toString())
-                  .toList())
+              ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())
             ]}',
             name: "🗑️");
       }
@@ -179,8 +168,7 @@ class RouteManager {
 
       for (var type in bindsToDispose) {
         try {
-          if (_appModule?.binds.any((b) => b.instance.runtimeType == type) ??
-              false) {
+          if (_appModule?.binds.any((b) => b.instance.runtimeType == type) ?? false) {
             continue;
           }
           Bind.disposeByType(type);
@@ -206,8 +194,7 @@ class RouteManager {
 
   void _decrementBindReference(Type type) {
     if (!_bindReferences.containsKey(type)) {
-      throw StateError(
-          'Cannot decrement reference for unregistered type: $type');
+      throw StateError('Cannot decrement reference for unregistered type: $type');
     }
 
     final currentCount = _bindReferences[type]!;
