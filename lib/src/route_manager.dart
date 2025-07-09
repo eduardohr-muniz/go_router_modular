@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/widgets.dart';
-import 'package:go_router_modular/src/bind.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/delay_dispose.dart';
-import 'package:go_router_modular/src/go_router_modular_configure.dart';
 import 'package:go_router_modular/src/internal_logs.dart';
-import 'package:go_router_modular/src/module.dart';
 
 class RouteManager {
   static final RouteManager _instance = RouteManager._();
@@ -13,6 +11,7 @@ class RouteManager {
   final Map<Type, int> _bindReferences = {};
   Module? _appModule;
   List<Type> bindsToDispose = [];
+  final Injector _injector = Injector();
 
   RouteManager._();
 
@@ -30,6 +29,28 @@ class RouteManager {
     registerBindsIfNeeded(module);
   }
 
+  /// Coleta recursivamente todos os binds de imports aninhados
+  List<Bind<Object>> _getAllImportedBindsRecursively(Module module, [Set<Module>? visited]) {
+    visited ??= <Module>{};
+    Set<Bind<Object>> allImportedBinds = {};
+
+    // Evita loops infinitos
+    if (visited.contains(module)) {
+      return allImportedBinds.toList();
+    }
+    visited.add(module);
+
+    for (var importedModule in module.imports) {
+      // Adiciona os binds do módulo importado
+      allImportedBinds.addAll(importedModule.binds);
+
+      // Recursivamente coleta binds dos imports do módulo importado
+      allImportedBinds.addAll(_getAllImportedBindsRecursively(importedModule, visited));
+    }
+
+    return allImportedBinds.toList();
+  }
+
   void registerBindsIfNeeded(Module module) {
     iLog('🔍 CHECKING MODULE: ${module.runtimeType}', name: "ROUTE_MANAGER");
 
@@ -42,12 +63,15 @@ class RouteManager {
     iLog('📦 NÚMERO DE BINDS DO MÓDULO: ${module.binds.length}', name: "ROUTE_MANAGER");
     iLog('📦 IMPORTS DO MÓDULO: ${module.imports.map((e) => e.runtimeType).toList()}', name: "ROUTE_MANAGER");
 
-    List<Bind<Object>> allBinds = [...module.binds, ...module.imports.map((e) => e.binds).expand((e) => e)];
+    final importedBindings = _getAllImportedBindsRecursively(module);
+
+    List<Bind<Object>> allBinds = [...module.binds, ...importedBindings];
     iLog('📦 TOTAL DE BINDS PARA REGISTRAR: ${allBinds.length}', name: "ROUTE_MANAGER");
 
     _recursiveRegisterBinds(allBinds);
 
     _activeRoutes[module] = {};
+    module.initState(_injector);
     iLog('✅ MÓDULO REGISTRADO: ${module.runtimeType}', name: "ROUTE_MANAGER");
 
     if (Modular.debugLogDiagnostics) {
@@ -103,10 +127,10 @@ class RouteManager {
       return;
     }
 
-    if (_activeRoutes[module]?.isNotEmpty ?? false) {
-      iLog('⚠️ MÓDULO AINDA TEM ROTAS ATIVAS: ${module.runtimeType} - ${_activeRoutes[module]}', name: "ROUTE_MANAGER");
-      return;
-    }
+    // if (_activeRoutes[module]?.isNotEmpty ?? false) {
+    //   iLog('⚠️ MÓDULO AINDA TEM ROTAS ATIVAS: ${module.runtimeType} - ${_activeRoutes[module]}', name: "ROUTE_MANAGER");
+    //   return;
+    // }
 
     iLog('🗑️ DISPOSANDO MÓDULO: ${module.runtimeType}', name: "ROUTE_MANAGER");
 
@@ -178,35 +202,45 @@ class RouteManager {
   }
 
   void registerRoute(String route, Module module) {
-    iLog('📍 REGISTRANDO ROTA: $route para ${module.runtimeType}', name: "ROUTE_MANAGER");
+    if (_modulesBeingDisposed.contains(module)) {
+      iLog('⚠️ MÓDULO EM DISPOSE: ${module.runtimeType}', name: "ROUTE_MANAGER");
+      return;
+    }
+
+    log('✅ REGISTRANDO ROTA: $route para ${module.runtimeType} DATE: ${DateTime.now().toIso8601String()}', name: "ROUTE_MANAGER");
     _activeRoutes.putIfAbsent(module, () => {});
     _activeRoutes[module]?.add(route);
     iLog('✅ ROTA REGISTRADA: ${module.runtimeType} agora tem ${_activeRoutes[module]?.length} rotas', name: "ROUTE_MANAGER");
   }
 
+  final Set<Module> _modulesBeingDisposed = {};
+
   Timer? _timer;
 
+  void _disposeModule(Module module) {
+    module.dispose();
+    unregisterBinds(module);
+    _modulesBeingDisposed.remove(module);
+  }
+
   void unregisterRoute(String route, Module module) {
-    iLog('📍 REMOVENDO ROTA: $route de ${module.runtimeType}', name: "ROUTE_MANAGER");
+    log('📍 REMOVENDO ROTA: $route de ${module.runtimeType} DATE: ${DateTime.now().toIso8601String()}', name: "ROUTE_MANAGER");
     _activeRoutes[module]?.remove(route);
     iLog('📊 ${module.runtimeType} agora tem ${_activeRoutes[module]?.length ?? 0} rotas', name: "ROUTE_MANAGER");
 
-    _timer?.cancel();
     iLog('⏰ INICIANDO TIMER DE DISPOSE (${modularDelayDisposeMilisenconds}ms)', name: "ROUTE_MANAGER");
+    if (_activeRoutes[module]?.isNotEmpty ?? false) {
+      iLog('⚠️ MÓDULO AINDA TEM ROTAS ATIVAS: ${module.runtimeType} - ${_activeRoutes[module]}', name: "ROUTE_MANAGER");
+      return;
+    }
+    _modulesBeingDisposed.add(module);
 
-    _timer = Timer(Duration(milliseconds: modularDelayDisposeMilisenconds), () {
-      if (_activeRoutes[module] != null && _activeRoutes[module]!.isEmpty) {
-        iLog('⏰ TIMER EXECUTADO - AGUARDANDO POST FRAME CALLBACK', name: "ROUTE_MANAGER");
+    _timer?.cancel();
 
-        // Adiciona segurança extra aguardando o frame terminar de renderizar
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          iLog('🎬 POST FRAME CALLBACK - DISPOSANDO ${module.runtimeType}', name: "ROUTE_MANAGER");
-          unregisterBinds(module);
-        });
-      } else {
-        iLog('⏰ TIMER EXECUTADO - ${module.runtimeType} ainda tem rotas: ${_activeRoutes[module]}', name: "ROUTE_MANAGER");
-      }
-      _timer?.cancel();
+    _timer = Timer(const Duration(milliseconds: 500), () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _disposeModule(module);
+      });
     });
   }
 }

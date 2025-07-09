@@ -1,29 +1,55 @@
-import 'package:example/src/modules/user/domain/repositories/i_user_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import 'package:go_router_modular/go_router_modular.dart';
+class UserNamePage extends StatelessWidget {
+  final String userName;
 
-class UserNamePage extends StatefulWidget {
-  final String name;
-  const UserNamePage({
-    super.key,
-    this.name = 'não veio',
-  });
-
-  @override
-  State<UserNamePage> createState() => _UserNamePageState();
-}
-
-class _UserNamePageState extends State<UserNamePage> {
-  late final store = Bind.get<IUserRepository>();
+  const UserNamePage({super.key, required this.userName});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Olá 👋, ${widget.name} ${store.getSurname()}'),
+        title: Text('👤 User - $userName'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
-      body: Container(),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.person, size: 64, color: Colors.blue),
+            const SizedBox(height: 16),
+            Text(
+              'User Module - $userName',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Parâmetro recebido: $userName',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => context.go('/user'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Voltar para Lista'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.go('/'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Voltar para Home'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
