@@ -1,29 +1,58 @@
-import 'package:example/src/core/routes.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router/go_router.dart';
 
-class UserPage extends StatefulWidget {
+class UserPage extends StatelessWidget {
   const UserPage({super.key});
 
-  @override
-  State<UserPage> createState() => _UserPageState();
-}
-
-class _UserPageState extends State<UserPage> {
-  // late final auth = context.read<AuthStore>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Passe para proxima pagina '),
+        title: const Text('👤 User - Lista'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
-      body: SizedBox(
-        child: Center(
-          child: ElevatedButton(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.people, size: 64, color: Colors.blue),
+            const SizedBox(height: 16),
+            const Text(
+              'User Module - Lista',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => context.go('/user/user_name/João'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Ver Usuário João'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.go('/'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Voltar para Home'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
               onPressed: () {
-                context.go(Routes.userName.buildPath(params: ["Dudu"]));
+                print('🧪 TESTE: Navegando para /demo para forçar dispose do UserModule');
+                context.go('/demo');
               },
-              child: const Text("Go User name")),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('🧪 Testar Dispose (ir para /demo)'),
+            ),
+          ],
         ),
       ),
     );

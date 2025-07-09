@@ -156,6 +156,72 @@ final homeController = Modular.get<HomeController>();
 // or
 final homeController = Bind.get<HomeController>();
 ```
+
+# Module Lifecycle 🔄
+
+GoRouter Modular provides complete control over the module lifecycle with `initState` and `dispose` methods.
+
+## initState
+
+The `initState` method is automatically called when the module's binds are injected for the first time. Use this method to:
+
+- Initialize services
+- Configure listeners
+- Load initial data
+- Set up streams or timers
+
+```dart
+class AuthModule extends Module {
+  @override
+  List<Bind<Object>> get binds => [
+        Bind.singleton((i) => AuthStore()),
+      ];
+
+  @override
+  void initState(Injector i) {
+    // Module initialization when binds are injected for the first time
+    print('🚀 AuthModule initialized!');
+    
+    // Example: Configure listeners, initialize services, etc.
+    final authStore = i.get<AuthStore>();
+    print('📱 AuthStore injected: ${authStore.runtimeType}');
+    
+    // Here you can do any necessary initialization
+    // For example: configure listeners, load initial data, etc.
+  }
+}
+```
+
+## dispose
+
+The `dispose` method is automatically called when the module is removed. Use this method to:
+
+- Cancel listeners
+- Close connections
+- Clean up resources
+- Cancel timers or streams
+
+```dart
+@override
+void dispose() {
+  // Module cleanup when it is removed
+  print('🗑️ AuthModule being disposed!');
+  
+  // Example: cancel listeners, close connections, etc.
+  // Here you can do any necessary cleanup
+  // For example: cancel timers, close streams, etc.
+}
+```
+
+## Lifecycle Flow
+
+1. **Module Registration**: When a module is first accessed, its binds are registered
+2. **initState Call**: `initState` is called once after binds are successfully registered
+3. **Module Usage**: The module remains active while routes are being used
+4. **Module Disposal**: When no routes are active, the module is scheduled for disposal
+5. **dispose Call**: `dispose` is called before the module is completely removed
+
+> **Note**: The AppModule is never disposed and its `dispose` method is never called.
 # Routes 🛣️
 Route control is done by our beloved go_router. The only thing that changes is that we leave the route configurations for the module to use **ChildRoute**, it will have the same structure as GoRoute, you can find an example below.
 You can follow the go_router documentation for navigation. [open go_router documentation](https://pub.dev/documentation/go_router/latest/topics/Get%20started-topic.html)

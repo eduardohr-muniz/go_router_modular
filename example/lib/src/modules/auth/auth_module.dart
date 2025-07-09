@@ -1,18 +1,49 @@
-import 'package:example/src/core/routes.dart';
-import 'package:example/src/modules/auth/auth_store.dart';
-import 'package:example/src/modules/auth/pages/login_page.dart';
-import 'package:example/src/modules/auth/pages/splash_page.dart';
-
+import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+import '../shared/shared_module.dart';
+import 'auth_store.dart';
+import 'pages/login_page.dart';
+import 'pages/splash_page.dart';
 
 class AuthModule extends Module {
   @override
-  List<Bind<Object>> get binds => [
-        Bind.singleton((i) => AuthStore()),
-      ];
+  List<Module> get imports {
+    print('📦 [AUTH_MODULE] Obtendo imports');
+    return [SharedModule()];
+  }
+
   @override
-  List<ModularRoute> get routes => [
-        ChildRoute(Routes.slpash.childR, name: 'auth', child: (context, state) => const SplashPage()),
-        ChildRoute(Routes.login.childR, name: Routes.login.name, child: (context, state) => const LoginPage()),
-      ];
+  List<Bind<Object>> get binds {
+    print('📦 [AUTH_MODULE] Obtendo binds');
+    return [Bind.singleton<AuthStore>((i) => AuthStore())];
+  }
+
+  @override
+  List<ModularRoute> get routes {
+    print('🛣️ [AUTH_MODULE] Obtendo rotas');
+    return [
+      ChildRoute(
+        '/',
+        child: (context, state) => const SplashPage(),
+      ),
+      ChildRoute(
+        '/login',
+        child: (context, state) => const LoginPage(),
+      ),
+    ];
+  }
+
+  @override
+  void initState(Injector i) {
+    print('🚀 [AUTH_MODULE] initState chamado');
+    super.initState(i);
+    print('✅ [AUTH_MODULE] AuthModule inicializado com sucesso');
+  }
+
+  @override
+  void dispose() {
+    print('🗑️ [AUTH_MODULE] dispose chamado');
+    super.dispose();
+    print('✅ [AUTH_MODULE] AuthModule disposto com sucesso');
+  }
 }

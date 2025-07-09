@@ -23,3 +23,21 @@ class AppWidget extends StatelessWidget {
     );
   }
 }
+
+class ErrorPage extends StatelessWidget {
+  final Exception? error;
+  const ErrorPage({super.key, this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Erro de Navegação')),
+      body: Center(
+        child: Text(
+          'Erro: ${error?.toString() ?? 'Rota não encontrada'}',
+          style: const TextStyle(color: Colors.red, fontSize: 18),
+        ),
+      ),
+    );
+  }
+}

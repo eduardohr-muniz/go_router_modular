@@ -1,29 +1,47 @@
-import 'package:example/src/core/routes.dart';
-import 'package:example/src/modules/auth/auth_store.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router/go_router.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  late final store = context.read<AuthStore>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login page - store: ${store.hello}'),
+        title: const Text('🔐 Auth - Login'),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
       ),
       body: Center(
-        child: ElevatedButton(
-            onPressed: () {
-              context.goNamed(Routes.user.name);
-            },
-            child: const Text('Go user module')),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.login, size: 64, color: Colors.green),
+            const SizedBox(height: 16),
+            const Text(
+              'Auth Module - Login',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => context.go('/auth'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Voltar para Splash'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.go('/'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Voltar para Home'),
+            ),
+          ],
+        ),
       ),
     );
   }
