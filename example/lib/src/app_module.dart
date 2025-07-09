@@ -6,37 +6,32 @@ import 'modules/shared/shared_module.dart';
 import 'modules/home/home_module.dart';
 
 class AppModule extends Module {
+  static final List<Module> _staticImports = [SharedModule()];
+  static final List<Bind<Object>> _staticBinds = [
+    Bind.singleton<AppService>((i) => AppService()),
+  ];
+  static final List<ModularRoute> _staticRoutes = [
+    ModuleRoute('/auth', module: AuthModule()),
+    ModuleRoute('/user', module: UserModule()),
+    ModuleRoute('/', module: HomeModule()),
+  ];
+
   @override
   List<Module> get imports {
     print('📦 [APP_MODULE] Obtendo imports');
-    return [SharedModule()];
+    return _staticImports;
   }
 
   @override
   List<Bind<Object>> get binds {
     print('📦 [APP_MODULE] Obtendo binds');
-    return [
-      Bind.singleton<AppService>((i) => AppService()),
-    ];
+    return _staticBinds;
   }
 
   @override
   List<ModularRoute> get routes {
     print('🛣️ [APP_MODULE] Obtendo rotas');
-    return [
-      ModuleRoute(
-        '/auth',
-        module: AuthModule(),
-      ),
-      ModuleRoute(
-        '/user',
-        module: UserModule(),
-      ),
-      ModuleRoute(
-        '/',
-        module: HomeModule(),
-      ),
-    ];
+    return _staticRoutes;
   }
 
   @override

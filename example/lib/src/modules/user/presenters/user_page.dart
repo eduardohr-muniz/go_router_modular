@@ -1,56 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 
-class UserPage extends StatelessWidget {
+class UserPage extends StatefulWidget {
   const UserPage({super.key});
 
   @override
+  State<UserPage> createState() => _UserPageState();
+}
+
+class _UserPageState extends State<UserPage> {
+  @override
+  void initState() {
+    super.initState();
+    print('👤 [USER_PAGE] UserPage inicializada');
+  }
+
+  @override
+  void dispose() {
+    print('🗑️ [USER_PAGE] UserPage disposta');
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    print('🏗️ [USER_PAGE] Construindo UserPage');
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('👤 User - Lista'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        title: const Text('User Module'),
+        backgroundColor: Colors.green,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.people, size: 64, color: Colors.blue),
-            const SizedBox(height: 16),
             const Text(
-              'User Module - Lista',
+              'User Module',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => context.go('/user/user_name/João'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Ver Usuário João'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => context.go('/'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Voltar para Home'),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+            const Text('Este é o módulo de usuário'),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                print('🧪 TESTE: Navegando para /demo para forçar dispose do UserModule');
-                context.go('/demo');
+                print('👤 [USER_PAGE] Navegando para HomeModule');
+                context.go('/');
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('🧪 Testar Dispose (ir para /demo)'),
+              child: const Text('Ir para Home'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                print('👤 [USER_PAGE] Navegando para AuthModule');
+                context.go('/auth');
+              },
+              child: const Text('Ir para Auth'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                print('👤 [USER_PAGE] Navegando para UserNamePage');
+                context.go('/user/user_name/teste');
+              },
+              child: const Text('Ir para User Name Page'),
             ),
           ],
         ),

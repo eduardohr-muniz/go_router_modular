@@ -12,6 +12,9 @@ void main() {
     debugLogDiagnosticsGoRouter: true,
   );
 
+  print('🔧 [MAIN] GoRouter configurado');
+  print('📊 [MAIN] Router config: ${Modular.routerConfig.runtimeType}');
+
   runApp(MyApp());
 }
 

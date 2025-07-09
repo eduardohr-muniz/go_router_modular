@@ -20,6 +20,48 @@ class AppWidget extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      builder: (context, child) {
+        return Scaffold(
+          body: child,
+          floatingActionButton: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FloatingActionButton(
+                heroTag: "debug_modules",
+                onPressed: () {
+                  // Debug do estado atual dos módulos
+                  print('🔍 [DEBUG] ESTADO DOS MÓDULOS:');
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Debug dos módulos executado - verifique os logs'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: const Icon(Icons.bug_report),
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton(
+                heroTag: "force_dispose",
+                backgroundColor: Colors.red,
+                onPressed: () {
+                  // Força limpeza de todos os módulos não ativos
+                  print('🗑️ [DEBUG] FORÇANDO LIMPEZA...');
+                  // Aqui você pode adicionar lógica para forçar dispose se necessário
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Limpeza forçada executada'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: const Icon(Icons.cleaning_services),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
