@@ -15,5 +15,6 @@ void main() {
     initialRoute: Routes.slpash.route,
     debugLogDiagnosticsGoRouter: true,
   );
+
   runApp(const AppWidget());
 }

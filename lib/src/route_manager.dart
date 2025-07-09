@@ -42,8 +42,8 @@ class RouteManager {
     iLog('📦 NÚMERO DE BINDS DO MÓDULO: ${module.binds.length}', name: "ROUTE_MANAGER");
     iLog('📦 IMPORTS DO MÓDULO: ${module.imports.map((e) => e.runtimeType).toList()}', name: "ROUTE_MANAGER");
 
-    List<Bind<Object>> allBinds = [...module.binds, ...module.imports.map((e) => e.binds).expand((e) => e)];
-    iLog('📦 TOTAL DE BINDS PARA REGISTRAR: ${allBinds.length}', name: "ROUTE_MANAGER");
+    List<Bind<Object>> allBinds = module.getModuleBindsAvaliable();
+    iLog('📦 TOTAL DE BINDS PARA REGISTRAR (RECURSIVO): ${allBinds.length}', name: "ROUTE_MANAGER");
 
     _recursiveRegisterBinds(allBinds);
 
@@ -51,7 +51,7 @@ class RouteManager {
     iLog('✅ MÓDULO REGISTRADO: ${module.runtimeType}', name: "ROUTE_MANAGER");
 
     if (Modular.debugLogDiagnostics) {
-      log('INJECTED: ${module.runtimeType} BINDS: ${[...module.binds.map((e) => e.instance.runtimeType.toString()), ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())]}', name: "💉");
+      log('INJECTED: ${module.runtimeType} BINDS (RECURSIVO): ${allBinds.map((e) => e.instance.runtimeType.toString()).toList()}', name: "💉");
     }
   }
 
@@ -110,33 +110,25 @@ class RouteManager {
 
     iLog('🗑️ DISPOSANDO MÓDULO: ${module.runtimeType}', name: "ROUTE_MANAGER");
 
+    // Coleta todos os binds recursivamente (incluindo imports dos imports)
+    List<Bind<Object>> allBinds = module.getModuleBindsAvaliable();
+
     if (Modular.debugLogDiagnostics) {
-      log('DISPOSED: ${module.runtimeType} BINDS: ${[...module.binds.map((e) => e.instance.runtimeType.toString()), ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())]}', name: "🗑️");
+      log('DISPOSED: ${module.runtimeType} BINDS (RECURSIVO): ${allBinds.map((e) => e.instance.runtimeType.toString()).toList()}', name: "🗑️");
     }
 
-    for (var bind in module.binds) {
+    for (var bind in allBinds) {
+      // Pula binds que pertencem ao app module principal
+      if (_appModule?.getModuleBindsAvaliable().contains(bind) ?? false) {
+        iLog('⛔ PULANDO BIND DO APP MODULE: ${bind.runtimeType}', name: "ROUTE_MANAGER");
+        continue;
+      }
+
       try {
-        iLog('📉 DECREMENTANDO REFERÊNCIA: ${bind.instance.runtimeType}', name: "ROUTE_MANAGER");
+        iLog('📉 DECREMENTANDO REFERÊNCIA RECURSIVA: ${bind.instance.runtimeType}', name: "ROUTE_MANAGER");
         _decrementBindReference(bind.instance.runtimeType);
       } catch (e) {
-        iLog('⚠️ ERRO AO DECREMENTAR: ${bind.runtimeType} - $e', name: "ROUTE_MANAGER");
-      }
-    }
-
-    if (module.imports.isNotEmpty) {
-      for (var importedModule in module.imports) {
-        for (var bind in importedModule.binds) {
-          if (_appModule?.binds.contains(bind) ?? false) {
-            iLog('⛔ PULANDO BIND DO APP MODULE: ${bind.runtimeType}', name: "ROUTE_MANAGER");
-            continue;
-          }
-          try {
-            iLog('📉 DECREMENTANDO IMPORT: ${bind.instance.runtimeType}', name: "ROUTE_MANAGER");
-            _decrementBindReference(bind.instance.runtimeType);
-          } catch (e) {
-            iLog('⚠️ ERRO AO DECREMENTAR IMPORT: ${bind.runtimeType} - $e', name: "ROUTE_MANAGER");
-          }
-        }
+        iLog('⚠️ ERRO AO DECREMENTAR RECURSIVO: ${bind.runtimeType} - $e', name: "ROUTE_MANAGER");
       }
     }
 

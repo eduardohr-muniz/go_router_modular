@@ -16,6 +16,37 @@ abstract class Module {
   List<Bind<Object>> get binds => const [];
   List<ModularRoute> get routes => const [];
 
+  /// Coleta todos os binds disponíveis recursivamente evitando duplicatas
+  List<Bind<Object>> getModuleBindsAvaliable() {
+    final List<Bind<Object>> availableBinds = [];
+    final Set<Module> processedModules = {};
+
+    _collectBindsRecursively(this, availableBinds, processedModules);
+
+    return availableBinds;
+  }
+
+  void _collectBindsRecursively(Module module, List<Bind<Object>> availableBinds, Set<Module> processedModules) {
+    // Evita loops infinitos se houver importações circulares
+    if (processedModules.contains(module)) {
+      return;
+    }
+
+    processedModules.add(module);
+
+    // Adiciona os binds do módulo atual se não existirem
+    for (final bind in module.binds) {
+      if (!availableBinds.contains(bind)) {
+        availableBinds.add(bind);
+      }
+    }
+
+    // Processa recursivamente todos os imports
+    for (final importedModule in module.imports) {
+      _collectBindsRecursively(importedModule, availableBinds, processedModules);
+    }
+  }
+
   List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
     List<RouteBase> result = [];
     RouteManager().registerBindsAppModule(this);
