@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/widgets.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/bind.dart';
 import 'package:go_router_modular/src/delay_dispose.dart';
 import 'package:go_router_modular/src/go_router_modular_configure.dart';
@@ -53,6 +54,8 @@ class RouteManager {
     if (Modular.debugLogDiagnostics) {
       log('INJECTED: ${module.runtimeType} BINDS (RECURSIVO): ${allBinds.map((e) => e.instance.runtimeType.toString()).toList()}', name: "💉");
     }
+
+    module.initState(Injector());
   }
 
   void _recursiveRegisterBinds(List<Bind<Object>> binds) {
@@ -140,6 +143,7 @@ class RouteManager {
 
     // Notifica o módulo para limpar seu cache de transições
     _notifyModuleDisposed(module);
+    module.dispose();
 
     iLog('✅ MÓDULO REMOVIDO: ${module.runtimeType}', name: "ROUTE_MANAGER");
   }

@@ -1,137 +1,198 @@
-# 🧪 Exemplo do Sistema Modular
+# GoRouter Modular - Exemplo de Uso
 
-Este exemplo demonstra o funcionamento completo do sistema `go_router_modular` com ciclo de vida de módulos.
+Este exemplo demonstra como usar o GoRouter Modular com os novos métodos `initState` e `dispose` para controle do ciclo de vida dos módulos.
+
+## 📁 Estrutura do Projeto
+
+```
+example/
+├── lib/
+│   ├── main.dart
+│   └── src/
+│       ├── app_module.dart
+│       ├── app_widget.dart
+│       └── modules/
+│           ├── auth/
+│           │   ├── auth_module.dart
+│           │   ├── auth_store.dart
+│           │   └── pages/
+│           │       ├── login_page.dart
+│           │       └── splash_page.dart
+│           ├── home/
+│           │   ├── home_module.dart
+│           │   └── pages/
+│           │       ├── home_page.dart
+│           │       └── demo_page.dart
+│           ├── user/
+│           │   ├── user_module.dart
+│           │   ├── domain/
+│           │   │   └── repositories/
+│           │   │       └── user_repository.dart
+│           │   └── presenters/
+│           │       ├── user_page.dart
+│           │       └── user_name_page.dart
+│           └── shared/
+│               ├── shared_module.dart
+│               └── shared_service.dart
+```
+
+## 🔄 Ciclo de Vida dos Módulos
+
+### initState(Injector i)
+
+O método `initState` é chamado automaticamente quando os bindings do módulo são injetados pela primeira vez.
+
+**Exemplo de uso:**
+
+```dart
+class AuthModule extends Module {
+  bool _isInitialized = false;
+
+  @override
+  void initState(Injector i) {
+    if (_isInitialized) return;
+
+    try {
+      // Obtém dependências injetadas
+      final authStore = i.get<AuthStore>();
+      
+      // Configura listeners
+      _setupAuthListeners();
+      
+      // Carrega configurações
+      _loadAuthConfig();
+      
+      _isInitialized = true;
+    } catch (e) {
+      rethrow;
+    }
+  }
+}
+```
+
+### dispose()
+
+O método `dispose` é chamado automaticamente quando o módulo é disposado.
+
+**Exemplo de uso:**
+
+```dart
+class AuthModule extends Module {
+  Timer? _authTimer;
+  StreamSubscription? _authSubscription;
+
+  @override
+  void dispose() {
+    if (!_isInitialized) return;
+
+    try {
+      // Cancela timers
+      _authTimer?.cancel();
+      
+      // Cancela subscriptions
+      _authSubscription?.cancel();
+      
+      // Limpa dados
+      _clearTempAuthData();
+      
+      // Fecha conexões
+      _closeAuthConnections();
+    } catch (e) {
+      rethrow;
+    }
+  }
+}
+```
 
 ## 🚀 Como Executar
 
-1. **Execute o app:**
+1. **Configure o projeto:**
    ```bash
    cd example
+   flutter pub get
+   ```
+
+2. **Execute o app:**
+   ```bash
    flutter run
    ```
 
-2. **Siga o fluxo de teste:**
-   - O app abrirá com um guia passo a passo
-   - Cada passo testa uma funcionalidade específica
-   - Observe os logs no console para acompanhar o processo
+3. **Navegue entre as rotas para ver os logs:**
+   - `/` - Home Module
+   - `/auth` - Auth Module  
+   - `/user` - User Module
 
-## 📋 O que o Exemplo Demonstra
+## 📊 Logs de Exemplo
 
-### ✅ Funcionalidades Testadas
-
-1. **Inicialização de Módulos**
-   - `initState()` é chamado automaticamente
-   - Binds são injetados corretamente
-   - Logs mostram o processo
-
-2. **Injeção de Dependências**
-   - Serviços são injetados automaticamente
-   - Dependências entre módulos funcionam
-   - Tratamento de erros de injeção
-
-3. **Disposição de Módulos**
-   - `dispose()` é chamado automaticamente
-   - Recursos são limpos corretamente
-   - Logs mostram o processo de limpeza
-
-4. **Reutilização de Módulos**
-   - Módulos são reutilizados quando necessário
-   - Não são reinicializados desnecessariamente
-   - Performance otimizada
-
-5. **Tratamento de Erros**
-   - Binds inexistentes
-   - Rotas inexistentes
-   - Parâmetros ausentes
-
-## 🏗️ Estrutura do Exemplo
+Quando você navega entre as rotas, verá logs como:
 
 ```
-example/lib/src/
-├── app_module.dart          # Módulo principal
-├── modules/
-│   ├── auth/               # Módulo de autenticação
-│   │   ├── auth_module.dart
-│   │   ├── auth_store.dart
-│   │   └── pages/
-│   │       ├── login_page.dart
-│   │       └── splash_page.dart
-│   ├── user/               # Módulo de usuário
-│   │   ├── user_module.dart
-│   │   ├── domain/
-│   │   │   └── repositories/
-│   │   │       └── user_repository.dart
-│   │   └── presenters/
-│   │       ├── user_page.dart
-│   │       └── user_name_page.dart
-│   ├── shared/             # Módulo compartilhado
-│   │   └── shared_module.dart
-│   └── home/               # Módulo da página inicial
-│       ├── home_module.dart
-│       └── pages/
-│           ├── home_page.dart
-│           └── demo_page.dart
-└── app_widget.dart         # Widget principal
+🚀 [AUTH_MODULE] initState chamado
+🔐 [AUTH_MODULE] AuthStore obtido: AuthStore
+🔧 [AUTH_MODULE] Configurando listeners de autenticação
+⚙️ [AUTH_MODULE] Carregando configurações de autenticação
+🔍 [AUTH_MODULE] Verificando token salvo
+✅ [AUTH_MODULE] AuthModule inicializado com sucesso
+
+// ... navegação para outra rota ...
+
+🗑️ [AUTH_MODULE] dispose chamado
+⏰ [AUTH_MODULE] Timer de autenticação cancelado
+📡 [AUTH_MODULE] Subscription de autenticação cancelado
+🧹 [AUTH_MODULE] Limpando dados temporários de autenticação
+🔌 [AUTH_MODULE] Fechando conexões de autenticação
+✅ [AUTH_MODULE] AuthModule disposto com sucesso
 ```
 
-## 🔍 Observando os Logs
+## 🎯 Casos de Uso
 
-Os logs importantes aparecem no console com emojis:
+### 1. **Módulo de Autenticação**
+- Configura listeners de autenticação
+- Carrega configurações de segurança
+- Verifica tokens salvos
+- Limpa dados sensíveis na disposição
 
-- 🚀 **Inicialização**: `initState()` sendo chamado
-- 🗑️ **Disposição**: `dispose()` sendo chamado
-- 🔄 **Navegação**: Mudanças de rota
-- ❌ **Erros**: Tratamento de exceções
-- ✅ **Sucesso**: Operações bem-sucedidas
+### 2. **Módulo Home**
+- Carrega dados iniciais
+- Configura analytics
+- Gerencia timers de atualização
+- Limpa cache de dados
 
-## 🧪 Fluxo de Teste
+### 3. **Módulo User**
+- Configura permissões de usuário
+- Carrega dados de perfil
+- Gerencia listeners de mudanças
+- Limpa dados pessoais
 
-1. **Introdução**: Explicação do sistema
-2. **Inicialização**: Teste de `initState()` e injeção
-3. **Disposição**: Teste de `dispose()` ao sair dos módulos
-4. **Reutilização**: Teste de reutilização de módulos
-5. **Erros**: Teste de tratamento de erros
+### 4. **Módulo Shared**
+- Configura serviços globais
+- Carrega configurações compartilhadas
+- Gerencia recursos compartilhados
+- Limpa recursos globais
 
-## 🎯 Pontos de Atenção
+## ⚠️ Boas Práticas
 
-- **Console**: Mantenha o console aberto para ver os logs
-- **Navegação**: Use os botões da interface para navegar
-- **Logs**: Observe os logs em tempo real
-- **Reutilização**: Volte e navegue novamente para ver a reutilização
+1. **Controle de Estado:** Use uma flag `_isInitialized` para evitar inicializações múltiplas
+2. **Tratamento de Erros:** Sempre use try-catch nos métodos `initState` e `dispose`
+3. **Limpeza de Recursos:** Sempre cancele timers, subscriptions e feche conexões no `dispose`
+4. **Acesso a Dependências:** Use o `Injector` passado no `initState` para acessar dependências injetadas
+5. **Logs Informativos:** Use logs para debug e monitoramento do ciclo de vida
 
-## 🔧 Personalização
+## 🔧 Configuração
 
-Para testar seu próprio código:
+O exemplo está configurado no `main.dart`:
 
-1. **Adicione seus módulos** em `modules/`
-2. **Crie seus binds** nos módulos
-3. **Implemente initState/dispose** conforme necessário
-4. **Teste a navegação** entre seus módulos
+```dart
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  Modular.configure(
+    appModule: AppModule(),
+    initialRoute: "/",
+  );
 
-O sistema modular garante que o ciclo de vida seja gerenciado automaticamente!
+  runApp(AppWidget());
+}
+```
 
-## 📊 Módulos do Exemplo
-
-### AppModule
-- **Binds globais**: GlobalAppService, AppConfig
-- **Imports**: SharedModule
-- **Rotas**: HomeModule, AuthModule, UserModule
-
-### SharedModule
-- **Binds compartilhados**: SharedService, LoggerService
-- **Usado por**: Todos os outros módulos
-
-### AuthModule
-- **Binds**: AuthStore, AuthService
-- **Imports**: SharedModule
-- **Rotas**: SplashPage, LoginPage
-
-### UserModule
-- **Binds**: UserRepository, UserService
-- **Imports**: SharedModule
-- **Rotas**: UserPage, UserNamePage (com parâmetros)
-
-### HomeModule
-- **Binds**: Nenhum
-- **Imports**: SharedModule
-- **Rotas**: HomePage (interface de teste), DemoPage
+Isso garante que o sistema de módulos seja inicializado corretamente e que os métodos `initState` e `dispose` sejam chamados nos momentos apropriados.

@@ -1,20 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/src/bind.dart';
-import 'package:go_router_modular/src/go_router_modular_configure.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal_logs.dart';
-import 'package:go_router_modular/src/route_manager.dart';
-import 'package:go_router_modular/src/routes/child_route.dart';
-import 'package:go_router_modular/src/routes/i_modular_route.dart';
-import 'package:go_router_modular/src/routes/module_route.dart';
-import 'package:go_router_modular/src/routes/shell_modular_route.dart';
-import 'package:go_router_modular/src/transition.dart';
 
 abstract class Module {
   List<Module> get imports => const [];
   List<Bind<Object>> get binds => const [];
   List<ModularRoute> get routes => const [];
+
+  void initState(Injector i) {
+    // Implementação padrão vazia
+  }
+
+  void dispose() {
+    // Implementação padrão vazia
+  }
 
   /// Coleta todos os binds disponíveis recursivamente evitando duplicatas
   List<Bind<Object>> getModuleBindsAvaliable() {
