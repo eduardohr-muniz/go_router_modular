@@ -1,9 +1,5 @@
 class AuthStore {
-  AuthStore() {
-    print('🔐 AuthStore criado');
-  }
+  AuthStore();
 
-  void dispose() {
-    print('🔐 AuthStore disposto');
-  }
+  void dispose() {}
 }

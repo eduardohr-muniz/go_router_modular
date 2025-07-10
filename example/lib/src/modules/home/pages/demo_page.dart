@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class DemoPage extends StatefulWidget {
@@ -13,19 +12,15 @@ class _DemoPageState extends State<DemoPage> {
   @override
   void initState() {
     super.initState();
-    print('🎯 [DEMO_PAGE] DemoPage inicializada');
   }
 
   @override
   void dispose() {
-    print('🗑️ [DEMO_PAGE] DemoPage disposta');
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🏗️ [DEMO_PAGE] Construindo DemoPage');
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Demo Page'),
@@ -51,7 +46,6 @@ class _DemoPageState extends State<DemoPage> {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
-                print('🏠 [DEMO_PAGE] Voltando para Home');
                 context.go('/');
               },
               child: const Text('Voltar para Home'),
@@ -59,7 +53,6 @@ class _DemoPageState extends State<DemoPage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                print('🔐 [DEMO_PAGE] Navegando para AuthModule');
                 context.go('/auth');
               },
               child: const Text('Ir para AuthModule'),
@@ -67,7 +60,6 @@ class _DemoPageState extends State<DemoPage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                print('👤 [DEMO_PAGE] Navegando para UserModule');
                 context.go('/user');
               },
               child: const Text('Ir para UserModule'),
@@ -80,15 +72,11 @@ class _DemoPageState extends State<DemoPage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                print('🔍 [DEMO_PAGE] Testando injeção de SharedService');
                 try {
-                  final sharedService = GoRouterModular.get<SharedService>();
-                  print('✅ [DEMO_PAGE] SharedService injetado: ${sharedService.runtimeType}');
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('✅ SharedService injetado com sucesso!')),
                   );
                 } catch (e) {
-                  print('❌ [DEMO_PAGE] Erro ao injetar SharedService: $e');
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('❌ Erro: $e')),
                   );
@@ -104,7 +92,5 @@ class _DemoPageState extends State<DemoPage> {
 }
 
 class SharedService {
-  SharedService() {
-    print('🔗 [SHARED_SERVICE] SharedService criado via DemoPage');
-  }
+  SharedService();
 }

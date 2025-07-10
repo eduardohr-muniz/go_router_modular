@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,19 +12,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    print('🏠 [HOME_PAGE] HomePage inicializada');
   }
 
   @override
   void dispose() {
-    print('🗑️ [HOME_PAGE] HomePage disposta');
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🏗️ [HOME_PAGE] Construindo HomePage');
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Go Router Modular Demo'),
@@ -44,7 +39,6 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
-                print('🔐 [HOME_PAGE] Navegando para AuthModule');
                 context.go('/auth');
               },
               child: const Text('Módulo Auth'),
@@ -52,7 +46,6 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                print('👤 [HOME_PAGE] Navegando para UserModule');
                 context.go('/user');
               },
               child: const Text('Módulo User'),
@@ -60,7 +53,6 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                print('🎯 [HOME_PAGE] Navegando para Demo');
                 context.go('/demo');
               },
               child: const Text('Demo Page'),
@@ -73,7 +65,6 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                print('❌ [HOME_PAGE] Testando rota inexistente');
                 context.go('/rota-inexistente');
               },
               style: ElevatedButton.styleFrom(
@@ -85,7 +76,6 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                print('👤 [HOME_PAGE] Testando parâmetro ausente');
                 context.go('/user/name/');
               },
               style: ElevatedButton.styleFrom(

@@ -3,8 +3,6 @@ import 'package:go_router_modular/go_router_modular.dart';
 import 'src/app_module.dart';
 
 void main() {
-  print('🚀 [MAIN] Iniciando aplicação');
-
   Modular.configure(
     appModule: AppModule(),
     initialRoute: '/',
@@ -12,21 +10,14 @@ void main() {
     debugLogDiagnosticsGoRouter: true,
   );
 
-  print('🔧 [MAIN] GoRouter configurado');
-  print('📊 [MAIN] Router config: ${Modular.routerConfig.runtimeType}');
-
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key}) {
-    print('🏠 [MYAPP] MyApp criado');
-  }
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    print('🏗️ [MYAPP] Construindo widget');
-
     return MaterialApp.router(
       title: 'Go Router Modular Demo',
       debugShowCheckedModeBanner: false,

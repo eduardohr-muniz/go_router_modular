@@ -1,3 +1,16 @@
+
+
+## 2.0.3+1
+
+### Added
+* **Lifecycle Methods**: Added support for initState and dispose methods in modules
+* **Recursive Import**: Implemented recursive binding imports between modules
+
+### Fixed
+* **Auto Dispose**: Fixed auto dispose mechanism to ensure proper resource cleanup
+* **State Management**: Improved module state management during lifecycle
+
+
 ## 2.0.2+1
 
 ### Added

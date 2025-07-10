@@ -4,9 +4,7 @@ abstract class IUserRepository {
 }
 
 class UserRepository implements IUserRepository {
-  UserRepository() {
-    print('👤 UserRepository criado');
-  }
+  UserRepository();
 
   @override
   Future<List<String>> getUsers() async {
@@ -24,7 +22,5 @@ class UserRepository implements IUserRepository {
     );
   }
 
-  void dispose() {
-    print('👤 UserRepository disposto');
-  }
+  void dispose() {}
 }

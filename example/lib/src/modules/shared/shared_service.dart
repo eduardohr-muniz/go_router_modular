@@ -1,13 +1,7 @@
 class SharedService {
-  SharedService() {
-    print('🔗 [SHARED_SERVICE] SharedService criado');
-  }
+  SharedService();
 
-  void log(String message) {
-    print('🔗 [SHARED_SERVICE] $message');
-  }
+  void log(String message) {}
 
-  void dispose() {
-    print('🔗 [SHARED_SERVICE] SharedService disposto');
-  }
+  void dispose() {}
 }

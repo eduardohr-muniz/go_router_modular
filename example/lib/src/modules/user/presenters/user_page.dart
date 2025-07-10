@@ -12,19 +12,15 @@ class _UserPageState extends State<UserPage> {
   @override
   void initState() {
     super.initState();
-    print('👤 [USER_PAGE] UserPage inicializada');
   }
 
   @override
   void dispose() {
-    print('🗑️ [USER_PAGE] UserPage disposta');
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🏗️ [USER_PAGE] Construindo UserPage');
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Module'),
@@ -43,7 +39,6 @@ class _UserPageState extends State<UserPage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                print('👤 [USER_PAGE] Navegando para HomeModule');
                 context.go('/');
               },
               child: const Text('Ir para Home'),
@@ -51,7 +46,6 @@ class _UserPageState extends State<UserPage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                print('👤 [USER_PAGE] Navegando para AuthModule');
                 context.go('/auth');
               },
               child: const Text('Ir para Auth'),
@@ -59,7 +53,6 @@ class _UserPageState extends State<UserPage> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                print('👤 [USER_PAGE] Navegando para UserNamePage');
                 context.go('/user/user_name/teste');
               },
               child: const Text('Ir para User Name Page'),

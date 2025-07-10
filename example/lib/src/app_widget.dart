@@ -30,7 +30,6 @@ class AppWidget extends StatelessWidget {
                 heroTag: "debug_modules",
                 onPressed: () {
                   // Debug do estado atual dos módulos
-                  print('🔍 [DEBUG] ESTADO DOS MÓDULOS:');
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -47,7 +46,6 @@ class AppWidget extends StatelessWidget {
                 backgroundColor: Colors.red,
                 onPressed: () {
                   // Força limpeza de todos os módulos não ativos
-                  print('🗑️ [DEBUG] FORÇANDO LIMPEZA...');
                   // Aqui você pode adicionar lógica para forçar dispose se necessário
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
