@@ -53,6 +53,7 @@ abstract class Module {
 
   GoRoute _createModule({required ModuleRoute module, required String modulePath, required bool topLevel}) {
     final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').firstOrNull;
+    assert(childRoute != null, 'Module ${module.module.runtimeType} must have a ChildRoute with path "/" because it serves as the parent route for the module');
 
     return GoRoute(
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),

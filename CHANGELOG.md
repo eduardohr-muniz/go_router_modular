@@ -1,5 +1,27 @@
 
 
+## 3.0.0
+
+### Breaking Changes
+* **Root Route Handling**: Changed behavior for "/" route in modules
+  - Modules must now have a root ChildRoute ("/") as it serves as the parent route
+  - This route acts as the module's entry point and container for nested routes
+  - Assertion error will be thrown if root route is missing
+  - Example:
+    ```dart
+    @override
+    List<ModularRoute> get routes => [
+      ChildRoute('/', child: (_, __) => HomePage()), // Required root route
+      ChildRoute('/details', child: (_, __) => DetailsPage()),
+    ];
+    ```
+
+### Fixed
+* **Module Route Structure**: Improved module route hierarchy validation
+  - Added assertion check for required root route in modules
+  - Better error messages to help developers implement correct route structure
+  - Enhanced documentation around module route requirements
+
 ## 2.0.3+1
 
 ### Added

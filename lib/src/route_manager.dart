@@ -207,7 +207,7 @@ class RouteManager {
       return;
     }
 
-    log('✅ REGISTRANDO ROTA: $route para ${module.runtimeType} DATE: ${DateTime.now().toIso8601String()}', name: "ROUTE_MANAGER");
+    iLog('✅ REGISTRANDO ROTA: $route para ${module.runtimeType} DATE: ${DateTime.now().toIso8601String()}', name: "ROUTE_MANAGER");
     _activeRoutes.putIfAbsent(module, () => {});
     _activeRoutes[module]?.add(route);
     iLog('✅ ROTA REGISTRADA: ${module.runtimeType} agora tem ${_activeRoutes[module]?.length} rotas', name: "ROUTE_MANAGER");
@@ -224,7 +224,7 @@ class RouteManager {
   }
 
   void unregisterRoute(String route, Module module) {
-    log('📍 REMOVENDO ROTA: $route de ${module.runtimeType} DATE: ${DateTime.now().toIso8601String()}', name: "ROUTE_MANAGER");
+    iLog('📍 REMOVENDO ROTA: $route de ${module.runtimeType} DATE: ${DateTime.now().toIso8601String()}', name: "ROUTE_MANAGER");
     _activeRoutes[module]?.remove(route);
     iLog('📊 ${module.runtimeType} agora tem ${_activeRoutes[module]?.length ?? 0} rotas', name: "ROUTE_MANAGER");
 
