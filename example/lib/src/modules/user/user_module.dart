@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:go_router_modular/go_router_modular.dart';
 import '../shared/shared_module.dart';
 import 'domain/repositories/user_repository.dart';
@@ -8,16 +10,14 @@ class UserModule extends Module {
   // Controle de estado do módulo
 
   @override
-  List<Module> get imports {
+  FutureOr<List<Module>> imports() {
     return [SharedModule()];
   }
 
   @override
-  List<Bind<Object>> get binds {
-    return [
-      Bind.singleton<IUserRepository>((i) => UserRepository()),
-    ];
-  }
+  Future<List<Bind<Object>>> binds() async => [
+        Bind.singleton<IUserRepository>((i) => UserRepository()),
+      ];
 
   @override
   List<ModularRoute> get routes {

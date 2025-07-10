@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:go_router_modular/go_router_modular.dart';
 import 'modules/auth/auth_module.dart';
 import 'modules/user/user_module.dart';
@@ -16,12 +18,12 @@ class AppModule extends Module {
   ];
 
   @override
-  List<Module> get imports {
+  FutureOr<List<Module>> imports() {
     return _staticImports;
   }
 
   @override
-  List<Bind<Object>> get binds {
+  List<Bind<Object>> binds() {
     return _staticBinds;
   }
 

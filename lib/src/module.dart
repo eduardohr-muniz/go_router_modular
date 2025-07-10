@@ -5,8 +5,8 @@ import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal_logs.dart';
 
 abstract class Module {
-  List<Module> get imports => const [];
-  List<Bind<Object>> get binds => const [];
+  FutureOr<List<Module>> imports() => [];
+  FutureOr<List<Bind<Object>>> binds() => [];
   List<ModularRoute> get routes => const [];
 
   void initState(Injector i) {}
@@ -61,9 +61,28 @@ abstract class Module {
       builder: (context, state) => _buildModuleChild(context, state: state, module: module, route: childRoute),
       routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
-      redirect: childRoute?.redirect,
+      redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: childRoute?.redirect, topLevel: topLevel),
       onExit: (context, state) => childRoute == null ? Future.value(true) : _handleRouteExit(context, state: state, route: childRoute, module: module.module),
     );
+  }
+
+  FutureOr<String?> _buildRedirectAndInjectBinds(
+    BuildContext context,
+    GoRouterState state, {
+    required Module module,
+    required String modulePath,
+    required bool topLevel,
+    FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
+  }) async {
+    try {
+      //TODO: implement loader.show(context)
+      await _register(path: modulePath, module: module);
+    } finally {
+      //TODO: implement loader.hide()
+    }
+
+    if (context.mounted) return redirect?.call(context, state);
+    return null;
   }
 
   List<GoRoute> _createModuleRoutes({required String modulePath, required bool topLevel}) {
@@ -121,7 +140,7 @@ abstract class Module {
     // Executa registro com prioridade (fire and forget - não bloqueia UI)
     iLog('📱 BUILD ChildRoute: ${state.path} - Módulo: $runtimeType', name: "BUILD_DEBUG");
     iLog('📍 CHAMANDO _register de _buildRouteChild', name: "BUILD_DEBUG");
-    _register(path: state.path.toString());
+
     return route.child(context, state);
   }
 
@@ -130,24 +149,7 @@ abstract class Module {
       key: state.pageKey,
       child: route.child(context, state),
       transitionsBuilder: Transition.builder(
-        configRouteManager: () {
-          final cacheKey = '$runtimeType:${state.path}';
-          if (!_transitionCache.contains(cacheKey)) {
-            iLog('🎬 TRANSITION: ${state.path} - Módulo: $runtimeType', name: "BUILD_DEBUG");
-            _transitionCache.add(cacheKey);
-            _register(path: state.path.toString());
-
-            // Remove do cache após um delay para permitir re-registro quando necessário
-            iLog('⏰ CRIANDO TIMER DE CACHE (2s): $cacheKey', name: "CACHE_DEBUG");
-            Timer(const Duration(seconds: 2), () {
-              iLog('⏰ TIMER DE CACHE EXECUTANDO: $cacheKey', name: "CACHE_DEBUG");
-              _transitionCache.remove(cacheKey);
-              iLog('🧹 CACHE REMOVIDO: $cacheKey', name: "CACHE_DEBUG");
-            });
-          } else {
-            iLog('🚫 TRANSITION IGNORADA (CACHE): ${state.path} - Módulo: $runtimeType', name: "BUILD_DEBUG");
-          }
-        },
+        configRouteManager: () {},
         pageTransition: route.pageTransition ?? Modular.getDefaultPageTransition,
       ),
     );
@@ -157,7 +159,6 @@ abstract class Module {
     // Executa registro com prioridade (fire and forget - não bloqueia UI)
     iLog('📱 BUILD ModuleChild: ${state.path} - Módulo: ${module.module.runtimeType}', name: "BUILD_DEBUG");
     iLog('📍 CHAMANDO _register de _buildModuleChild', name: "BUILD_DEBUG");
-    _register(path: state.path.toString(), module: module.module);
     return route?.child(context, state) ?? Container();
   }
 
@@ -182,38 +183,14 @@ abstract class Module {
     });
   }
 
-  // Sistema de prioridade para _register - evita execuções simultâneas
-  static final Map<String, Completer<void>> _registerQueue = {};
-
-  // Cache para evitar registros repetidos em transições
-  static final Set<String> _transitionCache = {};
-
   Future<void> _register({required String path, Module? module}) async {
     final targetModule = module ?? this;
     final queueKey = '${targetModule.runtimeType}:$path';
 
-    // Log detalhado para debug
-    final stackTrace = StackTrace.current;
-    iLog('🎯 REGISTER CHAMADO: ${targetModule.runtimeType} para path: $path', name: "PRIORITY_DEBUG");
-    iLog('📍 STACK TRACE: ${stackTrace.toString().split('\n').take(3).join('\n')}', name: "PRIORITY_DEBUG");
-
-    // Se já está executando para esta combinação módulo+path, aguarda completar
-    if (_registerQueue.containsKey(queueKey)) {
-      iLog('⏳ AGUARDANDO EXECUÇÃO EM ANDAMENTO: $queueKey', name: "PRIORITY_DEBUG");
-      await _registerQueue[queueKey]!.future;
-      iLog('✅ EXECUÇÃO COMPLETADA - RETORNANDO: $queueKey', name: "PRIORITY_DEBUG");
-      return;
-    }
-
-    // Cria completer para esta execução
-    iLog('🚀 INICIANDO EXECUÇÃO PRIORITÁRIA: $queueKey', name: "PRIORITY_DEBUG");
-    final completer = Completer<void>();
-    _registerQueue[queueKey] = completer;
-
     try {
       // Executa o registro com prioridade
       iLog('💉 REGISTERING BINDS: ${targetModule.runtimeType} para path: $path', name: "BIND_REGISTER");
-      RouteManager().registerBindsIfNeeded(targetModule);
+      await RouteManager().registerBindsIfNeeded(targetModule);
 
       if (path != '/') {
         RouteManager().registerRoute(path, targetModule);
@@ -222,8 +199,6 @@ abstract class Module {
     } finally {
       // Remove da fila e completa
       iLog('🏁 FINALIZANDO EXECUÇÃO: $queueKey', name: "PRIORITY_DEBUG");
-      _registerQueue.remove(queueKey);
-      completer.complete();
     }
   }
 
@@ -232,28 +207,12 @@ abstract class Module {
     iLog('🗑️ UNREGISTER: ${targetModule.runtimeType} para path: $path', name: "UNREGISTER_DEBUG");
     RouteManager().unregisterRoute(path, targetModule);
 
-    // Limpa o cache de transições quando o módulo é unregistered
-    iLog('🧹 LIMPANDO CACHE DE TRANSIÇÕES para ${targetModule.runtimeType}', name: "UNREGISTER_DEBUG");
-    _cleanTransitionCache(targetModule);
-
     iLog('✅ UNREGISTER COMPLETADO: ${targetModule.runtimeType} para path: $path', name: "UNREGISTER_DEBUG");
   }
 
   // Limpa entradas do cache de transições para um módulo específico
-  static void _cleanTransitionCache(Module module) {
-    final keysToRemove = _transitionCache.where((key) => key.startsWith('${module.runtimeType}:')).toList();
-    iLog('🔍 CACHE ANTES DE LIMPAR: $_transitionCache', name: "CACHE_DEBUG");
-    for (final key in keysToRemove) {
-      _transitionCache.remove(key);
-      iLog('🧹 CACHE LIMPO: $key', name: "UNREGISTER_DEBUG");
-    }
-    iLog('🔍 CACHE DEPOIS DE LIMPAR: $_transitionCache', name: "CACHE_DEBUG");
-  }
 
   // Método público para limpeza de cache chamado pelo RouteManager
-  void cleanModuleTransitionCache() {
-    _cleanTransitionCache(this);
-  }
 
   String _buildPath(String path) {
     if (!path.endsWith('/')) {

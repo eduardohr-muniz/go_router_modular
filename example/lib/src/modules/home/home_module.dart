@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:go_router_modular/go_router_modular.dart';
 import '../shared/shared_module.dart';
 import 'pages/home_page.dart';
@@ -7,12 +9,12 @@ class HomeModule extends Module {
   // Controle de estado do módulo
 
   @override
-  List<Module> get imports {
+  FutureOr<List<Module>> imports() {
     return [SharedModule()];
   }
 
   @override
-  List<Bind<Object>> get binds {
+  FutureOr<List<Bind<Object>>> binds() {
     return [
       Bind.singleton<HomeService>((i) => HomeService()),
     ];

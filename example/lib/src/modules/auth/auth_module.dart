@@ -12,12 +12,12 @@ class AuthModule extends Module {
   StreamSubscription? _authSubscription;
 
   @override
-  List<Module> get imports {
+  FutureOr<List<Module>> imports() {
     return [SharedModule()];
   }
 
   @override
-  List<Bind<Object>> get binds {
+  FutureOr<List<Bind<Object>>> binds() {
     return [Bind.singleton<AuthStore>((i) => AuthStore())];
   }
 
