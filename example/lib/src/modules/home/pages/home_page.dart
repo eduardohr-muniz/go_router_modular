@@ -57,6 +57,17 @@ class _HomePageState extends State<HomePage> {
               },
               child: const Text('Demo Page'),
             ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                context.push('/shell/dashboard');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('🚀 Shell Router Example'),
+            ),
             const SizedBox(height: 32),
             const Text(
               'Teste de Erros:',

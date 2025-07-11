@@ -53,8 +53,10 @@ abstract class Module {
 
   GoRoute _createModule({required ModuleRoute module, required String modulePath, required bool topLevel}) {
     final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').firstOrNull;
-    assert(childRoute != null, 'Module ${module.module.runtimeType} must have a ChildRoute with path "/" because it serves as the parent route for the module');
+    final isShell = module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
+    if (!isShell) assert(childRoute != null, 'Module ${module.module.runtimeType} must have a ChildRoute with path "/" because it serves as the parent route for the module');
 
+    //TODO: VALIDACAO
     return GoRoute(
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
@@ -62,7 +64,7 @@ abstract class Module {
       routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
       redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: childRoute?.redirect, topLevel: topLevel),
-      onExit: (context, state) => childRoute == null ? Future.value(true) : _handleRouteExit(context, state: state, route: childRoute, module: module.module),
+      onExit: (context, state) => _handleRouteExit(context, state: state, route: childRoute, module: module.module),
     );
   }
 
@@ -162,10 +164,10 @@ abstract class Module {
     return route?.child(context, state) ?? Container();
   }
 
-  FutureOr<bool> _handleRouteExit(BuildContext context, {required GoRouterState state, required ChildRoute route, required Module module}) {
+  FutureOr<bool> _handleRouteExit(BuildContext context, {required GoRouterState state, required ChildRoute? route, required Module module}) {
     iLog('🚪 EXIT ROUTE: ${state.path} - Módulo: ${module.runtimeType}', name: "EXIT_DEBUG");
     final completer = Completer<bool>();
-    final onExit = route.onExit?.call(context, state) ?? Future.value(true);
+    final onExit = route?.onExit?.call(context, state) ?? Future.value(true);
     completer.complete(onExit);
     return completer.future.then((exit) {
       try {
