@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal_logs.dart';
+import 'package:go_router_modular/src/shell_pop_wrapper.dart';
 
 abstract class Module {
   FutureOr<List<Module>> imports() => [];
@@ -18,7 +19,7 @@ abstract class Module {
 
     result.addAll(_createChildRoutes(topLevel: topLevel));
     result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
-    result.addAll(_createShellRoutes(topLevel));
+    result.addAll(_createShellRoutes(topLevel, modulePath));
 
     return result;
   }
@@ -93,13 +94,10 @@ abstract class Module {
     }).toList();
   }
 
-  List<RouteBase> _createShellRoutes(bool topLevel) {
+  List<RouteBase> _createShellRoutes(bool topLevel, String modulePath) {
     return routes.whereType<ShellModularRoute>().map((shellRoute) {
-      // if (shellRoute.routes.whereType<ChildRoute>().where((element) => element.path == '/').isNotEmpty) {
-      //   throw Exception('ShellModularRoute cannot contain ChildRoute with path "/"');
-      // }
       return ShellRoute(
-        builder: (context, state, child) => shellRoute.builder!(context, state, child),
+        builder: (context, state, child) => shellRoute.builder!(context, state, ShellPopWrapper(onExit: () => _handleRouteExit(context, state: state, route: null, module: this, shellPath: modulePath), child: child)),
         pageBuilder: shellRoute.pageBuilder != null ? (context, state, child) => shellRoute.pageBuilder!(context, state, child) : null,
         redirect: shellRoute.redirect,
         navigatorKey: shellRoute.navigatorKey,
@@ -164,8 +162,8 @@ abstract class Module {
     return route?.child(context, state) ?? Container();
   }
 
-  FutureOr<bool> _handleRouteExit(BuildContext context, {required GoRouterState state, required ChildRoute? route, required Module module}) {
-    iLog('🚪 EXIT ROUTE: ${state.path} - Módulo: ${module.runtimeType}', name: "EXIT_DEBUG");
+  FutureOr<bool> _handleRouteExit(BuildContext context, {required GoRouterState state, required ChildRoute? route, String? shellPath, required Module module}) {
+    iLog('🚪 EXIT ROUTE: ${state.path} - Módulo: ${module.runtimeType} - ShellPath: $shellPath', name: "EXIT_DEBUG");
     final completer = Completer<bool>();
     final onExit = route?.onExit?.call(context, state) ?? Future.value(true);
     completer.complete(onExit);
@@ -174,6 +172,9 @@ abstract class Module {
         if (exit) {
           iLog('🗑️ UNREGISTERING: ${state.path} - Módulo: ${module.runtimeType}', name: "EXIT_DEBUG");
           _unregister(state.path.toString(), module: module);
+          if (shellPath != null) {
+            _unregister(shellPath, module: module);
+          }
         } else {
           iLog('❌ EXIT BLOCKED: ${state.path} - Módulo: ${module.runtimeType}', name: "EXIT_DEBUG");
         }
