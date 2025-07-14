@@ -10,6 +10,7 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
+  event_bus: ^2.0.1
   flutter:
     sdk: flutter
   go_router: ">=14.3.0"

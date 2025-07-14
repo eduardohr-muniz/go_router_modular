@@ -57,10 +57,9 @@ import 'package:go_router_modular/go_router_modular.dart';
 class AppWidget extends StatelessWidget {
   const AppWidget({super.key});
 
-  @override
+  @override◊
   Widget build(BuildContext context) {
-    return MaterialApp.router( // Use MaterialApp.router
-      routerConfig: Modular.routerConfig, // Define Router config
+    return ModularApp.router( // Use ModularApp.router instead of MaterialApp.router
       title: 'Modular GoRoute Example',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -92,6 +91,61 @@ class AppModule extends Module {
 }
 ```
 
+# 🎯 LOADER SYSTEM
+
+GoRouter Modular includes a built-in loader system that automatically shows during module registration and can be controlled manually.
+
+## Automatic Loader
+
+The loader automatically appears when navigating between modules during the dependency injection process.
+
+## Manual Loader Control
+
+You can manually control the loader in your code:
+
+```dart
+// Show the loader
+ModularLoader.show();
+
+// Hide the loader
+ModularLoader.hide();
+```
+
+## Custom Loader
+
+You can customize the loader appearance by creating a `CustomModularLoader`:
+
+```dart
+class MyLoader extends CustomModularLoader {
+  @override
+  Color get backgroundColor => Colors.black87;
+  
+  @override
+  Widget get child => const Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      ),
+      SizedBox(height: 16),
+      Text(
+        'Carregando...',
+        style: TextStyle(color: Colors.white),
+      ),
+    ],
+  );
+}
+```
+
+Then use it in your `ModularApp.router`:
+
+```dart
+return ModularApp.router(
+  customModularLoader: MyLoader(),
+  title: 'My App',
+);
+```
+
 # 💉 DEPENDENCY INJECTION
 
 ⚠️ **Attention**
@@ -100,7 +154,7 @@ class AppModule extends Module {
 Example:
 ```dart
 ✅  Bind.singleton<HomeController>((i) => HomeController())
-❌  Bind.singleton((i) => HomeController())
+✅  Bind.singleton((i) => HomeController())
 ```
 
 ### Injecting Dependencies
@@ -318,6 +372,7 @@ For more complete examples, visit the [GoRouter Documentation](https://pub.dev/d
 2. **Convert Binds Getter**: Change `get binds =>` to `binds() =>`
 3. **Add Lifecycle Methods**: Implement `initState()` and `dispose()` if needed
 4. **Consider Module Imports**: Use `imports()` to share dependencies between modules
+5. **Use ModularApp.router**: Replace `MaterialApp.router` with `ModularApp.router`
 
 ### Example Complete Migration
 
@@ -335,9 +390,20 @@ class UserModule extends Module {
     ChildRoute('/profile', builder: (context, state) => const ProfilePage()),
   ];
 }
+
+// AppWidget
+class AppWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      routerConfig: Modular.routerConfig,
+      title: 'My App',
+    );
+  }
+}
 ```
 
-**After (3.x):**
+**After (4.x):**
 ```dart
 class UserModule extends Module {
   @override
@@ -362,6 +428,18 @@ class UserModule extends Module {
   @override
   void dispose() {
     // Clean up user resources
+  }
+}
+
+// AppWidget
+class AppWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ModularApp.router( // ✅ Use ModularApp.router
+
+      title: 'My App',
+      loaderDecorator: CustomLoaderDecorator(), // ✅ Optional custom loader
+    );
   }
 }
 ```

@@ -15,9 +15,12 @@ class UserModule extends Module {
   }
 
   @override
-  Future<List<Bind<Object>>> binds() async => [
-        Bind.singleton<IUserRepository>((i) => UserRepository()),
-      ];
+  Future<List<Bind<Object>>> binds() async {
+    await Future.delayed(const Duration(seconds: 2));
+    return [
+      Bind.singleton<IUserRepository>((i) => UserRepository()),
+    ];
+  }
 
   @override
   List<ModularRoute> get routes {

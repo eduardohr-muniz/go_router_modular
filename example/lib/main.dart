@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'src/app_module.dart';
 
-void main() {
-  Modular.configure(
+Future<void> main() async {
+  await Modular.configure(
     appModule: AppModule(),
     initialRoute: '/',
     debugLogDiagnostics: true,

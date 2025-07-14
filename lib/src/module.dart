@@ -57,7 +57,6 @@ abstract class Module {
     final isShell = module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
     if (!isShell) assert(childRoute != null, 'Module ${module.module.runtimeType} must have a ChildRoute with path "/" because it serves as the parent route for the module');
 
-    //TODO: VALIDACAO
     return GoRoute(
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
@@ -78,10 +77,10 @@ abstract class Module {
     FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
   }) async {
     try {
-      //TODO: implement loader.show(context)
+      ModularLoader.show();
       await _register(path: modulePath, module: module);
     } finally {
-      //TODO: implement loader.hide()
+      ModularLoader.hide();
     }
 
     if (context.mounted) return redirect?.call(context, state);

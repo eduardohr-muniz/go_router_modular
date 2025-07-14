@@ -70,6 +70,36 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 32),
             const Text(
+              'Teste de Loader:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                ModularLoader.show();
+                Future.delayed(const Duration(seconds: 2), () {
+                  ModularLoader.hide();
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Mostrar Loader'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                ModularLoader.hide();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Esconder Loader'),
+            ),
+            const SizedBox(height: 32),
+            const Text(
               'Teste de Erros:',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
