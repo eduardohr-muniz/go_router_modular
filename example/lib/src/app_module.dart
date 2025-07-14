@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:go_router_modular/go_router_modular.dart';
 import 'modules/auth/auth_module.dart';
 import 'modules/user/user_module.dart';
 import 'modules/shared/shared_module.dart';
 import 'modules/home/home_module.dart';
+import 'modules/shell_example/shell_module.dart';
 
 class AppModule extends Module {
   static final List<Module> _staticImports = [SharedModule()];
@@ -10,18 +13,19 @@ class AppModule extends Module {
     Bind.singleton<AppService>((i) => AppService()),
   ];
   static final List<ModularRoute> _staticRoutes = [
+    ModuleRoute('/', module: HomeModule()),
     ModuleRoute('/auth', module: AuthModule()),
     ModuleRoute('/user', module: UserModule()),
-    ModuleRoute('/', module: HomeModule()),
+    ModuleRoute('/shell', module: ShellExampleModule()),
   ];
 
   @override
-  List<Module> get imports {
+  FutureOr<List<Module>> imports() {
     return _staticImports;
   }
 
   @override
-  List<Bind<Object>> get binds {
+  List<Bind<Object>> binds() {
     return _staticBinds;
   }
 
@@ -32,7 +36,5 @@ class AppModule extends Module {
 }
 
 class AppService {
-  AppService();
-
   void dispose() {}
 }

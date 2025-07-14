@@ -13,6 +13,8 @@ class RouteManager {
   List<Type> bindsToDispose = [];
   final Injector _injector = Injector();
 
+  final Map<Module, Set<Type>> _bindsToDispose = {};
+
   RouteManager._();
 
   factory RouteManager() {
@@ -30,28 +32,27 @@ class RouteManager {
   }
 
   /// Coleta recursivamente todos os binds de imports aninhados
-  List<Bind<Object>> _getAllImportedBindsRecursively(Module module, [Set<Module>? visited]) {
+  Future<List<Bind<Object>>> _getAllImportedBindsRecursively(Module module, [Set<Module>? visited]) async {
     visited ??= <Module>{};
     Set<Bind<Object>> allImportedBinds = {};
 
-    // Evita loops infinitos
     if (visited.contains(module)) {
       return allImportedBinds.toList();
     }
     visited.add(module);
 
-    for (var importedModule in module.imports) {
-      // Adiciona os binds do módulo importado
-      allImportedBinds.addAll(importedModule.binds);
+    final imports = await module.imports();
 
-      // Recursivamente coleta binds dos imports do módulo importado
-      allImportedBinds.addAll(_getAllImportedBindsRecursively(importedModule, visited));
-    }
+    Future.forEach(imports, (module) async {
+      final binds = await module.binds();
+      allImportedBinds.addAll(binds);
+      allImportedBinds.addAll(await _getAllImportedBindsRecursively(module, visited));
+    });
 
     return allImportedBinds.toList();
   }
 
-  void registerBindsIfNeeded(Module module) {
+  Future<void> registerBindsIfNeeded(Module module) async {
     iLog('🔍 CHECKING MODULE: ${module.runtimeType}', name: "ROUTE_MANAGER");
 
     if (_activeRoutes.containsKey(module)) {
@@ -59,23 +60,27 @@ class RouteManager {
       return;
     }
 
+    final moduleBinds = await module.binds();
+    final imports = await module.imports();
+
     iLog('📦 INICIANDO REGISTRO: ${module.runtimeType}', name: "ROUTE_MANAGER");
-    iLog('📦 NÚMERO DE BINDS DO MÓDULO: ${module.binds.length}', name: "ROUTE_MANAGER");
-    iLog('📦 IMPORTS DO MÓDULO: ${module.imports.map((e) => e.runtimeType).toList()}', name: "ROUTE_MANAGER");
+    iLog('📦 NÚMERO DE BINDS DO MÓDULO: $moduleBinds.length}', name: "ROUTE_MANAGER");
+    iLog('📦 IMPORTS DO MÓDULO: ${imports.map((e) => e.runtimeType).toList()}', name: "ROUTE_MANAGER");
 
-    final importedBindings = _getAllImportedBindsRecursively(module);
+    final importedBinds = await _getAllImportedBindsRecursively(module);
 
-    List<Bind<Object>> allBinds = [...module.binds, ...importedBindings];
+    List<Bind<Object>> allBinds = [...moduleBinds, ...importedBinds];
     iLog('📦 TOTAL DE BINDS PARA REGISTRAR: ${allBinds.length}', name: "ROUTE_MANAGER");
 
     _recursiveRegisterBinds(allBinds);
+    _bindsToDispose[module] = allBinds.map((e) => e.instance.runtimeType).toSet();
 
     _activeRoutes[module] = {};
     module.initState(_injector);
     iLog('✅ MÓDULO REGISTRADO: ${module.runtimeType}', name: "ROUTE_MANAGER");
 
     if (Modular.debugLogDiagnostics) {
-      log('INJECTED: ${module.runtimeType} BINDS: ${[...module.binds.map((e) => e.instance.runtimeType.toString()), ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())]}', name: "💉");
+      log('INJECTED: ${module.runtimeType} BINDS: ${allBinds.map((e) => e.instance.runtimeType.toString()).toList()}', name: "💉");
     }
   }
 
@@ -119,7 +124,7 @@ class RouteManager {
     }
   }
 
-  void unregisterBinds(Module module) {
+  Future<void> unregisterBinds(Module module) async {
     iLog('🗑️ INICIANDO UNREGISTER: ${module.runtimeType}', name: "ROUTE_MANAGER");
 
     if (_appModule != null && module == _appModule!) {
@@ -127,40 +132,19 @@ class RouteManager {
       return;
     }
 
-    // if (_activeRoutes[module]?.isNotEmpty ?? false) {
-    //   iLog('⚠️ MÓDULO AINDA TEM ROTAS ATIVAS: ${module.runtimeType} - ${_activeRoutes[module]}', name: "ROUTE_MANAGER");
-    //   return;
-    // }
-
     iLog('🗑️ DISPOSANDO MÓDULO: ${module.runtimeType}', name: "ROUTE_MANAGER");
+    final List<Type> bindsToDispose = _bindsToDispose[module]?.toList() ?? [];
 
     if (Modular.debugLogDiagnostics) {
-      log('DISPOSED: ${module.runtimeType} BINDS: ${[...module.binds.map((e) => e.instance.runtimeType.toString()), ...module.imports.map((e) => e.binds.map((e) => e.instance.runtimeType.toString()).toList())]}', name: "🗑️");
+      log('DISPOSED: ${module.runtimeType} BINDS: ', name: "🗑️");
     }
 
-    for (var bind in module.binds) {
+    for (var bind in bindsToDispose) {
       try {
-        iLog('📉 DECREMENTANDO REFERÊNCIA: ${bind.instance.runtimeType}', name: "ROUTE_MANAGER");
-        _decrementBindReference(bind.instance.runtimeType);
+        iLog('📉 DECREMENTANDO REFERÊNCIA: ${bind.runtimeType}', name: "ROUTE_MANAGER");
+        _decrementBindReference(bind.runtimeType);
       } catch (e) {
         iLog('⚠️ ERRO AO DECREMENTAR: ${bind.runtimeType} - $e', name: "ROUTE_MANAGER");
-      }
-    }
-
-    if (module.imports.isNotEmpty) {
-      for (var importedModule in module.imports) {
-        for (var bind in importedModule.binds) {
-          if (_appModule?.binds.contains(bind) ?? false) {
-            iLog('⛔ PULANDO BIND DO APP MODULE: ${bind.runtimeType}', name: "ROUTE_MANAGER");
-            continue;
-          }
-          try {
-            iLog('📉 DECREMENTANDO IMPORT: ${bind.instance.runtimeType}', name: "ROUTE_MANAGER");
-            _decrementBindReference(bind.instance.runtimeType);
-          } catch (e) {
-            iLog('⚠️ ERRO AO DECREMENTAR IMPORT: ${bind.runtimeType} - $e', name: "ROUTE_MANAGER");
-          }
-        }
       }
     }
 
@@ -170,18 +154,10 @@ class RouteManager {
 
     _activeRoutes.remove(module);
 
-    // Notifica o módulo para limpar seu cache de transições
-    _notifyModuleDisposed(module);
-
     iLog('✅ MÓDULO REMOVIDO: ${module.runtimeType}', name: "ROUTE_MANAGER");
   }
 
   // Notifica que um módulo foi disposto para limpeza de cache
-  void _notifyModuleDisposed(Module module) {
-    // Importa dinamicamente para evitar dependência circular
-    // O Module tem acesso estático ao método de limpeza
-    module.cleanModuleTransitionCache();
-  }
 
   void _incrementBindReference(Type type) {
     if (_bindReferences.containsKey(type)) {
