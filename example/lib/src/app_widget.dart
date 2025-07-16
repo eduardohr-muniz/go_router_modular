@@ -8,7 +8,9 @@ class AppWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ModularApp.router(
+    return MaterialApp.router(
+      routerConfig: Modular.routerConfig,
+      builder: (context, child) => ModularLoader.builder(context, child),
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: {
           PointerDeviceKind.touch,

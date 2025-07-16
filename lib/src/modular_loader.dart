@@ -28,6 +28,16 @@ class ModularLoader {
     controller.hide();
   }
 
+  static Widget builder(BuildContext context, Widget? child, {CustomModularLoader? customModularLoader}) {
+    final materialChild = child ?? const SizedBox.shrink();
+    return Stack(
+      children: [
+        materialChild,
+        ModularLoader.buildLoader(customModularLoader),
+      ],
+    );
+  }
+
   static Widget buildLoader(CustomModularLoader? loader) {
     return ValueListenableBuilder<bool>(
       valueListenable: controller,
