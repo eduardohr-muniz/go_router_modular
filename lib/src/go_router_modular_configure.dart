@@ -29,7 +29,8 @@ class GoRouterModular {
   /// Returns `true` if logs are enabled. Throws an exception if
   /// [configure] has not been called yet.
   static bool get debugLogDiagnostics {
-    assert(_debugLogDiagnostics != null, 'Add GoRouterModular.configure in main.dart');
+    assert(_debugLogDiagnostics != null,
+        'Add GoRouterModular.configure in main.dart');
     return _debugLogDiagnostics!;
   }
 
@@ -38,7 +39,8 @@ class GoRouterModular {
   /// Returns the type of transition configured in [configure].
   /// Throws an exception if [configure] has not been called yet.
   static PageTransition get getDefaultPageTransition {
-    assert(_pageTansition != null, 'Add GoRouterModular.configure in main.dart');
+    assert(
+        _pageTansition != null, 'Add GoRouterModular.configure in main.dart');
     return _pageTansition!;
   }
 
@@ -70,14 +72,16 @@ class GoRouterModular {
   ///   final path = GoRouterModular.getCurrentPathOf(context);
   ///   print(path); // Prints the current path
   ///   ```
-  static String getCurrentPathOf(BuildContext context) => GoRouterState.of(context).path ?? '';
+  static String getCurrentPathOf(BuildContext context) =>
+      GoRouterState.of(context).path ?? '';
 
   /// Returns the current router state based on the [BuildContext].
   ///
   /// - **Parameters**:
   ///   - `context`: The current [BuildContext].
   /// - **Returns**: An instance of [GoRouterState].
-  static GoRouterState stateOf(BuildContext context) => GoRouterState.of(context);
+  static GoRouterState stateOf(BuildContext context) =>
+      GoRouterState.of(context);
 
   /// Configures the modular router with the provided modules and options.
   ///
@@ -171,6 +175,32 @@ class GoRouterModular {
   }
 }
 
+class RouteWithCompleterService {
+  const RouteWithCompleterService._();
+
+  /// Map to store route completers.
+  static final List<Completer> _stackCompleters = [];
+
+  /// Completes the navigation for a specific route.
+  ///
+  /// - [route]: The route path to complete.
+  static void setCompleteRoute(String route) {
+    _stackCompleters.add(Completer<void>());
+  }
+
+  static Completer getLastCompleteRoute() {
+    final completer = _stackCompleters.isNotEmpty
+        ? _stackCompleters.removeLast()
+        : Completer<void>();
+    return completer;
+  }
+
+  /// Checks if any route completer exists.
+  static bool hasRouteCompleter() {
+    return _stackCompleters.isNotEmpty;
+  }
+}
+
 /// Extension to add functionalities to [BuildContext] for GoRouter.
 extension GoRouterExtension on BuildContext {
   /// Returns the value of a URL parameter by its name.
@@ -209,5 +239,297 @@ extension GoRouterExtension on BuildContext {
   ///   ```
   GoRouterState get state {
     return GoRouterState.of(this);
+  }
+
+  /// Navega para a rota [routeName] e retorna um [Future]
+  /// que completa quando a nova página for construída.
+  /// This method is similar to [goAsync] but uses a named route instead of a path
+  /// to navigate.
+  /// - [routeName]: The name of the route to navigate to.
+  /// - [pathParameters]: Optional path parameters to include in the route.
+  /// - [queryParameters]: Optional query parameters to include in the route.
+  /// - [extra]: Optional extra data to pass to the route.
+  /// - [onComplete]: Optional callback to execute when the navigation completes.
+  /// - **Returns**: A [Future] that completes when the navigation is done.
+  /// - **Example**:
+  ///   ```dart
+  ///   await context.goNamedAsync(
+  ///     'userProfile',
+  ///     pathParameters: {'userId': '123'},
+  ///     queryParameters: {'ref': 'home'},
+  ///     extra: {'someData': 'value'},
+  ///     onComplete: () {
+  ///       print('Navigation completed!');
+  ///     },
+  ///   );
+  Future<void> goNamedAsync(
+    String routeName, {
+    Map<String, String> pathParameters = const {},
+    Map<String, String> queryParameters = const {},
+    Object? extra,
+    VoidCallback? onComplete,
+  }) {
+    RouteWithCompleterService.setCompleteRoute(routeName);
+
+    GoRouter.of(this).goNamed(
+      routeName,
+      pathParameters: pathParameters,
+      queryParameters: queryParameters,
+      extra: extra,
+    );
+
+    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
+      onComplete?.call();
+    });
+  }
+
+  /// Navega para a rota [routeName] e retorna um [Future]
+  /// que completa quando a nova página for construída.
+  /// This method is similar to [goNamedAsync] but uses the route path instead of a named route
+  /// to navigate.
+  /// - [routeName]: The path of the route to navigate to.
+  /// - [extra]: Optional extra data to pass to the route.
+  /// - [onComplete]: Optional callback to execute when the navigation completes.
+  /// - **Returns**: A [Future] that completes when the navigation is done.
+  /// - **Example**:
+  ///  ```dart
+  ///  await context.goAsync(
+  ///   '/user',
+  ///   extra: {'someData': 'value'},
+  ///   onComplete: () {
+  ///     print('Navigation completed!');
+  ///   },
+  /// });
+  Future<void> goAsync(
+    String routeName, {
+    Object? extra,
+    VoidCallback? onComplete,
+  }) {
+    RouteWithCompleterService.setCompleteRoute(routeName);
+
+    GoRouter.of(this).go(
+      routeName,
+      extra: extra,
+    );
+
+    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
+      onComplete?.call();
+    });
+  }
+
+  /// Pushes a new route onto the navigation stack and returns a [Future]
+  /// that completes when the new page is built.
+  /// - [routeName]: The name of the route to push.
+  /// - [extra]: Optional extra data to pass to the route.
+  /// - [onComplete]: Optional callback to execute when the navigation completes.
+  /// - **Returns**: A [Future] that completes when the navigation is done.
+  /// - **Example**:
+  ///  ```dart
+  /// await context.pushAsync(
+  ///  '/user',
+  ///   extra: {'someData': 'value'},
+  ///   onComplete: () {
+  ///     print('Navigation completed!');
+  ///   },
+  /// });
+  Future<void> pushAsync(
+    String routeName, {
+    Object? extra,
+    VoidCallback? onComplete,
+  }) {
+    RouteWithCompleterService.setCompleteRoute(routeName);
+
+    GoRouter.of(this).push(
+      routeName,
+      extra: extra,
+    );
+
+    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
+      onComplete?.call();
+    });
+  }
+
+  /// Pushes a named route onto the navigation stack and returns a [Future]
+  /// that completes when the new page is built.
+  /// - [routeName]: The name of the route to push.
+  /// - [pathParameters]: Optional path parameters to include in the route.
+  /// - [queryParameters]: Optional query parameters to include in the route.
+  /// - [extra]: Optional extra data to pass to the route.
+  /// - [onComplete]: Optional callback to execute when the navigation completes.
+  /// - **Returns**: A [Future] that completes when the navigation is done.
+  /// - **Example**:
+  ///  ```dart
+  /// await context.pushNamedAsync(
+  ///  'userProfile',
+  ///   pathParameters: {'userId': '123'},
+  ///   queryParameters: {'ref': 'home'},
+  ///   extra: {'someData': 'value'},
+  ///   onComplete: () {
+  ///     print('Navigation completed!');
+  ///   },
+  /// });
+  Future<void> pushNamedAsync(
+    String routeName, {
+    Map<String, String> pathParameters = const {},
+    Map<String, String> queryParameters = const {},
+    Object? extra,
+    VoidCallback? onComplete,
+  }) {
+    RouteWithCompleterService.setCompleteRoute(routeName);
+
+    GoRouter.of(this).pushNamed(
+      routeName,
+      pathParameters: pathParameters,
+      queryParameters: queryParameters,
+      extra: extra,
+    );
+
+    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
+      onComplete?.call();
+    });
+  }
+
+  /// Pushes a new route onto the navigation stack and replaces the current route.
+  /// Returns a [Future] that completes when the new page is built.
+  /// - [routeName]: The name of the route to push and replace.
+  /// - [extra]: Optional extra data to pass to the route.
+  /// - [onComplete]: Optional callback to execute when the navigation completes.
+  /// - **Returns**: A [Future] that completes when the navigation is done.
+  /// - **Example**:
+  /// ```dart
+  /// await context.pushReplacementAsync(
+  ///  '/user',
+  ///   extra: {'someData': 'value'},
+  ///   onComplete: () {
+  ///     print('Navigation completed!');
+  ///   },
+  /// });
+  Future<void> pushReplacementAsync(
+    String routeName, {
+    Object? extra,
+    VoidCallback? onComplete,
+  }) {
+    RouteWithCompleterService.setCompleteRoute(routeName);
+
+    GoRouter.of(this).pushReplacement(
+      routeName,
+      extra: extra,
+    );
+
+    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
+      onComplete?.call();
+    });
+  }
+
+  /// Pushes a named route onto the navigation stack and replaces the current route.
+  /// Returns a [Future] that completes when the new page is built.
+  /// - [routeName]: The name of the route to push and replace.
+  /// - [pathParameters]: Optional path parameters to include in the route.
+  /// - [queryParameters]: Optional query parameters to include in the route.
+  /// - [extra]: Optional extra data to pass to the route.
+  /// - [onComplete]: Optional callback to execute when the navigation completes.
+  /// - **Returns**: A [Future] that completes when the navigation is done.
+  /// - **Example**:
+  /// ```dart
+  /// await context.pushReplacementNamedAsync(
+  ///   'userProfile',
+  ///   pathParameters: {'userId': '123'},
+  ///   queryParameters: {'ref': 'home'},
+  ///   extra: {'someData': 'value'},
+  ///   onComplete: () {
+  ///     print('Navigation completed!');
+  ///   },
+  /// });
+  Future<void> pushReplacementNamedAsync(
+    String routeName, {
+    Map<String, String> pathParameters = const {},
+    Map<String, String> queryParameters = const {},
+    Object? extra,
+    VoidCallback? onComplete,
+  }) {
+    RouteWithCompleterService.setCompleteRoute(routeName);
+
+    GoRouter.of(this).pushReplacementNamed(
+      routeName,
+      pathParameters: pathParameters,
+      queryParameters: queryParameters,
+      extra: extra,
+    );
+
+    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
+      onComplete?.call();
+    });
+  }
+
+  /// Replaces the current route with a new route and returns a [Future]
+  /// that completes when the new page is built.
+  /// - [routeName]: The name of the route to replace with.
+  /// - [extra]: Optional extra data to pass to the route.
+  /// - [onComplete]: Optional callback to execute when the navigation completes.
+  /// - **Returns**: A [Future] that completes when the navigation is done.
+  /// - **Example**:
+  /// ```dart
+  /// await context.replaceAsync(
+  ///   '/user',
+  ///   extra: {'someData': 'value'},
+  ///   onComplete: () {
+  ///     print('Navigation completed!');
+  ///   },
+  /// });
+  Future<void> replaceAsync(
+    String routeName, {
+    Object? extra,
+    VoidCallback? onComplete,
+  }) {
+    RouteWithCompleterService.setCompleteRoute(routeName);
+
+    GoRouter.of(this).replace(
+      routeName,
+      extra: extra,
+    );
+
+    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
+      onComplete?.call();
+    });
+  }
+
+  /// Replaces the current route with a named route and returns a [Future]
+  /// that completes when the new page is built.
+  /// - [routeName]: The name of the route to replace with.
+  /// - [pathParameters]: Optional path parameters to include in the route.
+  /// - [queryParameters]: Optional query parameters to include in the route.
+  /// - [extra]: Optional extra data to pass to the route.
+  /// - [onComplete]: Optional callback to execute when the navigation completes.
+  /// - **Returns**: A [Future] that completes when the navigation is done.
+  /// - **Example**:
+  /// ```dart
+  /// await context.replaceNamedAsync(
+  ///  'userProfile',
+  ///   pathParameters: {'userId': '123'},
+  ///   queryParameters: {'ref': 'home'},
+  ///   extra: {'someData': 'value'},
+  ///   onComplete: () {
+  ///     print('Navigation completed!');
+  ///   },
+  /// });
+  Future<void> replaceNamedAsync(
+    String routeName, {
+    Map<String, String> pathParameters = const {},
+    Map<String, String> queryParameters = const {},
+    Object? extra,
+    VoidCallback? onComplete,
+  }) {
+    RouteWithCompleterService.setCompleteRoute(routeName);
+
+    GoRouter.of(this).replaceNamed(
+      routeName,
+      pathParameters: pathParameters,
+      queryParameters: queryParameters,
+      extra: extra,
+    );
+
+    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
+      onComplete?.call();
+    });
   }
 }
