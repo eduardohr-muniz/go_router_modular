@@ -1,4 +1,5 @@
 # 🧩 GoRouter Modular 💉
+
 ## Simplifying modules dependency injections
 
 GoRouter Modular simplifies Flutter development by implementing a modular architecture.
@@ -18,6 +19,7 @@ Simplify your Flutter app development and accelerate your workflow with GoRouter
 > Below you will find examples of the structure and how each file should look.
 
 ### Project Structure Example
+
 ```css
 📁 src
    📁 modules
@@ -31,6 +33,7 @@ Simplify your Flutter app development and accelerate your workflow with GoRouter
 ```
 
 #### Main Example
+
 ```dart
 import 'package:example/src/app_module.dart';
 import 'package:example/src/app_widget.dart';
@@ -50,6 +53,7 @@ void main() {
 ```
 
 #### AppWidget Example
+
 ```dart
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
@@ -70,6 +74,7 @@ class AppWidget extends StatelessWidget {
 ```
 
 #### AppModule Example
+
 ```dart
 import 'package:go_router_modular/go_router_modular.dart';
 import 'modules/home/home_module.dart';
@@ -119,7 +124,7 @@ You can customize the loader appearance by creating a `CustomModularLoader`:
 class MyLoader extends CustomModularLoader {
   @override
   Color get backgroundColor => Colors.black87;
-  
+
   @override
   Widget get child => const Column(
     mainAxisSize: MainAxisSize.min,
@@ -146,23 +151,83 @@ return ModularApp.router(
 );
 ```
 
+## Local Custom Loader
+
+### goAsync
+
+The `goAsync` method is used to perform asynchronous navigation between pages. It allows you to `await` the navigation, making it possible to customize the loading indicator on your current page before navigating.
+
+- **`onComplete` Callback:** You can provide an optional `onComplete` function that will be executed automatically after navigation is complete. This is useful for actions such as displaying messages, updating state, or logging events.
+
+The same behavior applies to the following methods:
+
+- goAsync
+- goNamedAsync
+- pushAsync
+- pushNamedAsync
+- pushReplacementAsync
+- pushReplacementNamedAsync
+- replaceAsync
+- replaceNamedAsync
+
+### Usage Example
+
+````dart
+```dart
+ElevatedButton(
+  onPressed: () async {
+    setState(() => isLoading = true);
+
+    /// Wait for the page to load
+    await context.goAsync(
+      '/user',
+      onComplete: () { // optional
+        print('Navigation completed');
+      },
+    );
+
+    setState(() => isLoading = false);
+  },
+)
+
+ElevatedButton(
+  onPressed: () async {
+    setState(() => isLoading = true);
+
+    /// Wait for the page to load
+    await context.goNamedAsync(
+      '/user',
+      onComplete: () { // optional
+        print('Navigation completed');
+      },
+    );
+
+    setState(() => isLoading = false);
+  },
+)
+````
+
 # 💉 DEPENDENCY INJECTION
 
 ⚠️ **Attention**
+
 > Every dependency when placed in a **BIND** must be **TYPED** for correct operation.
 
 Example:
+
 ```dart
 ✅  Bind.singleton<HomeController>((i) => HomeController())
 ✅  Bind.singleton((i) => HomeController())
 ```
 
 ### Injecting Dependencies
+
 Create a class for your module and extend it from `Module`. Add your dependencies in the `binds()` method.
 
 > As soon as there are no active routes for your module in the widget tree, the module will automatically dispose of the binds.
 
 Example:
+
 ```dart
 import 'package:go_router_modular/go_router_modular.dart';
 import 'pages/home_page.dart';
@@ -182,6 +247,7 @@ class HomeModule extends Module {
 ```
 
 ### Module Imports
+
 You can import other modules to share their dependencies:
 
 ```dart
@@ -197,6 +263,7 @@ class UserModule extends Module {
 ```
 
 ### Module Lifecycle
+
 Modules have lifecycle methods for initialization and cleanup:
 
 ```dart
@@ -225,7 +292,9 @@ class AuthModule extends Module {
 ```
 
 ### Global Dependencies
+
 Simply place your binds in your `AppModule`.
+
 > Your `AppModule` will never be disposed of.
 
 ```dart
@@ -238,6 +307,7 @@ class AppModule extends Module {
 ```
 
 ### Retrieving Dependencies
+
 To retrieve a dependency, you have three options:
 
 ```dart
@@ -259,19 +329,21 @@ You can follow the GoRouter documentation for navigation: [GoRouter Documentatio
 > Note that every module must have a root route ("/") that serves as the parent route for the module.
 
 ### ChildRoutes
+
 ```dart
 class HomeModule extends Module {
   @override
   List<ModularRoute> get routes => [
     ChildRoute('/', child: (context, state) => const HomePage()), // Required root route
     ChildRoute('/config', child: (context, state) => const ConfigPage()),
-    ChildRoute('/info_product/:id', child: (context, state) => 
+    ChildRoute('/info_product/:id', child: (context, state) =>
       InfoProductPage(id: state.pathParameters['id']!)),
   ];
 }
 ```
 
 ### Module Routes
+
 Your module can also have submodules:
 
 > Note that when a route calls a module, it will fall into the module's "/" route.
@@ -288,6 +360,7 @@ class AppModule extends Module {
 ```
 
 ### Shell Routes
+
 ShellModularRoute is the equivalent of Flutter Modular's RouteOutlet. It allows you to have a navigation window within a page, commonly used for menu construction where options change but only the screen content updates.
 
 > For more details: [GoRouter ShellRoute Documentation](https://pub.dev/documentation/go_router/latest/go_router/ShellRoute-class.html)
@@ -309,6 +382,7 @@ class HomeShellModule extends Module {
 ```
 
 #### ShellPageExample
+
 ```dart
 class ShellPageExample extends StatefulWidget {
   final Widget shellChild; // Request a child WIDGET to be rendered in the shell
@@ -343,6 +417,7 @@ class _ShellPageExampleState extends State<ShellPageExample> {
 ```
 
 ### Navigation Examples
+
 Navigating to a destination in GoRouter will replace the current stack of screens:
 
 ```dart
@@ -366,6 +441,7 @@ For more complete examples, visit the [GoRouter Documentation](https://pub.dev/d
 # 🔄 MIGRATION GUIDE
 
 ## Migrating from Version 2.x to 4.x
+
 ### Breaking Changes Migration Steps
 
 1. **Update Root Routes**: Ensure every module has a root ChildRoute with path "/"
@@ -377,6 +453,7 @@ For more complete examples, visit the [GoRouter Documentation](https://pub.dev/d
 ### Example Complete Migration
 
 **Before (2.x):**
+
 ```dart
 class UserModule extends Module {
   @override
@@ -404,6 +481,7 @@ class AppWidget extends StatelessWidget {
 ```
 
 **After (4.x):**
+
 ```dart
 class UserModule extends Module {
   @override

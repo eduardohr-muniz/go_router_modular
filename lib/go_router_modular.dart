@@ -13,6 +13,6 @@ export 'src/routes/child_route.dart';
 export 'src/routes/i_modular_route.dart';
 export 'src/routes/module_route.dart';
 export 'src/routes/shell_modular_route.dart';
-export 'package:go_router/go_router.dart' hide GoRouter hide ShellRoute;
+export 'package:go_router/go_router.dart' hide GoRouter, ShellRoute;
 export 'package:go_router_modular/src/material_app_router.dart';
 export 'package:go_router_modular/src/modular_loader.dart';

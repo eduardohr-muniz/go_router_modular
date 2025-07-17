@@ -9,6 +9,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool isLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,10 +47,17 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                context.go('/user');
+              /// behavior with
+              /// local loading handling
+              onPressed: () async {
+                setState(() => isLoading = true);
+                await context.push('/user');
+                setState(() => isLoading = false);
               },
-              child: const Text('Módulo User'),
+              child: isLoading
+                  ? const SizedBox(
+                      height: 15, width: 15, child: CircularProgressIndicator())
+                  : const Text('Módulo User'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
