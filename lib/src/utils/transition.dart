@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/src/page_transition_enum.dart';
+import 'package:go_router_modular/src/utils/page_transition_enum.dart';
 
 class Transition {
   Transition._();

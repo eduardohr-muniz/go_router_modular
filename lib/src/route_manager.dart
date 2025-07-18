@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/widgets.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/delay_dispose.dart';
-import 'package:go_router_modular/src/internal_logs.dart';
+import 'package:go_router_modular/src/utils/delay_dispose.dart';
+import 'package:go_router_modular/src/utils/internal_logs.dart';
 
 class RouteManager {
   static final RouteManager _instance = RouteManager._();
