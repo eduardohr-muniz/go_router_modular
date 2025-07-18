@@ -42,7 +42,6 @@ abstract class Module {
               ),
       parentNavigatorKey: childRoute.parentNavigatorKey,
       redirect: childRoute.redirect,
-      onExit: (context, state) => _handleRouteExit(context, state: state, route: childRoute, module: this),
     );
   }
 
@@ -62,11 +61,10 @@ abstract class Module {
     return GoRoute(
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
-      builder: (context, state) => _buildModuleChild(context, state: state, module: module, route: childRoute),
+      builder: (context, state) => ShellPopWrapper(onExit: () => _handleRouteExit(context, module: module.module), child: _buildModuleChild(context, state: state, module: module, route: childRoute)),
       routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
       redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: childRoute?.redirect, topLevel: topLevel),
-      onExit: (context, state) => _handleRouteExit(context, state: state, route: childRoute, module: module.module),
     );
   }
 
@@ -81,12 +79,12 @@ abstract class Module {
     if (RouteWithCompleterService.hasRouteCompleter()) {
       final completer = RouteWithCompleterService.getLastCompleteRoute();
 
-      await _register(path: modulePath, module: module);
+      await _register(module: module);
       completer.complete();
     } else {
       try {
         ModularLoader.show();
-        await _register(path: modulePath, module: module);
+        await _register(module: module);
       } finally {
         ModularLoader.hide();
       }
@@ -105,7 +103,7 @@ abstract class Module {
   List<RouteBase> _createShellRoutes(bool topLevel, String modulePath) {
     return routes.whereType<ShellModularRoute>().map((shellRoute) {
       return ShellRoute(
-        builder: (context, state, child) => shellRoute.builder!(context, state, ShellPopWrapper(onExit: () => _handleRouteExit(context, state: state, route: null, module: this, shellPath: modulePath), child: child)),
+        builder: (context, state, child) => shellRoute.builder!(context, state, ShellPopWrapper(onExit: () => _handleRouteExit(context, module: this), child: child)),
         pageBuilder: shellRoute.pageBuilder != null ? (context, state, child) => shellRoute.pageBuilder!(context, state, child) : null,
         redirect: shellRoute.redirect,
         navigatorKey: shellRoute.navigatorKey,
@@ -170,55 +168,20 @@ abstract class Module {
     return route?.child(context, state) ?? Container();
   }
 
-  FutureOr<bool> _handleRouteExit(BuildContext context, {required GoRouterState state, required ChildRoute? route, String? shellPath, required Module module}) {
-    iLog('🚪 EXIT ROUTE: ${state.path} - Módulo: ${module.runtimeType} - ShellPath: $shellPath', name: "EXIT_DEBUG");
-    final completer = Completer<bool>();
-    final onExit = route?.onExit?.call(context, state) ?? Future.value(true);
-    completer.complete(onExit);
-    return completer.future.then((exit) {
-      try {
-        if (exit) {
-          iLog('🗑️ UNREGISTERING: ${state.path} - Módulo: ${module.runtimeType}', name: "EXIT_DEBUG");
-          _unregister(state.path.toString(), module: module);
-          if (shellPath != null) {
-            _unregister(shellPath, module: module);
-          }
-        } else {
-          iLog('❌ EXIT BLOCKED: ${state.path} - Módulo: ${module.runtimeType}', name: "EXIT_DEBUG");
-        }
-        return exit;
-      } catch (e) {
-        iLog('💥 ERROR ON EXIT: ${state.path} - Módulo: ${module.runtimeType} - Error: $e', name: "EXIT_DEBUG");
-        return false;
-      }
-    });
+  void _handleRouteExit(BuildContext context, {required Module module}) {
+    _unregister(module: module);
   }
 
-  Future<void> _register({required String path, Module? module}) async {
+  Future<void> _register({Module? module}) async {
     final targetModule = module ?? this;
-    final queueKey = '${targetModule.runtimeType}:$path';
 
-    try {
-      // Executa o registro com prioridade
-      iLog('💉 REGISTERING BINDS: ${targetModule.runtimeType} para path: $path', name: "BIND_REGISTER");
-      await RouteManager().registerBindsIfNeeded(targetModule);
-
-      if (path != '/') {
-        RouteManager().registerRoute(path, targetModule);
-      }
-      iLog('✅ BINDS REGISTERED: ${targetModule.runtimeType} para path: $path', name: "BIND_REGISTER");
-    } finally {
-      // Remove da fila e completa
-      iLog('🏁 FINALIZANDO EXECUÇÃO: $queueKey', name: "PRIORITY_DEBUG");
-    }
+    await RouteManager().registerBindsModule(targetModule);
   }
 
-  void _unregister(String path, {Module? module}) {
+  void _unregister({Module? module}) {
     final targetModule = module ?? this;
-    iLog('🗑️ UNREGISTER: ${targetModule.runtimeType} para path: $path', name: "UNREGISTER_DEBUG");
-    RouteManager().unregisterRoute(path, targetModule);
 
-    iLog('✅ UNREGISTER COMPLETADO: ${targetModule.runtimeType} para path: $path', name: "UNREGISTER_DEBUG");
+    RouteManager().unregisterModule(targetModule);
   }
 
   // Limpa entradas do cache de transições para um módulo específico
