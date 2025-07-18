@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
-import 'package:go_router_modular/src/utils/shell_pop_wrapper.dart';
+import 'package:go_router_modular/src/utils/parent_widget_observer.dart';
 
 abstract class Module {
   FutureOr<List<Module>> imports() => [];
@@ -61,7 +61,7 @@ abstract class Module {
     return GoRoute(
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
-      builder: (context, state) => ShellPopWrapper(onExit: () => _handleRouteExit(context, module: module.module), child: _buildModuleChild(context, state: state, module: module, route: childRoute)),
+      builder: (context, state) => ParentWidgetObserver(onDispose: () => _handleRouteExit(context, module: module.module), child: _buildModuleChild(context, state: state, module: module, route: childRoute)),
       routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
       redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: childRoute?.redirect, topLevel: topLevel),
@@ -103,7 +103,7 @@ abstract class Module {
   List<RouteBase> _createShellRoutes(bool topLevel, String modulePath) {
     return routes.whereType<ShellModularRoute>().map((shellRoute) {
       return ShellRoute(
-        builder: (context, state, child) => shellRoute.builder!(context, state, ShellPopWrapper(onExit: () => _handleRouteExit(context, module: this), child: child)),
+        builder: (context, state, child) => shellRoute.builder!(context, state, ParentWidgetObserver(onDispose: () => _handleRouteExit(context, module: this), child: child)),
         pageBuilder: shellRoute.pageBuilder != null ? (context, state, child) => shellRoute.pageBuilder!(context, state, child) : null,
         redirect: shellRoute.redirect,
         navigatorKey: shellRoute.navigatorKey,
