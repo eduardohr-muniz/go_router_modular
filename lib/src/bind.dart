@@ -4,12 +4,14 @@ class Bind<T> {
   final T Function(Injector i) factoryFunction;
   final bool isSingleton;
   final bool isLazy;
+  final StackTrace stackTrace;
   T? _instance;
 
   Bind(
     this.factoryFunction, {
     this.isSingleton = true,
     this.isLazy = true,
+    required this.stackTrace,
   });
 
   T get instance {
@@ -49,7 +51,12 @@ class Bind<T> {
     if (bind == null) {
       for (var entry in _bindsMap.entries) {
         if (entry.value.instance is T) {
-          bind = Bind<T>((injector) => entry.value.instance, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy);
+          bind = Bind<T>(
+            (injector) => entry.value.instance,
+            isSingleton: entry.value.isSingleton,
+            isLazy: entry.value.isLazy,
+            stackTrace: entry.value.stackTrace,
+          );
           _bindsMap[T] = bind; // Atualiza o mapa com o novo Bind encontrado
           break;
         }
@@ -66,7 +73,12 @@ class Bind<T> {
   static T get<T>() => _find<T>();
 
   static Bind<T> singleton<T>(T Function(Injector i) builder) {
-    final bind = Bind<T>(builder, isSingleton: true, isLazy: false);
+    final bind = Bind<T>(
+      builder,
+      isSingleton: true,
+      isLazy: false,
+      stackTrace: StackTrace.current,
+    );
     return bind;
   }
 
@@ -76,7 +88,12 @@ class Bind<T> {
   // }
 
   static Bind<T> factory<T>(T Function(Injector i) builder) {
-    final bind = Bind<T>(builder, isSingleton: false, isLazy: false);
+    final bind = Bind<T>(
+      builder,
+      isSingleton: false,
+      isLazy: false,
+      stackTrace: StackTrace.current,
+    );
     return bind;
   }
 }

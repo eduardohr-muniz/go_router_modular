@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/bind.dart';
-import 'package:go_router_modular/src/utils/delay_dispose.dart';
 import 'package:go_router_modular/src/module.dart';
 import 'package:go_router_modular/src/utils/page_transition_enum.dart';
 
@@ -140,12 +140,6 @@ class GoRouterModular {
     _pageTansition = pageTransition;
     _debugLogDiagnostics = debugLogDiagnostics;
     GoRouter.optionURLReflectsImperativeAPIs = true;
-
-    assert(
-      delayDisposeMilliseconds > 500,
-      '❌ delayDisposeMilliseconds must be at least 500ms - Check `go_router_modular main.dart`.',
-    );
-    setModularDelayDisposeMiliseconds(delayDisposeMilliseconds);
 
     _router = GoRouter(
       routes: appModule.configureRoutes(topLevel: true),

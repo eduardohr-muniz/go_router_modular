@@ -47,6 +47,13 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
+              onPressed: () {
+                context.go('/auto-resolve');
+              },
+              child: const Text('Módulo Auto Resolve'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
               /// behavior with
               /// local loading handling
               onPressed: () async {
@@ -54,10 +61,7 @@ class _HomePageState extends State<HomePage> {
                 await context.push('/user');
                 setState(() => isLoading = false);
               },
-              child: isLoading
-                  ? const SizedBox(
-                      height: 15, width: 15, child: CircularProgressIndicator())
-                  : const Text('Módulo User'),
+              child: isLoading ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator()) : const Text('Módulo User'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -133,6 +137,17 @@ class _HomePageState extends State<HomePage> {
                 foregroundColor: Colors.white,
               ),
               child: const Text('Parâmetro Ausente'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                context.go('/injector-error');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Injeção com erro'),
             ),
           ],
         ),

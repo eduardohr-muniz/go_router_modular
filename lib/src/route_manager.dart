@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:developer';
+
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/utils/error.dart';
 
 class RouteManager {
   static final RouteManager _instance = RouteManager._();
@@ -37,7 +39,7 @@ class RouteManager {
 
     final imports = await module.imports();
 
-    Future.forEach(imports, (module) async {
+    await Future.forEach(imports, (module) async {
       final binds = await module.binds();
       allImportedBinds.addAll(binds);
       allImportedBinds.addAll(await _getAllImportedBindsRecursively(module, visited));
@@ -86,14 +88,15 @@ class RouteManager {
     if (queueBinds.length < binds.length) {
       _recursiveRegisterBinds(queueBinds);
     } else if (queueBinds.isNotEmpty) {
-      for (var bind in queueBinds) {
-        try {
-          _incrementBindReference(bind.instance.runtimeType);
-          Bind.register(bind);
-        } catch (e) {
-          rethrow;
-        }
+      for (var bindError in queueBinds) {
+        log('ERROR: ${bindError.runtimeType}', name: "❌");
+        log(bindError.stackTrace.toString().split('\n').sublist(0, 4).join("\n"), name: "❌");
       }
+      throw InjectorGoRouterModularError(
+        'Error registering binds',
+        StackTrace.current,
+        queueBinds,
+      );
     }
   }
 
@@ -124,13 +127,8 @@ class RouteManager {
   }
 
   // Notifica que um módulo foi disposto para limpeza de cache
-
   void _incrementBindReference(Type type) {
-    if (_bindReferences.containsKey(type)) {
-      _bindReferences[type] = (_bindReferences[type] ?? 0) + 1;
-    } else {
-      _bindReferences[type] = 1;
-    }
+    _bindReferences[type] = (_bindReferences[type] ?? 0) + 1;
   }
 
   bool _decrementBindReference(Type type) {
