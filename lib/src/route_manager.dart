@@ -6,10 +6,10 @@ class RouteManager {
   static final RouteManager _instance = RouteManager._();
   final Map<Type, int> _bindReferences = {};
   Module? _appModule;
-  final List<Type> _injectedBinds = [];
+
   final Injector _injector = Injector();
 
-  final Map<Module, Set<Type>> _bindsToDispose = {};
+  final Map<Module, Set<Type>> _moduleBindTypes = {};
 
   RouteManager._();
 
@@ -47,10 +47,9 @@ class RouteManager {
   }
 
   Future<void> registerBindsModule(Module module) async {
-    if (_injectedBinds.contains(module.runtimeType)) {
+    if (_moduleBindTypes.containsKey(module)) {
       return;
     }
-    _injectedBinds.add(module.runtimeType);
 
     final moduleBinds = await module.binds();
 
@@ -59,7 +58,7 @@ class RouteManager {
     List<Bind<Object>> allBinds = [...moduleBinds, ...importedBinds];
 
     _recursiveRegisterBinds(allBinds);
-    _bindsToDispose[module] = allBinds.map((e) => e.instance.runtimeType).toSet();
+    _moduleBindTypes[module] = allBinds.map((e) => e.instance.runtimeType).toSet();
 
     module.initState(_injector);
 
@@ -103,19 +102,24 @@ class RouteManager {
       return;
     }
 
-    final List<Type> bindsToDispose = _bindsToDispose[module]?.toList() ?? [];
+    final Set<Type> bindsToDispose = _moduleBindTypes[module] ?? {};
 
-    if (Modular.debugLogDiagnostics) {
-      log('DISPOSED: ${module.runtimeType} BINDS: ', name: "🗑️");
-    }
+    List<Type> disposedBinds = [];
 
     for (var bind in bindsToDispose) {
       try {
-        _decrementBindReference(bind.runtimeType);
-      } catch (e) {}
+        final disposed = _decrementBindReference(bind);
+        if (disposed) {
+          disposedBinds.add(bind);
+        }
+      } catch (_) {}
     }
 
-    bindsToDispose.map((type) => Bind.disposeByType(type)).toList();
+    if (Modular.debugLogDiagnostics) {
+      log('DISPOSED: ${module.runtimeType} BINDS: ${disposedBinds.map((e) => e.toString()).toList()}', name: "🗑️");
+    }
+
+    bindsToDispose.map((type) => Bind.disposeByType(type.runtimeType)).toList();
     bindsToDispose.clear();
   }
 
@@ -129,26 +133,20 @@ class RouteManager {
     }
   }
 
-  void _decrementBindReference(Type type) {
+  bool _decrementBindReference(Type type) {
     if (_bindReferences.containsKey(type)) {
       _bindReferences[type] = (_bindReferences[type] ?? 1) - 1;
       if (_bindReferences[type] == 0) {
         _bindReferences.remove(type);
+        return true;
       }
     }
-  }
-
-  // final Set<Module> _modulesBeingDisposed = {};
-
-  void _disposeModule(Module module) {
-    module.dispose();
-    unregisterBinds(module);
-    // _modulesBeingDisposed.remove(module);
-    _injectedBinds.remove(module.runtimeType);
+    return false;
   }
 
   void unregisterModule(Module module) {
-    // _modulesBeingDisposed.add(module);
-    _disposeModule(module);
+    module.dispose();
+    unregisterBinds(module);
+    _moduleBindTypes.remove(module);
   }
 }
