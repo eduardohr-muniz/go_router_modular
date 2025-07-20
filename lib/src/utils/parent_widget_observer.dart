@@ -36,6 +36,10 @@ class _ParentWidgetObserverState extends State<ParentWidgetObserver> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (snapshot.hasError) {
+            return Center(child: Text(snapshot.error.toString()));
+          }
+
           if (snapshot.connectionState == ConnectionState.done) {
             return widget.child;
           }

@@ -72,7 +72,7 @@ abstract class Module {
       name: childRoute?.name ?? module.name,
       builder: (context, state) => ParentWidgetObserver(
         initState: (module) async => await _register(module: module),
-        onDispose: (module) => _handleRouteExit(context, module: module),
+        onDispose: (module) => _onDisposeModule(module: module),
         didChangeDependencies: (module) => disposeDid(module),
         module: module.module,
         child: _buildModuleChild(context, state: state, module: module, route: childRoute),
@@ -124,7 +124,7 @@ abstract class Module {
           state,
           ParentWidgetObserver(
             initState: (module) async => await _register(module: module),
-            onDispose: (module) => _handleRouteExit(context, module: module),
+            onDispose: (module) => _onDisposeModule(module: module),
             didChangeDependencies: (module) => disposeDid(module),
             module: this,
             child: child,
@@ -194,17 +194,13 @@ abstract class Module {
     return route?.child(context, state) ?? Container();
   }
 
-  void _handleRouteExit(BuildContext context, {required Module module}) {
-    _unregister(module: module);
-  }
-
   Future<void> _register({Module? module}) async {
     final targetModule = module ?? this;
 
     await RouteManager().registerBindsModule(targetModule);
   }
 
-  void _unregister({Module? module}) {
+  void _onDisposeModule({Module? module}) {
     final targetModule = module ?? this;
     if (disposeDidChange.contains(targetModule)) return;
 
