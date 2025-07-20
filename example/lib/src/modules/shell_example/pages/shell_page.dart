@@ -3,10 +3,12 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class ShellPage extends StatefulWidget {
   final Widget child;
+  final GoRouterState state;
 
   const ShellPage({
     super.key,
     required this.child,
+    required this.state,
   });
 
   @override
@@ -17,13 +19,21 @@ class _ShellPageState extends State<ShellPage> {
   int _selectedIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    final result = GoRouterModular.getCurrentPathOf(context);
+
+    print(result);
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _updateSelectedIndex();
   }
 
   void _updateSelectedIndex() {
-    final location = context.getPath ?? '';
+    final location = widget.state.fullPath!;
     if (location.contains('/shell/dashboard')) {
       _selectedIndex = 0;
     } else if (location.contains('/shell/profile')) {
@@ -40,13 +50,13 @@ class _ShellPageState extends State<ShellPage> {
 
     switch (index) {
       case 0:
-        context.push('/shell/dashboard');
+        context.pushReplacement('/shell/dashboard');
         break;
       case 1:
-        context.push('/shell/profile');
+        context.pushReplacement('/shell/profile');
         break;
       case 2:
-        context.push('/shell/settings');
+        context.pushReplacement('/shell/settings');
         break;
     }
   }

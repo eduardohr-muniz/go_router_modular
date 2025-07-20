@@ -11,18 +11,18 @@ import 'modules/shell_example/shell_module.dart';
 import 'modules/user/user_module.dart';
 
 class AppModule extends Module {
-  static final List<Module> _staticImports = [SharedModule()];
-  static final List<Bind<Object>> _staticBinds = [
-    Bind.singleton<AppService>((i) => AppService()),
-  ];
-  static final List<ModularRoute> _staticRoutes = [
-    ModuleRoute('/', module: HomeModule()),
-    ModuleRoute('/auth', module: AuthModule()),
-    ModuleRoute('/user', module: UserModule()),
-    ModuleRoute('/shell', module: ShellExampleModule()),
-    ModuleRoute('/injector-error', module: InjectorErrorModule()),
-    ModuleRoute('/auto-resolve', module: AutoResolveModule()),
-  ];
+  List<Module> get _staticImports => [SharedModule()];
+  List<Bind<Object>> get _staticBinds => [
+        Bind.factory<AppService>((i) => AppService()),
+      ];
+  List<ModularRoute> get _staticRoutes => [
+        ModuleRoute('/', module: HomeModule()),
+        ModuleRoute('/auth', module: AuthModule()),
+        ModuleRoute('/user', module: UserModule()),
+        ModuleRoute('/shell', module: ShellExampleModule()),
+        ModuleRoute('/injector-error', module: InjectorErrorModule()),
+        ModuleRoute('/auto-resolve', module: AutoResolveModule()),
+      ];
 
   @override
   FutureOr<List<Module>> imports() {

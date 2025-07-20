@@ -14,6 +14,8 @@ dependencies:
   flutter:
     sdk: flutter
   go_router: ">=14.3.0"
+  meta: ^1.16.0
+  universal_html: ^2.2.4
 
 dev_dependencies:
   flutter_test:

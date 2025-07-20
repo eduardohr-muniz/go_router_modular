@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                context.go('/auto-resolve');
+                context.push('/auto-resolve');
               },
               child: const Text('Módulo Auto Resolve'),
             ),

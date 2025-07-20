@@ -19,12 +19,12 @@ class RouteManager {
     return _instance;
   }
 
-  void registerBindsAppModule(Module module) {
+  Future<void> registerBindsAppModule(Module module) async {
     if (_appModule != null) {
       return;
     }
     _appModule = module;
-    registerBindsModule(module);
+    await registerBindsModule(module);
   }
 
   /// Coleta recursivamente todos os binds de imports aninhados

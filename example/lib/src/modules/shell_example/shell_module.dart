@@ -1,10 +1,13 @@
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+
 import '../shared/shared_module.dart';
-import 'pages/shell_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/shell_page.dart';
 
 class ShellExampleModule extends Module {
   @override
@@ -22,9 +25,25 @@ class ShellExampleModule extends Module {
   @override
   List<ModularRoute> get routes {
     return [
+      ChildRoute(
+        '/',
+        child: (context, state) => Material(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text('Example Shell'),
+              const SizedBox(height: 20),
+              TextButton(onPressed: () => context.go('/shell/dashboard'), child: const Text('Dashboard')),
+              TextButton(onPressed: () => context.go('/shell/profile'), child: const Text('Profile')),
+              TextButton(onPressed: () => context.go('/shell/settings'), child: const Text('Settings')),
+            ],
+          ),
+        ),
+      ),
       // Shell Route com navegação por tabs
       ShellModularRoute(
-        builder: (context, state, child) => ShellPage(child: child),
+        builder: (context, state, child) => ShellPage(state: state, child: child),
         routes: [
           ChildRoute(
             '/dashboard',

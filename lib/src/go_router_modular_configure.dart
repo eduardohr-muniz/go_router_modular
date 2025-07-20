@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/bind.dart';
 import 'package:go_router_modular/src/module.dart';
 import 'package:go_router_modular/src/utils/page_transition_enum.dart';
+import 'package:universal_html/html.dart' show window;
 
 /// Alias to simplify the use of GoRouterModular.
 typedef Modular = GoRouterModular;
@@ -70,7 +71,15 @@ class GoRouterModular {
   ///   final path = GoRouterModular.getCurrentPathOf(context);
   ///   print(path); // Prints the current path
   ///   ```
-  static String getCurrentPathOf(BuildContext context) => GoRouterState.of(context).path ?? '';
+  static String? getCurrentPathOf(BuildContext? context, [bool withState = false]) {
+    final buildContext = context ?? GoRouterModular.routerConfig.configuration.navigatorKey.currentContext;
+    if (buildContext == null) return null;
+    if (withState) {
+      final goRoute = GoRouterState.of(buildContext);
+      return window.location.pathname ?? goRoute.fullPath;
+    }
+    return window.location.pathname ?? GoRouter.of(buildContext).routerDelegate.currentConfiguration.fullPath;
+  }
 
   /// Returns the current router state based on the [BuildContext].
   ///
@@ -142,7 +151,7 @@ class GoRouterModular {
     GoRouter.optionURLReflectsImperativeAPIs = true;
 
     _router = GoRouter(
-      routes: appModule.configureRoutes(topLevel: true),
+      routes: await appModule.configureRoutes(topLevel: true),
       initialLocation: initialRoute,
       debugLogDiagnostics: debugLogDiagnosticsGoRouter,
       errorBuilder: errorBuilder,
@@ -214,7 +223,7 @@ extension GoRouterExtension on BuildContext {
   ///   print(path); // Prints the current path
   ///   ```
   String? get getPath {
-    return GoRouterState.of(this).path;
+    return GoRouterModular.getCurrentPathOf(this);
   }
 
   /// Returns the current router state.

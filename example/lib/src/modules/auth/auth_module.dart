@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:go_router_modular/go_router_modular.dart';
+
 import '../shared/shared_module.dart';
 import 'auth_store.dart';
 import 'pages/login_page.dart';
@@ -18,7 +20,7 @@ class AuthModule extends Module {
 
   @override
   FutureOr<List<Bind<Object>>> binds() {
-    return [Bind.singleton<AuthStore>((i) => AuthStore())];
+    return [Bind.singleton<AuthStore>((i) => AuthStore(i.get()))];
   }
 
   @override

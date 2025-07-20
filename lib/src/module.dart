@@ -14,12 +14,11 @@ abstract class Module {
   void initState(Injector i) {}
   void dispose() {}
 
-  List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
+  Future<List<RouteBase>> configureRoutes({String modulePath = '', bool topLevel = false}) async {
     List<RouteBase> result = [];
-    RouteManager().registerBindsAppModule(this);
-
+    await RouteManager().registerBindsAppModule(this);
     result.addAll(_createChildRoutes(topLevel: topLevel));
-    result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
+    result.addAll(await _createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
     result.addAll(_createShellRoutes(topLevel, modulePath));
 
     return result;
@@ -52,7 +51,7 @@ abstract class Module {
     }).toList();
   }
 
-  GoRoute _createModule({required ModuleRoute module, required String modulePath, required bool topLevel}) {
+  Future<GoRoute> _createModule({required ModuleRoute module, required String modulePath, required bool topLevel}) async {
     final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').firstOrNull;
     final isShell = module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
     if (!isShell) {
@@ -63,7 +62,7 @@ abstract class Module {
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
       builder: (context, state) => ParentWidgetObserver(onDispose: () => _handleRouteExit(context, module: module.module), child: _buildModuleChild(context, state: state, module: module, route: childRoute)),
-      routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
+      routes: await module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
       redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: childRoute?.redirect, topLevel: topLevel),
     );
@@ -95,10 +94,11 @@ abstract class Module {
     return null;
   }
 
-  List<GoRoute> _createModuleRoutes({required String modulePath, required bool topLevel}) {
-    return routes.whereType<ModuleRoute>().map((module) {
+  Future<List<GoRoute>> _createModuleRoutes({required String modulePath, required bool topLevel}) async {
+    final moduleRoutes = routes.whereType<ModuleRoute>();
+    return await Future.wait(moduleRoutes.map((module) async {
       return _createModule(module: module, modulePath: modulePath, topLevel: topLevel);
-    }).toList();
+    }).toList());
   }
 
   List<RouteBase> _createShellRoutes(bool topLevel, String modulePath) {

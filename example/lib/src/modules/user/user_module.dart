@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:go_router_modular/go_router_modular.dart';
+
 import '../shared/shared_module.dart';
 import 'domain/repositories/user_repository.dart';
-import 'presenters/user_page.dart';
 import 'presenters/user_name_page.dart';
+import 'presenters/user_page.dart';
 
 class UserModule extends Module {
   // Controle de estado do módulo

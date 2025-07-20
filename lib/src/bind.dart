@@ -1,4 +1,4 @@
-import 'package:go_router_modular/src/utils/injector.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 
 class Bind<T> {
   final T Function(Injector i) factoryFunction;

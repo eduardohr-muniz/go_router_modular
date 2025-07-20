@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -17,9 +18,9 @@ class ShellModularRoute extends ModularRoute {
     this.pageBuilder,
     this.observers,
     this.parentNavigatorKey,
-    this.navigatorKey,
+    GlobalKey<NavigatorState>? navigatorKey,
     this.restorationScopeId,
     required this.builder,
     required this.routes,
-  });
+  }) : navigatorKey = navigatorKey ?? GlobalKey<NavigatorState>();
 }

@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:example/src/app_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+
 import '../shared/shared_module.dart';
-import 'pages/home_page.dart';
 import 'pages/demo_page.dart';
+import 'pages/home_page.dart';
 
 class HomeModule extends Module {
   // Controle de estado do módulo
@@ -16,6 +18,7 @@ class HomeModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
+      Bind.factory<AppService>((i) => AppService()),
       Bind.singleton<HomeService>((i) => HomeService()),
     ];
   }
