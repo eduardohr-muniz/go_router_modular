@@ -3,7 +3,10 @@ import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class RouteManager {
-  static final RouteManager _instance = RouteManager._();
+  static RouteManager? _instance;
+  RouteManager._();
+  static RouteManager get instance => _instance ??= RouteManager._();
+
   final Map<Type, int> _bindReferences = {};
   Module? _appModule;
 
@@ -15,13 +18,7 @@ class RouteManager {
     return _moduleBindTypes[_appModule]?.contains(type) ?? false;
   }
 
-  RouteManager._();
-
-  factory RouteManager() {
-    return _instance;
-  }
-
-  void registerBindsAppModule(Module module) {
+  void registerAppModule(Module module) {
     if (_appModule != null) {
       return;
     }

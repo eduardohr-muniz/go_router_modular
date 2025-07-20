@@ -8,6 +8,7 @@ class AutoResolveModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
+      Bind.singleton((i) => HomeService()),
       Bind.factory<Z>((i) => Z(i.get<HomeService>())),
       Bind.factory<A>((i) => A(i.get<Z>())),
       Bind.factory<B>((i) => B(i.get<A>())),
@@ -18,18 +19,34 @@ class AutoResolveModule extends Module {
 
   @override
   List<ModularRoute> get routes => [
-        ChildRoute('/',
-            child: (context, args) => Material(
-                  child: Placeholder(
-                    child: Column(
-                      children: [
-                        Text('Auto Resolve: ${Modular.get<Z>().homeService.name}'),
-                        // Text('Auto Resolve: ${Modular.get<HomeService>().name}'),
-                      ],
-                    ),
-                  ),
-                )),
+        ChildRoute('/', child: (context, args) => const AutoResolveModuleWidget()),
       ];
+}
+
+class AutoResolveModuleWidget extends StatelessWidget {
+  const AutoResolveModuleWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Auto Resolve'),
+      ),
+      body: Placeholder(
+        child: Column(
+          children: [
+            Text('Auto Resolve: ${Modular.get<Z>().homeService.name}'),
+            ElevatedButton(
+                onPressed: () {
+                  print(Modular.get<Z>().homeService.name);
+                },
+                child: const Text('Olá'))
+            // Text('Auto Resolve: ${Modular.get<HomeService>().name}'),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class A {

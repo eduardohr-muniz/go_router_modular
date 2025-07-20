@@ -15,7 +15,7 @@ abstract class Module {
 
   List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
     List<RouteBase> result = [];
-    RouteManager().registerBindsAppModule(this);
+    RouteManager.instance.registerAppModule(this);
 
     result.addAll(_createChildRoutes(topLevel: topLevel));
     result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
@@ -24,12 +24,12 @@ abstract class Module {
     return result;
   }
 
-  Set<Module> disposeDidChange = {};
+  Set<Module> didChangeGoingReference = {};
 
-  void disposeDid(Module module) {
-    disposeDidChange.add(module);
+  void _onDidChange(Module module) {
+    didChangeGoingReference.add(module);
     Future.microtask(() {
-      disposeDidChange.remove(module);
+      didChangeGoingReference.remove(module);
     });
   }
 
@@ -71,11 +71,11 @@ abstract class Module {
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
       builder: (context, state) => ParentWidgetObserver(
-        initState: (module) async => await _register(module: module),
-        onDispose: (module) => _onDisposeModule(module: module),
-        didChangeDependencies: (module) => disposeDid(module),
+        initState: (module) async => await _registerModule(module),
+        onDispose: (module) => _disposeModule(module),
+        didChangeDependencies: (module) => _onDidChange(module),
         module: module.module,
-        child: _buildModuleChild(context, state: state, module: module, route: childRoute),
+        child: childRoute!.child(context, state),
       ),
       routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
@@ -123,9 +123,9 @@ abstract class Module {
           context,
           state,
           ParentWidgetObserver(
-            initState: (module) async => await _register(module: module),
-            onDispose: (module) => _onDisposeModule(module: module),
-            didChangeDependencies: (module) => disposeDid(module),
+            initState: (module) async => await _registerModule(module),
+            onDispose: (module) => _disposeModule(module),
+            didChangeDependencies: (module) => _onDidChange(module),
             module: this,
             child: child,
           ),
@@ -165,7 +165,7 @@ abstract class Module {
     if (path.startsWith("/") && !topLevel && !path.startsWith("/:")) {
       path = path.substring(1);
     }
-    return _buildPath(path);
+    return _parsePath(path);
   }
 
   Widget _buildRouteChild(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
@@ -187,31 +187,16 @@ abstract class Module {
     );
   }
 
-  Widget _buildModuleChild(BuildContext context, {required GoRouterState state, required ModuleRoute module, ChildRoute? route}) {
-    // Executa registro com prioridade (fire and forget - não bloqueia UI)
-    iLog('📱 BUILD ModuleChild: ${state.path} - Módulo: ${module.module.runtimeType}', name: "BUILD_DEBUG");
-    iLog('📍 CHAMANDO _register de _buildModuleChild', name: "BUILD_DEBUG");
-    return route?.child(context, state) ?? Container();
+  Future<void> _registerModule(Module module) async {
+    await RouteManager.instance.registerBindsModule(module);
   }
 
-  Future<void> _register({Module? module}) async {
-    final targetModule = module ?? this;
-
-    await RouteManager().registerBindsModule(targetModule);
+  void _disposeModule(Module module) {
+    if (didChangeGoingReference.contains(module)) return;
+    RouteManager.instance.unregisterModule(module);
   }
 
-  void _onDisposeModule({Module? module}) {
-    final targetModule = module ?? this;
-    if (disposeDidChange.contains(targetModule)) return;
-
-    RouteManager().unregisterModule(targetModule);
-  }
-
-  // Limpa entradas do cache de transições para um módulo específico
-
-  // Método público para limpeza de cache chamado pelo RouteManager
-
-  String _buildPath(String path) {
+  String _parsePath(String path) {
     if (!path.endsWith('/')) {
       path = '$path/';
     }
