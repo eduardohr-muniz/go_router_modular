@@ -1,4 +1,6 @@
+import 'package:example/src/modules/shared/shared_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/src/foundation/diagnostics.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class UserPage extends StatefulWidget {
@@ -14,10 +16,11 @@ class _UserPageState extends State<UserPage> {
     super.initState();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
+  // @override
+  // void reassemble() {
+  //   print('UserPage reassemble');
+  //   super.reassemble();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +59,12 @@ class _UserPageState extends State<UserPage> {
                 context.go('/user/user_name/teste');
               },
               child: const Text('Ir para User Name Page'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Modular.get<SharedService>().setName('teste');
+              },
+              child: Text('Teste Shared ${Modular.get<SharedService>().name}'),
             ),
           ],
         ),

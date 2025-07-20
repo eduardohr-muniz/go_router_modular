@@ -1,3 +1,5 @@
+import 'package:example/src/modules/home/pages/demo_page.dart';
+import 'package:example/src/modules/shared/shared_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -54,10 +56,7 @@ class _HomePageState extends State<HomePage> {
                 await context.push('/user');
                 setState(() => isLoading = false);
               },
-              child: isLoading
-                  ? const SizedBox(
-                      height: 15, width: 15, child: CircularProgressIndicator())
-                  : const Text('Módulo User'),
+              child: isLoading ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator()) : const Text('Módulo User'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -76,6 +75,20 @@ class _HomePageState extends State<HomePage> {
                 foregroundColor: Colors.white,
               ),
               child: const Text('🚀 Shell Router Example'),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                Modular.get<SharedService>().setName('teste');
+              },
+              child: Text('Teste Shared ${Modular.get<SharedService>().name}'),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                context.go('/auto-resolve');
+              },
+              child: const Text('Teste Auto Resolve'),
             ),
             const SizedBox(height: 32),
             const Text(

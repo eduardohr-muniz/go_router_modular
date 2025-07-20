@@ -9,13 +9,7 @@ class SharedModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
-      Bind.singleton<SharedService>((i) => SharedService()),
+      Bind.factory<SharedService>((i) => SharedService()),
     ];
   }
-
-  @override
-  void initState(Injector i) {}
-
-  @override
-  void dispose() {}
 }

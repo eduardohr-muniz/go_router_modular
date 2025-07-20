@@ -44,5 +44,7 @@ class HomeModule extends Module {
 class HomeService {
   HomeService();
 
+  get name => 'olá';
+
   void dispose() {}
 }

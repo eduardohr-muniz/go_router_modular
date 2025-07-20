@@ -16,7 +16,6 @@ class UserModule extends Module {
 
   @override
   Future<List<Bind<Object>>> binds() async {
-    await Future.delayed(const Duration(seconds: 2));
     return [
       Bind.singleton<IUserRepository>((i) => UserRepository()),
     ];

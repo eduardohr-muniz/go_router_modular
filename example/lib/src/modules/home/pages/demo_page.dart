@@ -90,7 +90,3 @@ class _DemoPageState extends State<DemoPage> {
     );
   }
 }
-
-class SharedService {
-  SharedService();
-}

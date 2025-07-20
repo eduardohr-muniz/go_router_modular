@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:example/src/modules/auto_resolve/auto_resolve_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'modules/auth/auth_module.dart';
 import 'modules/user/user_module.dart';
@@ -17,6 +18,7 @@ class AppModule extends Module {
     ModuleRoute('/auth', module: AuthModule()),
     ModuleRoute('/user', module: UserModule()),
     ModuleRoute('/shell', module: ShellExampleModule()),
+    ModuleRoute('/auto-resolve', module: AutoResolveModule()),
   ];
 
   @override

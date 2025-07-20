@@ -37,7 +37,7 @@ class RouteManager {
 
     final imports = await module.imports();
 
-    Future.forEach(imports, (module) async {
+    await Future.forEach(imports, (module) async {
       final binds = await module.binds();
       allImportedBinds.addAll(binds);
       allImportedBinds.addAll(await _getAllImportedBindsRecursively(module, visited));

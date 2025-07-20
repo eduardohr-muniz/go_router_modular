@@ -24,6 +24,15 @@ abstract class Module {
     return result;
   }
 
+  Set<Module> disposeDidChange = {};
+
+  void disposeDid(Module module) {
+    disposeDidChange.add(module);
+    Future.microtask(() {
+      disposeDidChange.remove(module);
+    });
+  }
+
   GoRoute _createChild({required ChildRoute childRoute, required bool topLevel}) {
     return GoRoute(
       path: _normalizePath(path: childRoute.path, topLevel: topLevel),
@@ -61,7 +70,12 @@ abstract class Module {
     return GoRoute(
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
-      builder: (context, state) => ParentWidgetObserver(onDispose: () => _handleRouteExit(context, module: module.module), child: _buildModuleChild(context, state: state, module: module, route: childRoute)),
+      builder: (context, state) => ParentWidgetObserver(
+        onDispose: (module) => _handleRouteExit(context, module: module),
+        didChangeDependencies: (module) => disposeDid(module),
+        module: module.module,
+        child: _buildModuleChild(context, state: state, module: module, route: childRoute),
+      ),
       routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
       redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: childRoute?.redirect, topLevel: topLevel),
@@ -103,7 +117,16 @@ abstract class Module {
   List<RouteBase> _createShellRoutes(bool topLevel, String modulePath) {
     return routes.whereType<ShellModularRoute>().map((shellRoute) {
       return ShellRoute(
-        builder: (context, state, child) => shellRoute.builder!(context, state, ParentWidgetObserver(onDispose: () => _handleRouteExit(context, module: this), child: child)),
+        builder: (context, state, child) => shellRoute.builder!(
+          context,
+          state,
+          ParentWidgetObserver(
+            onDispose: (module) => _handleRouteExit(context, module: module),
+            didChangeDependencies: (module) => disposeDid(module),
+            module: this,
+            child: child,
+          ),
+        ),
         pageBuilder: shellRoute.pageBuilder != null ? (context, state, child) => shellRoute.pageBuilder!(context, state, child) : null,
         redirect: shellRoute.redirect,
         navigatorKey: shellRoute.navigatorKey,
@@ -180,6 +203,7 @@ abstract class Module {
 
   void _unregister({Module? module}) {
     final targetModule = module ?? this;
+    if (disposeDidChange.contains(targetModule)) return;
 
     RouteManager().unregisterModule(targetModule);
   }
