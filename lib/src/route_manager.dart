@@ -11,6 +11,10 @@ class RouteManager {
 
   final Map<Module, Set<Type>> _moduleBindTypes = {};
 
+  bool _isBindForAppModule(Type type) {
+    return _moduleBindTypes[_appModule]?.contains(type) ?? false;
+  }
+
   RouteManager._();
 
   factory RouteManager() {
@@ -119,7 +123,12 @@ class RouteManager {
       log('DISPOSED: ${module.runtimeType} BINDS: ${disposedBinds.map((e) => e.toString()).toList()}', name: "🗑️");
     }
 
-    bindsToDispose.map((type) => Bind.disposeByType(type)).toList();
+    bindsToDispose.map((type) {
+      if (_isBindForAppModule(type)) {
+        return;
+      }
+      Bind.disposeByType(type);
+    }).toList();
     bindsToDispose.clear();
   }
 
