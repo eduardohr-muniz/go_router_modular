@@ -24,7 +24,7 @@ class AutoResolveModule extends Module {
                     child: Column(
                       children: [
                         Text('Auto Resolve: ${Modular.get<Z>().homeService.name}'),
-                        Text('Auto Resolve: ${Modular.get<HomeService>().name}'),
+                        // Text('Auto Resolve: ${Modular.get<HomeService>().name}'),
                       ],
                     ),
                   ),

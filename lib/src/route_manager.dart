@@ -119,7 +119,7 @@ class RouteManager {
       log('DISPOSED: ${module.runtimeType} BINDS: ${disposedBinds.map((e) => e.toString()).toList()}', name: "🗑️");
     }
 
-    bindsToDispose.map((type) => Bind.disposeByType(type.runtimeType)).toList();
+    bindsToDispose.map((type) => Bind.disposeByType(type)).toList();
     bindsToDispose.clear();
   }
 
@@ -138,6 +138,7 @@ class RouteManager {
       _bindReferences[type] = (_bindReferences[type] ?? 1) - 1;
       if (_bindReferences[type] == 0) {
         _bindReferences.remove(type);
+
         return true;
       }
     }
