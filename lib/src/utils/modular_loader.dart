@@ -50,7 +50,7 @@ class ModularLoader {
             children: [
               Positioned.fill(
                 child: Container(
-                  color: loader?.backgroundColor ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: .2),
+                  color: loader?.backgroundColor ?? Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 ),
               ),
               if (loader != null) loader.child,

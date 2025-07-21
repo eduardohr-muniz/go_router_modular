@@ -1,83 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
-class ShellPage extends StatefulWidget {
+class ShellPage extends StatelessWidget {
   final Widget child;
 
-  const ShellPage({
-    super.key,
-    required this.child,
-  });
-
-  @override
-  State<ShellPage> createState() => _ShellPageState();
-}
-
-class _ShellPageState extends State<ShellPage> {
-  int _selectedIndex = 0;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateSelectedIndex();
-  }
-
-  void _updateSelectedIndex() {
-    final location = context.getPath ?? '';
-    if (location.contains('/shell/dashboard')) {
-      _selectedIndex = 0;
-    } else if (location.contains('/shell/profile')) {
-      _selectedIndex = 1;
-    } else if (location.contains('/shell/settings')) {
-      _selectedIndex = 2;
-    }
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        context.push('/shell/dashboard');
-        break;
-      case 1:
-        context.push('/shell/profile');
-        break;
-      case 2:
-        context.push('/shell/settings');
-        break;
-    }
-  }
+  const ShellPage({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shell Router Example'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        leading: BackButton(
-          onPressed: () => context.pop(),
-        ),
+        title: const Text('Shell Container'),
+        backgroundColor: Colors.orange.shade100,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () => context.go('/'),
+            tooltip: 'Voltar para Home',
+          ),
+        ],
       ),
-      body: widget.child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+      body: Row(
+        children: [
+          // Menu lateral
+          Container(
+            width: 200,
+            color: Colors.grey.shade100,
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    '🐚 Shell Menu',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Profile'),
+                  onTap: () => context.go('/shell/profile'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: const Text('Settings'),
+                  onTap: () => context.go('/shell/settings'),
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.exit_to_app),
+                  title: const Text('Sair do Shell'),
+                  onTap: () => context.go('/'),
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Configurações',
+          // Conteúdo principal
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(16.0),
+              child: child,
+            ),
           ),
         ],
       ),

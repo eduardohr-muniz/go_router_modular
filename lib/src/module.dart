@@ -67,6 +67,16 @@ abstract class Module {
       assert(childRoute != null, 'Module ${module.module.runtimeType} must have a ChildRoute with path "/" because it serves as the parent route for the module');
     }
 
+    // Para módulos shell, não precisa de um builder específico, apenas as rotas
+    if (isShell) {
+      return GoRoute(
+        path: _normalizePath(path: module.path, topLevel: topLevel),
+        name: module.name,
+        routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
+        redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: null, topLevel: topLevel),
+      );
+    }
+
     return GoRoute(
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,

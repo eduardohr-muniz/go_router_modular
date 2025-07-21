@@ -1,13 +1,12 @@
 import 'dart:async';
 
+import 'package:example/src/modules/shared/test_controller.dart';
+import 'package:example/src/modules/shared/shared_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import '../shared/shared_module.dart';
 import 'pages/home_page.dart';
 import 'pages/demo_page.dart';
 
 class HomeModule extends Module {
-  // Controle de estado do módulo
-
   @override
   FutureOr<List<Module>> imports() {
     return [SharedModule()];
@@ -35,10 +34,14 @@ class HomeModule extends Module {
   }
 
   @override
-  void initState(Injector i) {}
+  void initState(Injector i) {
+    TestController.instance.enterModule('HomeModule');
+  }
 
   @override
-  void dispose() {}
+  void dispose() {
+    TestController.instance.exitModule('HomeModule');
+  }
 }
 
 class HomeService {
