@@ -68,32 +68,30 @@ class RouteManager {
     }
   }
 
-  void _recursiveRegisterBinds(List<Bind<Object>> binds) {
-    if (binds.isEmpty) {
+  void _recursiveRegisterBinds(List<Bind<Object>> binds, [int maxAttempts = 10]) {
+    if (binds.isEmpty || maxAttempts <= 0) {
       return;
     }
 
-    List<Bind<Object>> queueBinds = [];
+    List<Bind<Object>> failedBinds = [];
 
     for (var bind in binds) {
       try {
-        _incrementBindReference(bind.instance.runtimeType);
+        // Captura erro ao acessar instance
+        final type = bind.instance.runtimeType;
+        _incrementBindReference(type);
         Bind.register(bind);
       } catch (e) {
-        queueBinds.add(bind);
+        failedBinds.add(bind);
       }
     }
 
-    if (queueBinds.length < binds.length) {
-      _recursiveRegisterBinds(queueBinds);
-    } else if (queueBinds.isNotEmpty) {
-      for (var bind in queueBinds) {
-        try {
-          _incrementBindReference(bind.instance.runtimeType);
-          Bind.register(bind);
-        } catch (e) {
-          rethrow;
-        }
+    // Se ainda há binds que falharam, tenta novamente
+    if (failedBinds.isNotEmpty && failedBinds.length < binds.length) {
+      _recursiveRegisterBinds(failedBinds, maxAttempts - 1);
+    } else if (failedBinds.isNotEmpty) {
+      for (var bind in failedBinds) {
+        //TODO: PRINT DE ERROS DE BIND NAO RESOLVIDOS
       }
     }
   }
@@ -128,8 +126,6 @@ class RouteManager {
     }).toList();
     bindsToDispose.clear();
   }
-
-  // Notifica que um módulo foi disposto para limpeza de cache
 
   void _incrementBindReference(Type type) {
     if (_bindReferences.containsKey(type)) {

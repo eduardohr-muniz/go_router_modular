@@ -71,7 +71,7 @@ abstract class Module {
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
       builder: (context, state) => ParentWidgetObserver(
-        initState: (module) async => await _registerModule(module),
+        initState: (module) async {},
         onDispose: (module) => _disposeModule(module),
         didChangeDependencies: (module) => _onDidChange(module),
         module: module.module,
@@ -92,19 +92,19 @@ abstract class Module {
     FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
   }) async {
     //TODO: ASYNC
-    // if (RouteWithCompleterService.hasRouteCompleter()) {
-    //   final completer = RouteWithCompleterService.getLastCompleteRoute();
+    if (RouteWithCompleterService.hasRouteCompleter()) {
+      final completer = RouteWithCompleterService.getLastCompleteRoute();
 
-    //   await _register(module: module);
-    //   completer.complete();
-    // } else {
-    //   try {
-    //     ModularLoader.show();
-    //     await _register(module: module);
-    //   } finally {
-    //     ModularLoader.hide();
-    //   }
-    // }
+      await _registerModule(module);
+      completer.complete();
+    } else {
+      try {
+        ModularLoader.show();
+        await _registerModule(module);
+      } finally {
+        ModularLoader.hide();
+      }
+    }
 
     if (context.mounted) return redirect?.call(context, state);
     return null;
