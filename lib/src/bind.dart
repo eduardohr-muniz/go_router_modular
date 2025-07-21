@@ -88,6 +88,8 @@ class Bind<T> {
 
     // Controle de tentativas para evitar loops infinitos
     _searchAttempts[type] = (_searchAttempts[type] ?? 0) + 1;
+    final isLastAttempt = _searchAttempts[type]! >= _maxSearchAttempts;
+
     if (_searchAttempts[type]! > _maxSearchAttempts) {
       iLog('💥 LIMITE EXCEDIDO: Máximo de tentativas atingido para ${type.toString()} (${_searchAttempts[type]} tentativas)', name: "BIND_DEBUG");
       _searchAttempts.remove(type);
@@ -118,8 +120,14 @@ class Bind<T> {
         }
 
         if (bind == null) {
-          iLog('💥 ERROR: Bind não encontrado para ${type.toString()}', name: "GO_ROUTER_MODULAR");
-          iLog('📋 Tipos disponíveis: ${_bindsMap.entries.map((e) => '${e.key} -> ${e.value.instance.runtimeType}').toList()}', name: "BIND_DEBUG");
+          // Só loga erro detalhado se for a última tentativa ou se atingir limite
+          if (isLastAttempt) {
+            log('💥 ERROR: when injecting: ${type.toString()}', name: "GO_ROUTER_MODULAR");
+            // log('💥 ERROR: Bind not found: ${type.toString()} \n📋 Available binds: ${_bindsMap.entries.map((e) => '${e.value.instance.runtimeType}').toList()}', name: "GO_ROUTER_MODULAR");
+          } else {
+            // Para tentativas intermediárias, só log discreto
+            iLog('⏳ Bind não encontrado para ${type.toString()} (tentativa ${_searchAttempts[type]}/$_maxSearchAttempts) - tentando novamente...', name: "BIND_DEBUG");
+          }
           throw Exception('Bind not found for type ${type.toString()}');
         }
       } else {
