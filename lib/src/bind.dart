@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:go_router_modular/src/utils/injector.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
 
@@ -6,12 +8,13 @@ class Bind<T> {
   final bool isSingleton;
   final bool isLazy;
   T? _instance;
+  final StackTrace stackTrace;
 
   Bind(
     this.factoryFunction, {
     this.isSingleton = true,
     this.isLazy = true,
-  });
+  }) : stackTrace = StackTrace.current;
 
   T get instance {
     if (_instance == null || !isSingleton) {
@@ -115,7 +118,7 @@ class Bind<T> {
         }
 
         if (bind == null) {
-          iLog('💥 ERRO: Nenhum bind encontrado para ${type.toString()}', name: "BIND_DEBUG");
+          iLog('💥 ERROR: Bind não encontrado para ${type.toString()}', name: "GO_ROUTER_MODULAR");
           iLog('📋 Tipos disponíveis: ${_bindsMap.entries.map((e) => '${e.key} -> ${e.value.instance.runtimeType}').toList()}', name: "BIND_DEBUG");
           throw Exception('Bind not found for type ${type.toString()}');
         }
