@@ -64,11 +64,12 @@ abstract class Module {
     final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').firstOrNull;
     final isShell = module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
     if (!isShell) {
-      assert(childRoute != null, 'Module ${module.module.runtimeType} must have a ChildRoute with path "/" because it serves as the parent route for the module');
+      assert(childRoute != null, 'Module ${module.module.runtimeType} must HAVE a ChildRoute with path "/" because it serves as the parent route for the module');
     }
 
     // Para módulos shell, não precisa de um builder específico, apenas as rotas
     if (isShell) {
+      assert(childRoute == null, 'Shell module ${module.module.runtimeType} cannot have a ChildRoute with path "/" - Shell modules only serve as wrappers for other routes');
       return GoRoute(
         path: _normalizePath(path: module.path, topLevel: topLevel),
         name: module.name,
@@ -81,7 +82,7 @@ abstract class Module {
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
       builder: (context, state) => ParentWidgetObserver(
-        initState: (module) async {},
+        // initState: (module) async {},
         onDispose: (module) => _disposeModule(module),
         didChangeDependencies: (module) => _onDidChange(module),
         module: module.module,
@@ -101,7 +102,6 @@ abstract class Module {
     required bool topLevel,
     FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
   }) async {
-    //TODO: ASYNC
     if (RouteWithCompleterService.hasRouteCompleter()) {
       final completer = RouteWithCompleterService.getLastCompleteRoute();
 
@@ -133,7 +133,7 @@ abstract class Module {
           context,
           state,
           ParentWidgetObserver(
-            initState: (module) async => await _registerModule(module),
+            // initState: (module) async => await _registerModule(module),
             onDispose: (module) => _disposeModule(module),
             didChangeDependencies: (module) => _onDidChange(module),
             module: this,
