@@ -1,4 +1,4 @@
-import 'package:go_router_modular/go_router_modular.dart';
+// ignore_for_file: avoid_print
 
 class TestController {
   static TestController? _instance;

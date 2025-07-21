@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:example/src/modules/auto_resolve/auto_resolve_module.dart';
 import 'package:example/src/modules/home/home_module.dart';
 import 'package:example/src/modules/shell_example/shell_module.dart';
@@ -7,7 +5,6 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
   @override
-  // TODO: implement routes
   List<ModularRoute> get routes => [
         ModuleRoute('/', module: HomeModule()),
         ModuleRoute(

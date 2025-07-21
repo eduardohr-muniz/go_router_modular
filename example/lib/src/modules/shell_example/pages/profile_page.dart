@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import '../shell_module.dart';
