@@ -110,6 +110,10 @@ class RouteManager {
         final disposed = _decrementBindReference(bind);
         if (disposed) {
           disposedBinds.add(bind);
+          // Só fazer dispose quando não há mais referências
+          if (!_isBindForAppModule(bind)) {
+            Bind.disposeByType(bind);
+          }
         }
       } catch (_) {}
     }
@@ -118,12 +122,13 @@ class RouteManager {
       log('DISPOSED: ${module.runtimeType} BINDS: ${disposedBinds.map((e) => e.toString()).toList()}', name: "🗑️");
     }
 
-    bindsToDispose.map((type) {
-      if (_isBindForAppModule(type)) {
-        return;
-      }
-      Bind.disposeByType(type);
-    }).toList();
+    // Remover o código problemático que sempre fazia dispose
+    // bindsToDispose.map((type) {
+    //   if (_isBindForAppModule(type)) {
+    //     return;
+    //   }
+    //   Bind.disposeByType(type);
+    // }).toList();
     bindsToDispose.clear();
   }
 

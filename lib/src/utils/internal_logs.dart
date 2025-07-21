@@ -1,7 +1,7 @@
 import 'dart:developer';
 
 /// Constante para controlar se os logs internos do go_router_modular devem ser exibidos
-const bool kInternalLogs = false;
+const bool kInternalLogs = true;
 
 /// Função para exibir logs internos do go_router_modular
 /// Só exibe se [kInternalLogs] for true
