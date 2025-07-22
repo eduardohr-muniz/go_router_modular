@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:go_router_modular/src/utils/exception.dart';
 import 'package:go_router_modular/src/utils/injector.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
 
@@ -75,7 +76,7 @@ class Bind<T> {
   // Proteções contra loops infinitos
   static final Map<Type, int> _searchAttempts = {};
   static final Set<Type> _currentlySearching = {};
-  static const int _maxSearchAttempts = 3;
+  static const int _maxSearchAttempts = 1000;
 
   static T _find<T>() {
     final type = T;
@@ -83,7 +84,7 @@ class Bind<T> {
     // Proteção contra múltiplas buscas simultâneas do mesmo tipo
     if (_currentlySearching.contains(type)) {
       iLog('🚫 BLOQUEIO: Busca já em andamento para ${type.toString()}', name: "BIND_DEBUG");
-      throw Exception('Circular dependency detected for type ${type.toString()}');
+      throw GoRouterModularException('Circular dependency detected for type ${type.toString()}');
     }
 
     // Controle de tentativas para evitar loops infinitos
@@ -93,7 +94,7 @@ class Bind<T> {
     if (_searchAttempts[type]! > _maxSearchAttempts) {
       iLog('💥 LIMITE EXCEDIDO: Máximo de tentativas atingido para ${type.toString()} (${_searchAttempts[type]} tentativas)', name: "BIND_DEBUG");
       _searchAttempts.remove(type);
-      throw Exception('Too many search attempts for type ${type.toString()}. Possible infinite loop detected.');
+      throw GoRouterModularException('Too many search attempts for type ${type.toString()}. Possible infinite loop detected.');
     }
 
     _currentlySearching.add(type);
@@ -123,18 +124,18 @@ class Bind<T> {
           // Só loga erro detalhado se for a última tentativa ou se atingir limite
           if (isLastAttempt) {
             log('💥 ERROR: when injecting: ${type.toString()}', name: "GO_ROUTER_MODULAR");
+            throw GoRouterModularException('Bind not found for type ${type.toString()} ');
             // log('💥 ERROR: Bind not found: ${type.toString()} \n📋 Available binds: ${_bindsMap.entries.map((e) => '${e.value.instance.runtimeType}').toList()}', name: "GO_ROUTER_MODULAR");
           } else {
             // Para tentativas intermediárias, só log discreto
             iLog('⏳ Bind não encontrado para ${type.toString()} (tentativa ${_searchAttempts[type]}/$_maxSearchAttempts) - tentando novamente...', name: "BIND_DEBUG");
           }
-          throw Exception('Bind not found for type ${type.toString()}');
         }
       } else {
         iLog('✅ Bind encontrado diretamente no mapa para ${type.toString()}', name: "BIND_DEBUG");
       }
 
-      final instance = bind.instance as T;
+      final instance = bind?.instance as T;
       iLog('🎯 Retornando instância: ${instance.runtimeType} para ${type.toString()}', name: "BIND_DEBUG");
 
       // Sucesso: limpar contador de tentativas

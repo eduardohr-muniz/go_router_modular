@@ -111,6 +111,12 @@ abstract class Module {
       try {
         ModularLoader.show();
         await _registerModule(module);
+      } catch (e) {
+        // Se for GoRouterModularException, propaga para o usuário
+        if (e is GoRouterModularException) {
+          rethrow;
+        }
+        // Para outros erros, continua normalmente
       } finally {
         ModularLoader.hide();
       }

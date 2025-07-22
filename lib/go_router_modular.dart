@@ -2,6 +2,7 @@ library go_router_modular;
 
 export 'src/bind.dart';
 export 'src/utils/context_extension.dart';
+export 'src/utils/exception.dart';
 export 'src/go_router_modular_configure.dart';
 export 'src/module.dart';
 export 'src/utils/injector.dart';

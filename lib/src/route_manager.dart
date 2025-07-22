@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
@@ -16,6 +17,57 @@ class RouteManager {
   final Map<Module, Set<Type>> _moduleBindTypes = {};
 
   final List<Function> _bindsToValidate = [];
+
+  // Sistema de fila sequencial para operações de módulos
+  final Queue<Future<void> Function()> _operationQueue = Queue<Future<void> Function()>();
+  bool _isProcessingQueue = false;
+
+  // Processa operações na fila sequencialmente
+  Future<void> _processQueue() async {
+    if (_isProcessingQueue || _operationQueue.isEmpty) {
+      return;
+    }
+
+    _isProcessingQueue = true;
+
+    try {
+      while (_operationQueue.isNotEmpty) {
+        final operation = _operationQueue.removeFirst();
+
+        try {
+          await operation();
+        } catch (e) {
+          // Se for GoRouterModularException, propaga para o usuário
+          if (e is GoRouterModularException) {
+            rethrow;
+          }
+          iLog('❌ Erro na operação da fila: $e', name: "ROUTE_MANAGER");
+        }
+      }
+    } finally {
+      _isProcessingQueue = false;
+    }
+  }
+
+  // Adiciona operação à fila e garante processamento sequencial
+  Future<T> _enqueueOperation<T>(Future<T> Function() operation) async {
+    final completer = Completer<T>();
+
+    _operationQueue.add(() async {
+      try {
+        final result = await operation();
+        completer.complete(result);
+      } catch (e) {
+        // Sempre propaga exceptions via completer para que sejam vistas pelo usuário
+        completer.completeError(e);
+      }
+    });
+
+    // Inicia processamento se não estiver rodando
+    _processQueue();
+
+    return completer.future;
+  }
 
   void addValidateQueue(void Function() validate, String moduleName) {
     _bindsToValidate.add(validate);
@@ -66,6 +118,10 @@ class RouteManager {
   }
 
   Future<void> registerBindsModule(Module module) async {
+    return _enqueueOperation(() => _registerBindsModuleInternal(module));
+  }
+
+  Future<void> _registerBindsModuleInternal(Module module) async {
     if (_moduleBindTypes.containsKey(module)) {
       return;
     }
@@ -130,8 +186,9 @@ class RouteManager {
 
           if (Modular.debugLogDiagnostics) {
             final stackTrace = bind.stackTrace.toString();
-            final stacks = stackTrace.split('\n');
-            log('❌ $bindType FAILED: $e \n🔎STACKTRACE: \n${stacks.where((e) => e.contains('binds')).take(4).join('\n')}', name: "GO_ROUTER_MODULAR");
+            final normalizedStack = _normalizeStackTrace(stackTrace);
+            log('❌ $bindType FAILED: $e \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
+            throw GoRouterModularException('Bind not found for type ${bindType.toString()}');
           }
         }
       }
@@ -155,7 +212,52 @@ class RouteManager {
     }
   }
 
-  void _recursiveRegisterBinds(List<Bind<Object>> binds, [int maxAttempts = 10]) {
+  // Normaliza caminhos do stacktrace para o formato padrão
+  String _normalizeStackTrace(String stackTrace) {
+    return stackTrace
+        .split('\n')
+        .where((line) => line.contains('binds') || line.contains('imports'))
+        .map((line) {
+          // Remove prefixos como "../" e normaliza o caminho
+          String normalized = line
+              .replaceAll('../packages/', 'packages/')
+              .replaceAll(RegExp(r'^\s*\.\.\/'), '') // Remove ../ do início
+              .trim();
+
+          // Extrair apenas a parte a partir de 'lib/'
+          if (normalized.contains('/lib/')) {
+            final libIndex = normalized.indexOf('/lib/');
+            return normalized.substring(libIndex + 1); // +1 para remover a barra inicial
+          }
+
+          // Se já começa com 'lib/', manter como está
+          if (normalized.startsWith('lib/')) {
+            return normalized;
+          }
+
+          // Se começar com packages/ mas não tiver /lib/, inserir lib/ e extrair
+          if (normalized.startsWith('packages/')) {
+            final parts = normalized.split('/');
+            if (parts.length >= 3) {
+              // packages/nome_projeto/src/... -> lib/src/...
+              if (!parts.contains('lib')) {
+                parts.insert(2, 'lib');
+              }
+              // Pegar apenas a partir de 'lib/'
+              final libIndexInParts = parts.indexOf('lib');
+              if (libIndexInParts != -1) {
+                return parts.sublist(libIndexInParts).join('/');
+              }
+            }
+          }
+
+          return normalized;
+        })
+        .take(4)
+        .join('\n');
+  }
+
+  void _recursiveRegisterBinds(List<Bind<Object>> binds, [int maxAttempts = 100]) {
     if (binds.isEmpty || maxAttempts <= 0) {
       return;
     }
@@ -179,8 +281,9 @@ class RouteManager {
     } else if (failedBinds.isNotEmpty) {
       for (var bind in failedBinds) {
         final stackTrace = bind.stackTrace.toString();
-        final stacks = stackTrace.split('\n');
-        log('❌ ${bind.instance.runtimeType} FAILED:  \n🔎STACKTRACE: \n${stacks.where((e) => e.contains('binds')).take(4).join('\n')}', name: "GO_ROUTER_MODULAR");
+        final normalizedStack = _normalizeStackTrace(stackTrace);
+        log('❌ ${bind.instance.runtimeType} FAILED:  \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
+        throw GoRouterModularException('Bind not found for type ${bind.instance.runtimeType.toString()}');
       }
     }
   }
@@ -241,7 +344,11 @@ class RouteManager {
     return false;
   }
 
-  void unregisterModule(Module module) {
+  Future<void> unregisterModule(Module module) async {
+    return _enqueueOperation(() => _unregisterModuleInternal(module));
+  }
+
+  Future<void> _unregisterModuleInternal(Module module) async {
     module.dispose();
     unregisterBinds(module);
     _moduleBindTypes.remove(module);
@@ -258,6 +365,10 @@ class RouteManager {
         try {
           validation();
         } catch (e) {
+          // Se for GoRouterModularException, propaga para o usuário
+          if (e is GoRouterModularException) {
+            rethrow;
+          }
           if (Modular.debugLogDiagnostics) {
             iLog('❌ Erro na validação: $e', name: "BIND_VALIDATION");
           }
