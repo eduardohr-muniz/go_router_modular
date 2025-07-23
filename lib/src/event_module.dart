@@ -1,17 +1,29 @@
 import 'dart:async';
-
 import 'package:event_bus/event_bus.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 Map<int, Map<Type, StreamSubscription<dynamic>>> _eventSubscriptions = {};
 
-// EventBus global para comunicação entre módulos
-EventBus modularEvent = EventBus();
+final EventBus _eventBus = EventBus();
+EventBus get modularEvent => _eventBus;
 
-void disposeModularEvent<T>({EventBus? eventBus}) {
-  eventBus ??= modularEvent;
-  _eventSubscriptions[eventBus.hashCode]?[T.runtimeType]?.cancel();
-  _eventSubscriptions[eventBus.hashCode]?.remove(T.runtimeType);
+class ModularEvent {
+  static ModularEvent? _instance;
+
+  ModularEvent._();
+  static ModularEvent get instance => _instance ??= ModularEvent._();
+
+  void dispose<T>({EventBus? eventBus}) {
+    eventBus ??= _eventBus;
+    _eventSubscriptions[eventBus.hashCode]?[T.runtimeType]?.cancel();
+    _eventSubscriptions[eventBus.hashCode]?.remove(T.runtimeType);
+  }
+
+  void on<T>(void Function(T event) callback, {EventBus? eventBus}) {
+    eventBus ??= modularEvent;
+    _eventSubscriptions[eventBus.hashCode]?[T.runtimeType]?.cancel();
+    _eventSubscriptions[eventBus.hashCode]![T.runtimeType] = eventBus.on<T>().listen((event) => Future.microtask(() => callback(event)));
+  }
 }
 
 abstract class EventModule extends Module {
@@ -23,25 +35,18 @@ abstract class EventModule extends Module {
     _eventBus = eventBus ?? modularEvent;
   }
 
-  // Método opcional para configuração inicial
-  void listen() {
-    // Implementação opcional nas classes filhas
-  }
+  void listen() {}
 
   void on<T>(void Function(T event) callback, {bool autoDispose = true}) {
     final eventBusId = _eventBus.hashCode;
 
-    // Inicializar maps se não existirem
     _eventSubscriptions[eventBusId] ??= {};
     _disposeSubscriptions[eventBusId] ??= {};
 
-    // Cancelar subscription anterior se existir
     _eventSubscriptions[eventBusId]?[T.runtimeType]?.cancel();
 
-    // Registrar novo subscription
-    _eventSubscriptions[eventBusId]![T.runtimeType] = _eventBus.on<T>().listen(callback);
+    _eventSubscriptions[eventBusId]![T.runtimeType] = _eventBus.on<T>().listen((event) => Future.microtask(() => callback(event)));
 
-    // Configurar auto-dispose
     _disposeSubscriptions[eventBusId]![T.runtimeType] = autoDispose;
   }
 
