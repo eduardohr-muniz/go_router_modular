@@ -347,10 +347,9 @@ import 'package:go_router_modular/go_router_modular.dart';
 import 'src/app_module.dart';
 import 'src/app_widget.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  Modular.configure(
+  await Modular.configure(
     appModule: AppModule(), 
     initialRoute: "/"
   );

@@ -203,8 +203,9 @@ class AppModule extends Module {
 
 **Before (2.x):**
 ```dart
-void main() {
-  Modular.configure(appModule: AppModule(), initialRoute: "/");
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Modular.configure(Modular.configure(appModule: AppModule(), initialRoute: "/");
   runApp(AppWidget());
 }
 
@@ -222,8 +223,9 @@ class AppWidget extends StatelessWidget {
 
 **After (4.x):**
 ```dart
-void main() {
-  Modular.configure(appModule: AppModule(), initialRoute: "/");
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Modular.configure(Modular.configure(appModule: AppModule(), initialRoute: "/");
   runApp(AppWidget());
 }
 

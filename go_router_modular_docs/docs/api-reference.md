@@ -191,57 +191,7 @@ abstract class CustomModularLoader {
 }
 ```
 
-## 🚀 Navigation
 
-### **Context Extensions**
-Navigation methods available on BuildContext.
-
-```dart
-extension NavigationContext on BuildContext {
-  /// Navigate to route
-  void go(String location, {Object? extra});
-  
-  /// Push route
-  void push(String location, {Object? extra});
-  
-  /// Pop current route
-  void pop();
-  
-  /// Replace current route
-  void replace(String location, {Object? extra});
-  
-  /// Async navigation
-  Future<void> goAsync(String location, {Object? extra});
-}
-```
-
-## 🔧 Configuration
-
-### **Modular.configure()**
-Configure the modular system.
-
-```dart
-static void configure({
-  required Module appModule,
-  required String initialRoute,
-  bool debugMode = false,
-});
-```
-
-### **ModularApp.router**
-App widget with router configuration.
-
-```dart
-class ModularApp extends StatelessWidget {
-  const ModularApp.router({
-    super.key,
-    required this.title,
-    this.theme,
-    this.customModularLoader,
-    this.debugShowCheckedModeBanner,
-  });
-}
-```
 
 ## 🏗️ Lifecycle
 
@@ -389,8 +339,9 @@ class NotificationModule extends EventModule {
 
 ### **Main Function**
 ```dart
-void main() {
-  Modular.configure(
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Modular.configure(
     appModule: AppModule(),
     initialRoute: "/",
   );

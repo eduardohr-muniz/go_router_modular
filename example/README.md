@@ -183,10 +183,9 @@ Quando você navega entre as rotas, verá logs como:
 O exemplo está configurado no `main.dart`:
 
 ```dart
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  Modular.configure(
+  await Modular.configure(
     appModule: AppModule(),
     initialRoute: "/",
   );
