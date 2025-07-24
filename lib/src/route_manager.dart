@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/utils/debug.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
 
 class RouteManager {
@@ -17,6 +18,8 @@ class RouteManager {
   final Map<Module, Set<Type>> _moduleBindTypes = {};
 
   final List<Function> _bindsToValidate = [];
+
+  bool get debugLog => DebugModular.instance.debugLogGoRouterModular;
 
   // Sistema de fila sequencial para operações de módulos
   final Queue<Future<void> Function()> _operationQueue = Queue<Future<void> Function()>();
@@ -72,13 +75,13 @@ class RouteManager {
   void addValidateQueue(void Function() validate, String moduleName) {
     _bindsToValidate.add(validate);
 
-    if (Modular.debugLogDiagnostics) {
+    if (debugLog) {
       iLog('⏰ Validação agendada para $moduleName (janela: 500ms)', name: "BIND_VALIDATION");
     }
 
     Future.delayed(const Duration(milliseconds: 500), () {
       final removed = _bindsToValidate.remove(validate);
-      if (removed && Modular.debugLogDiagnostics) {
+      if (removed && debugLog) {
         iLog('⏭️ Validação expirada para $moduleName - nenhum dispose detectado', name: "BIND_VALIDATION");
       }
     });
@@ -137,7 +140,7 @@ class RouteManager {
 
     module.initState(_injector);
 
-    if (Modular.debugLogDiagnostics) {
+    if (debugLog) {
       log('💉 INJECTED: ${module.runtimeType} BINDS: ${allBinds.map((e) => e.instance.runtimeType.toString()).toList()}', name: "GO_ROUTER_MODULAR");
     }
 
@@ -146,7 +149,7 @@ class RouteManager {
   }
 
   void _validateModuleBinds(Module module, List<Bind<Object>> moduleBinds) {
-    if (Modular.debugLogDiagnostics) {
+    if (debugLog) {
       iLog('🧪 Iniciando validação de ${moduleBinds.length} binds do ${module.runtimeType}', name: "BIND_VALIDATION");
     }
 
@@ -171,7 +174,7 @@ class RouteManager {
           tempInstances.add(newInstance);
           successCount++;
 
-          if (Modular.debugLogDiagnostics) {
+          if (debugLog) {
             iLog('✅ $bindType validado', name: "BIND_VALIDATION");
           }
         } catch (e) {
@@ -184,7 +187,7 @@ class RouteManager {
           }
           errorCount++;
 
-          if (Modular.debugLogDiagnostics) {
+          if (debugLog) {
             final stackTrace = bind.stackTrace.toString();
             final normalizedStack = _normalizeStackTrace(stackTrace);
             log('❌ $bindType FAILED: $e \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
@@ -197,13 +200,13 @@ class RouteManager {
       final instanceCount = tempInstances.length;
       tempInstances.clear();
 
-      if (Modular.debugLogDiagnostics) {
+      if (debugLog) {
         iLog('🧹 $instanceCount instâncias temporárias descartadas', name: "BIND_VALIDATION");
       }
     }
 
     // Resultado final da validação
-    if (Modular.debugLogDiagnostics) {
+    if (debugLog) {
       if (errorCount == 0) {
         iLog('🎉 ${module.runtimeType}: Validação completa - todos os binds OK (✅$successCount)', name: "BIND_VALIDATION");
       } else {
@@ -310,7 +313,7 @@ class RouteManager {
       } catch (_) {}
     }
 
-    if (Modular.debugLogDiagnostics) {
+    if (debugLog) {
       log('🗑️ DISPOSED: ${module.runtimeType} BINDS: ${disposedBinds.map((e) => e.toString()).toList()}', name: "GO_ROUTER_MODULAR");
     }
 
@@ -355,7 +358,7 @@ class RouteManager {
 
     // Executar todas as validações pendentes se houver dispose
     if (_bindsToValidate.isNotEmpty) {
-      if (Modular.debugLogDiagnostics) {
+      if (debugLog) {
         iLog('🔍 Dispose detectado - executando ${_bindsToValidate.length} validações pendentes', name: "BIND_VALIDATION");
       }
 
@@ -369,7 +372,7 @@ class RouteManager {
           if (e is GoRouterModularException) {
             rethrow;
           }
-          if (Modular.debugLogDiagnostics) {
+          if (debugLog) {
             iLog('❌ Erro na validação: $e', name: "BIND_VALIDATION");
           }
         }
@@ -378,11 +381,11 @@ class RouteManager {
       // Limpar fila após execução
       _bindsToValidate.clear();
 
-      if (Modular.debugLogDiagnostics) {
+      if (debugLog) {
         iLog('🧹 Fila de validações limpa', name: "BIND_VALIDATION");
       }
     } else {
-      if (Modular.debugLogDiagnostics) {
+      if (debugLog) {
         iLog('⏭️ Nenhuma validação pendente', name: "BIND_VALIDATION");
       }
     }

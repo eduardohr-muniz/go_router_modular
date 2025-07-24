@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/utils/debug.dart';
 
 /// Stores all event subscriptions organized by EventBus and event type.
 ///
@@ -26,35 +28,11 @@ final EventBus _eventBus = EventBus();
 /// // Fire an event
 /// modularEvent.fire(ShowNotificationEvent(message: 'Hello World!'));
 /// ```
-EventBus get modularEvent => _eventBus;
+// EventBus get modularEvent => _eventBus;
 
-/// Represents the main Navigator context of the application.
-///
-/// Can return `null` in the following scenarios:
-/// - During application initialization, before the Navigator is mounted
-/// - After application disposal, when the Navigator has been unmounted
-/// - During page transitions when the context is temporarily unavailable
-/// - In cases where modularNavigatorKey was not configured correctly
-///
-/// It's important to always check if the context is not null before using it:
-/// ```dart
-/// final context = _navigatorContext;
-/// if (context != null) {
-///   // Use the context safely
-///   context.go('/login');
-/// }
-/// ```
-typedef NavigatorContext = BuildContext?;
+BuildContext get _navigatorContext => modularNavigatorKey.currentContext!;
 
-/// Gets the current context of the main Navigator of the application.
-///
-/// This getter returns the BuildContext associated with `modularNavigatorKey`,
-/// which is automatically configured by go_router_modular.
-///
-/// Returns `null` when the Navigator is not available (see [NavigatorContext]).
-NavigatorContext get _navigatorContext {
-  return modularNavigatorKey.currentContext;
-}
+bool get _debugLog => DebugModular.instance.debugLogEventBus;
 
 /// Singleton class to manage global events in the application.
 ///
@@ -122,10 +100,13 @@ class ModularEvent {
   ///   }
   /// });
   /// ```
-  void on<T>(void Function(T event, NavigatorContext? context) callback, {EventBus? eventBus}) {
+  void on<T>(void Function(T event, BuildContext context) callback, {EventBus? eventBus}) {
     eventBus ??= _eventBus;
     _eventSubscriptions[eventBus.hashCode]?[T]?.cancel();
-    _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) => Future.microtask(() => callback(event, _navigatorContext)));
+    _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) => Future.microtask(() {
+          if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+          return _navigatorContext.mounted ? callback(event, _navigatorContext) : throw Exception('Context is not mounted');
+        }));
   }
 
   /// Fires an event in the application.
@@ -147,6 +128,7 @@ class ModularEvent {
   /// ```
   static void fire<T>(T event, {EventBus? eventBus}) {
     eventBus ??= _eventBus;
+    if (_debugLog) log('🔥 Event fired: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
     eventBus.fire(event);
   }
 }
@@ -254,7 +236,7 @@ abstract class EventModule extends Module {
   ///   // Logic that should persist
   /// }, autoDispose: false);
   /// ```
-  void on<T>(void Function(T event, NavigatorContext? context) callback, {bool autoDispose = true}) {
+  void on<T>(void Function(T event, BuildContext context) callback, {bool autoDispose = true}) {
     final eventBusId = _internalEventBus.hashCode;
 
     _eventSubscriptions[eventBusId] ??= {};
@@ -262,7 +244,10 @@ abstract class EventModule extends Module {
 
     _eventSubscriptions[eventBusId]?[T]?.cancel();
 
-    _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().listen((event) => Future.microtask(() => callback(event, _navigatorContext)));
+    _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().listen((event) => Future.microtask(() {
+          if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+          return _navigatorContext.mounted ? callback(event, _navigatorContext) : throw Exception('Context is not mounted');
+        }));
 
     _disposeSubscriptions[eventBusId]![T] = autoDispose;
   }

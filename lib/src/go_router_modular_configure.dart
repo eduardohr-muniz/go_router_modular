@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/bind.dart';
+import 'package:go_router_modular/src/utils/debug.dart';
 import 'package:go_router_modular/src/utils/delay_dispose.dart';
 import 'package:go_router_modular/src/module.dart';
 import 'package:go_router_modular/src/utils/page_transition_enum.dart';
@@ -26,15 +27,6 @@ class GoRouterModular {
     return _router!;
   }
 
-  /// Indicates whether GoRouter diagnostic logs are enabled.
-  ///
-  /// Returns `true` if logs are enabled. Throws an exception if
-  /// [configure] has not been called yet.
-  static bool get debugLogDiagnostics {
-    assert(_debugLogDiagnostics != null, 'Add GoRouterModular.configure in main.dart');
-    return _debugLogDiagnostics!;
-  }
-
   /// Default page transition configuration.
   ///
   /// Returns the type of transition configured in [configure].
@@ -46,9 +38,6 @@ class GoRouterModular {
 
   /// Private router instance.
   static GoRouter? _router;
-
-  /// Flag for enabling diagnostic logs.
-  static bool? _debugLogDiagnostics;
 
   /// Default page transition type.
   static PageTransition? _pageTansition;
@@ -137,11 +126,20 @@ class GoRouterModular {
     bool requestFocus = true,
     PageTransition pageTransition = PageTransition.fade,
     int delayDisposeMilliseconds = 1000,
+    bool debugLogEventBus = false,
   }) async {
     if (_router != null) return _router!;
     _pageTansition = pageTransition;
-    _debugLogDiagnostics = debugLogDiagnostics;
+
     GoRouter.optionURLReflectsImperativeAPIs = true;
+
+    DebugModular.instance.setDebugModel(
+      DebugModel(
+        debugLogEventBus: debugLogEventBus,
+        debugLogGoRouter: debugLogDiagnosticsGoRouter,
+        debugLogGoRouterModular: debugLogDiagnostics,
+      ),
+    );
 
     assert(
       delayDisposeMilliseconds > 500,

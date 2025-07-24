@@ -27,7 +27,6 @@ class ExampleEventPage extends StatelessWidget {
               onPressed: () {
                 // Disparar evento para mostrar modal
                 ModularEvent.fire(ShowModalEvent(
-                  context: context,
                   title: 'Modal Exemplo',
                   message: 'Este é um modal disparado por evento!',
                 ));
@@ -39,7 +38,6 @@ class ExampleEventPage extends StatelessWidget {
               onPressed: () {
                 // Disparar evento para mostrar snackbar
                 ModularEvent.fire(ShowSnackBarEvent(
-                  context: context,
                   message: 'SnackBar disparado por evento!',
                 ));
               },
@@ -50,14 +48,12 @@ class ExampleEventPage extends StatelessWidget {
               onPressed: () {
                 // Exemplo de disparar múltiplos eventos em sequência
                 ModularEvent.fire(ShowSnackBarEvent(
-                  context: context,
                   message: 'Primeiro evento disparado!',
                 ));
 
                 Future.delayed(const Duration(seconds: 2), () {
                   if (context.mounted) {
                     ModularEvent.fire(ShowModalEvent(
-                      context: context,
                       title: 'Segundo Evento',
                       message: 'Este modal foi disparado após 2 segundos!',
                     ));
@@ -94,16 +90,14 @@ class ExampleEventPage extends StatelessWidget {
 }
 
 class ShowModalEvent {
-  final BuildContext context;
   final String title;
   final String message;
 
-  ShowModalEvent({required this.context, required this.title, required this.message});
+  ShowModalEvent({required this.title, required this.message});
 }
 
 class ShowSnackBarEvent {
-  final BuildContext context;
   final String message;
 
-  ShowSnackBarEvent({required this.context, required this.message});
+  ShowSnackBarEvent({required this.message});
 }

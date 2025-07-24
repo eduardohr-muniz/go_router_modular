@@ -1,4 +1,5 @@
 import 'package:example/src/app_widget.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'src/app_module.dart';
@@ -10,6 +11,7 @@ Future<void> main() async {
     initialRoute: '/',
     debugLogDiagnostics: true,
     debugLogDiagnosticsGoRouter: true,
+    debugLogEventBus: kDebugMode,
   );
 
   runApp(const AppWidget());

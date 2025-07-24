@@ -11,7 +11,7 @@ class ExampleEventModule extends EventModule {
   void listen() {
     on<ShowModalEvent>((event, context) {
       showModalBottomSheet(
-          context: event.context,
+          context: context,
           builder: (context) => BottomSheet(
                 onClosing: () {},
                 builder: (context) => Column(
@@ -24,7 +24,7 @@ class ExampleEventModule extends EventModule {
     });
 
     on<ShowSnackBarEvent>((event, context) {
-      ScaffoldMessenger.of(context!).showSnackBar(SnackBar(content: Text(event.message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(event.message)));
     });
   }
 }
