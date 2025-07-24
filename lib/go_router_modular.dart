@@ -17,3 +17,4 @@ export 'src/routes/shell_modular_route.dart';
 export 'package:go_router/go_router.dart' hide GoRouter, ShellRoute;
 export 'package:go_router_modular/src/utils/material_app_router.dart';
 export 'package:go_router_modular/src/utils/modular_loader.dart';
+export 'package:go_router_modular/src/utils/event_module.dart';

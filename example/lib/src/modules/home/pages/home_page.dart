@@ -110,6 +110,30 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _navigateToEvent() async {
+    setState(() => isLoading = true);
+    _showSnackBar('🐚 Navegando para Event...', Colors.green);
+
+    try {
+      // Teste de shell navigation
+      final result = TestController.instance.testShellNavigation(
+        '/event',
+        ['profile', 'settings'],
+      );
+
+      await context.push('/event');
+
+      if (result.success) {
+        _showSnackBar('🎉 Event navigation testado com sucesso!', Colors.green);
+      }
+    } catch (e) {
+      print('❌ Erro na navegação: $e');
+      _showSnackBar('❌ Erro na navegação: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   void _testHomeService() {
     try {
       final sharedService = Modular.get<SharedService>();
@@ -232,6 +256,15 @@ class _HomePageState extends State<HomePage> {
                           onPressed: isLoading ? null : _navigateToShell,
                           icon: const Icon(Icons.layers),
                           label: const Text('3. Testar Shell'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isLoading ? null : _navigateToEvent,
+                          icon: const Icon(Icons.layers),
+                          label: const Text('4. Testar Event Module'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,

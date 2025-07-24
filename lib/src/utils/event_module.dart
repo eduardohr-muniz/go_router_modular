@@ -35,7 +35,7 @@ abstract class EventModule extends Module {
     _eventBus = eventBus ?? modularEvent;
   }
 
-  void listen() {}
+  void listen();
 
   void on<T>(void Function(T event) callback, {bool autoDispose = true}) {
     final eventBusId = _eventBus.hashCode;
