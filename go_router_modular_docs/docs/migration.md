@@ -1,5 +1,5 @@
 ---
-sidebar_position: 11
+sidebar_position: 14
 title: Migration Guide
 description: Migrate from older versions to GoRouter Modular 4.x
 ---

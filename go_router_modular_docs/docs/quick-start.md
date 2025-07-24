@@ -8,37 +8,51 @@ description: Get started with GoRouter Modular in minutes
 
 Get your modular Flutter app running in minutes!
 
-## 1️⃣ Installation
+## 1 -  Installation
 
 Add the dependencies to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
   go_router_modular: ^4.0.0
-  event_bus: ^2.0.0
 ```
 
-## 2️⃣ Create App Module
+## 2 - Create App Module  and Home Module
 
 Create your main app module:
 
 ```dart
+import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<AuthController>((i) => AuthController()),
-  ];
+  FutureOr<List<Bind<Object>>> binds() => [];
 
   @override
   List<ModularRoute> get routes => [
     ModuleRoute("/", module: HomeModule()),
   ];
 }
+
+//********************************************************
+
+class HomeModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute(
+      "/",
+      child: (context, state) => Scaffold(
+        body: Center(
+          child: Text('Hello GoRouter Modular'),
+        ),
+      ),
+    ),
+  ];
+}
 ```
 
-## 3️⃣ Create App Widget
+## 3 - Create App Widget
 
 Set up your app widget:
 
@@ -54,14 +68,19 @@ class AppWidget extends StatelessWidget {
 }
 ```
 
-## 4️⃣ Configure Main
+## 4 - Configure Main
 
 Initialize the modular system:
 
 ```dart
+import 'package:flutter/material.dart';
+import 'package:go_router_modular/go_router_modular.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Modular.configure(Modular.configure(appModule: AppModule(), initialRoute: "/");
+
+  await Modular.configure(appModule: AppModule(), initialRoute: "/");
+
   runApp(AppWidget());
 }
 ```

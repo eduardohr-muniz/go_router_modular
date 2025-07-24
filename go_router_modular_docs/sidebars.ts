@@ -4,31 +4,47 @@ const sidebars: SidebarsConfig = {
   // Main documentation sidebar - todas as páginas
   docsSidebar: [
     'intro',
-    'installation',
-    'getting-started',
-    'quick-start',
-    'project-structure',
+    {
+      type: 'category',
+      label: 'Getting Started',
+      items: [
+        'installation',
+        'getting-started',
+        'quick-start',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Routes',
+      items: [
+        'routes_overview',
+        'navigation',
+        'shell',
+        'child_and_module_routes',
+
+      ],
+    },
     'dependency-injection',
-    'routes',
-    'event-system',
-    'loader-system',
-    'micro-frontend',
+    {
+      type: 'category',
+      label: 'Advanced',
+      items: [
+        'event-system',
+        'micro-frontend',
+        'loader-system',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Core Concepts',
+      items: [
+        'project-structure',
+      ],
+    },
     'migration',
-    'api-reference',
   ],
 
-  // API Reference sidebar - será criada depois
-  // apiSidebar: [
-  //   {
-  //     type: 'category',
-  //     label: '📖 API Reference',
-  //     items: [
-  //       'api/overview',
-  //       'api/module',
-  //       'api/event-module',
-  //     ],
-  //   },
-  // ],
+
 };
 
 export default sidebars;

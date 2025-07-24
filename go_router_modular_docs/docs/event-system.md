@@ -1,12 +1,82 @@
 ---
-sidebar_position: 8
+sidebar_position: 10
 title: Event System
 description: Build decoupled communication between modules
 ---
 
 # 🎭 Event System
 
-The Event System enables **decoupled communication** between modules, perfect for **micro frontend architectures** where teams work independently.
+The Event System is designed to enable **decoupled communication** between modules. This means one module can notify or trigger actions in another module without direct dependencies, making your app more modular and maintainable.
+
+## ✨ Why Use Events?
+- Decouple features: modules don't need to know about each other
+- Centralize cross-cutting actions (navigation, notifications, etc)
+- Facilitate micro frontend/team-based architectures
+
+## 🚦 Typical Use Cases
+
+### 1. Auth: Redirect after login
+When a user logs in, the Auth module can fire an event to notify other modules (or the app shell) to redirect to a specific page:
+
+```dart
+// Event definition
+typedef void OnLoginSuccess();
+
+// In AuthModule
+class AuthModule extends EventModule {
+  @override
+  void listen() {
+    on<OnLoginSuccess>((event, context) {
+      if (context != null) {
+        context.go('/dashboard');
+      }
+    });
+  }
+}
+
+// Somewhere after successful login:
+ModularEvent.fire(OnLoginSuccess());
+```
+
+### 2. Dio Exception: RefreshTokenExpired → Redirect to login
+Quando uma exceção de token expirado ocorre em qualquer módulo, um evento pode ser disparado para redirecionar o usuário para a tela de login, sem acoplamento entre módulos:
+
+```dart
+// Event definition
+class RefreshTokenExpired {}
+
+// In a Dio interceptor (anywhere in the app)
+try {
+  // ...
+} on DioError catch (e) {
+  if (e.type == DioErrorType.badResponse && e.error == 'RefreshTokenExpired') {
+    ModularEvent.fire(RefreshTokenExpired());
+  }
+}
+
+// In AuthModule or a global event listener
+ModularEvent.instance.on<RefreshTokenExpired>((event, context) {
+  if (context != null) {
+    context.go('/login');
+  }
+});
+```
+
+## 🔄 Event Flow Example
+
+```mermaid
+graph TD
+    A[Login Page] -- Login Success --> B[AuthModule fires OnLoginSuccess]
+    B -- Event --> C[App Shell/Router]
+    C -- Redirect --> D[Dashboard Page]
+    E[Dio Interceptor] -- RefreshTokenExpired --> F[ModularEvent.fire]
+    F -- Event --> G[AuthModule/Global Listener]
+    G -- Redirect --> H[Login Page]
+```
+
+---
+
+# (Advanced usage and patterns below)
 
 ## 🚀 Creating Event Modules
 

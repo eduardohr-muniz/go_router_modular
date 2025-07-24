@@ -1,104 +1,101 @@
 ---
-sidebar_position: 5
+sidebar_position: 13
 title: Project Structure
-description: Recommended folder organization for modular Flutter apps
+description: Clean, modular, and SOLID folder organization for scalable Flutter apps
 ---
 
-# 🏗️ Project Structure
+# 🏗️ Project Structure (Clean Architecture + SOLID)
 
-Organize your modular Flutter app with clear boundaries and responsibilities.
+Organize your modular Flutter app following Clean Architecture and SOLID principles for maximum scalability, testability, and maintainability.
 
-## 📁 Recommended Structure
+## 📁 Recommended Structure (per module)
 
 ```
-📁 lib/
-  📁 src/
-    📁 modules/
-      📁 auth/
-        📄 auth_module.dart
-        📄 auth_controller.dart
-        📁 pages/
-          📄 login_page.dart
-          📄 register_page.dart
-        📁 services/
-          📄 auth_service.dart
-      📁 home/
-        📄 home_module.dart
-        📄 home_controller.dart
-        📁 pages/
-          📄 home_page.dart
-          📄 dashboard_page.dart
-        📁 widgets/
-          📄 home_card.dart
-      📁 shared/
-        📄 shared_module.dart
-        📁 services/
-          📄 api_service.dart
-        📁 widgets/
-          📄 loading_widget.dart
-    📄 app_module.dart
-    📄 app_widget.dart
-  📄 main.dart
+lib/
+└── src/
+    └── modules/
+        ├── 📁 user/           # example feature
+        │   ├── 📁 domain/
+        │   │   ├── 📁 entities/
+        │   │   │   └── 📄 user.dart
+        │   │   ├── 📁 repositories/
+        │   │   │   └── 📄 user_repository.dart
+        │   │   └── 📁 usecases/
+        │   │       └── 📄 get_user.dart
+        │   ├── 📁 data/
+        │   │   ├── 📁 datasources/
+        │   │   │   └── 📄 user_remote_datasource.dart
+        │   │   ├── 📁 repositories/
+        │   │   │   └── 📄 user_repository_impl.dart
+        │   │   └── 📁 models/
+        │   │       └── 📄 user_model.dart
+        │   ├── 📁 presentation/
+        │   │   ├── 📁 controllers/
+        │   │   │   └── 📄 user_controller.dart
+        │   │   ├── 📁 pages/
+        │   │   │   └── 📄 user_page.dart
+        │   │   └── 📁 widgets/
+        │   │       └── 📄 user_card.dart
+        │   └── 📄 user_module.dart
+        ├── 📁 auth/           # another feature
+        │   ├── 📁 domain/
+        │   │   ├── 📁 entities/
+        │   │   └── 📁 repositories/
+        │   │   └── 📁 usecases/
+        │   ├── 📁 data/
+        │   │   ├── 📁 datasources/
+        │   │   ├── 📁 repositories/
+        │   │   └── 📁 models/
+        │   ├── 📁 presentation/
+        │   │   ├── 📁 controllers/
+        │   │   ├── 📁 pages/
+        │   │   └── 📁 widgets/
+        │   └── 📄 auth_module.dart
+        ├── 📁 product/        # another feature
+        │   ├── 📁 domain/
+        │   │   ├── 📁 entities/
+        │   │   ├── 📁 repositories/
+        │   │   └── 📁 usecases/
+        │   ├── 📁 data/
+        │   │   ├── 📁 datasources/
+        │   │   ├── 📁 repositories/
+        │   │   └── 📁 models/
+        │   ├── 📁 presentation/
+        │   │   ├── 📁 controllers/
+        │   │   ├── 📁 pages/
+        │   │   └── 📁 widgets/
+        │   └── 📄 product_module.dart
+        └── 📁 shared/
+            ├── 📁 domain/
+            ├── 📁 data/
+            ├── 📁 presentation/
+            └── 📄 shared_module.dart
+    ├── 📄 app_module.dart
+    ├── 📄 app_widget.dart
+└── 📄 main.dart
 ```
 
-## 🧩 Module Organization
+## 🧩 Layered Module Organization
 
-### **Module Structure**
-Each module should contain:
-- **Module class** - Main module definition
-- **Controllers** - Business logic
-- **Pages** - UI screens
-- **Services** - External dependencies
-- **Widgets** - Reusable components
+Each module should be self-contained and follow the separation of concerns:
 
-### **Shared Module**
-Common functionality across modules:
-- Global services
-- Shared widgets
-- Utilities
-- Constants
+- **Domain**: Business logic, entities, repositories (abstract), use cases
+- **Data**: Data sources (API, DB), models, repository implementations
+- **Presentation**: UI, controllers, widgets, pages
 
-## 📋 Best Practices
+> **Note**
+> Each module must be responsible only for its own feature. Avoid cross-module dependencies and keep boundaries clear. A module should work independently, respecting the Single Responsibility Principle (SRP).
 
-### **1. Clear Boundaries**
-- Each module is independent
-- Minimal cross-module dependencies
-- Clear public APIs
 
-### **2. Consistent Naming**
-- `*_module.dart` for modules
-- `*_controller.dart` for controllers
-- `*_page.dart` for pages
-- `*_service.dart` for services
 
-### **3. Feature-based Organization**
-- Group related functionality
-- Keep modules focused
-- Avoid monolithic modules
+## 💡 Best Practices
 
-### **4. Dependency Management**
-- Use dependency injection
-- Avoid direct imports between modules
-- Use events for communication
-
-## 🎯 Example Module
-
-```dart
-// auth_module.dart
-class AuthModule extends Module {
-  @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<AuthController>((i) => AuthController()),
-    Bind.singleton<AuthService>((i) => AuthService()),
-  ];
-
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/', child: (context, state) => LoginPage()),
-    ChildRoute('/register', child: (context, state) => RegisterPage()),
-  ];
-}
-```
+- **Single Responsibility**: Each module should encapsulate only its own feature logic.
+- **No Cross-Feature Imports**: Use shared module for truly global code only.
+- **Explicit APIs**: Expose only what is necessary from each module.
+- **Testability**: Keep business logic in domain layer for easy testing.
+- **SOLID Principles**: Apply SOLID in all layers for maintainability.
+- **Scalability**: This structure supports large teams and codebases.
 
 ## 📚 Related Topics
 

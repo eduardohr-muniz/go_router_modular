@@ -22,7 +22,7 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'pt'],
+    locales: ['en'],
   },
 
   presets: [
@@ -47,7 +47,7 @@ const config: Config = {
           onUntruncatedBlogPosts: 'warn',
         },
         theme: {
-          customCss: './src/css/custom.css',
+          customCss: require.resolve('./src/css/custom.css'),
         },
       } satisfies Preset.Options,
     ],
@@ -73,13 +73,7 @@ const config: Config = {
           position: 'left',
           label: '📚 Docs',
         },
-        // API sidebar será adicionada depois
-        // {
-        //   type: 'docSidebar',
-        //   sidebarId: 'apiSidebar',
-        //   position: 'left',
-        //   label: '📖 API',
-        // },
+
         { to: '/blog', label: '📝 Blog', position: 'left' },
         {
           type: 'localeDropdown',
@@ -111,10 +105,7 @@ const config: Config = {
               label: 'Installation',
               to: '/docs/installation',
             },
-            {
-              label: 'API Reference',
-              to: '/docs/api-reference',
-            },
+
           ],
         },
         {

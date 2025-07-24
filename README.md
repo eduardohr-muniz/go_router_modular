@@ -138,6 +138,54 @@ class HomeModule extends Module {
   ];
 }
 ```
+---
+## 💉 Dependency injection
+
+
+**Example of binds in the feature package:**
+
+```dart
+// features/cart/lib/cart_module.dart
+class CartModule extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() => [
+    Bind.singleton<CartController>((i) => CartController()),
+    Bind.factory<CartService>((i) => CartService()),
+  ];
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (context, state) => CartPage()),
+  ];
+}
+```
+---
+
+### How to use your injected dependencies
+
+You can retrieve your dependencies in two main ways:
+
+**1. Using `Modular.get<T>()` anywhere:**
+
+```dart
+final cartController = Modular.get<CartController>();
+```
+
+**2. Using `context.read<T>()` inside a widget:**
+
+```dart
+class CartPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cartController = context.read<CartController>();
+    // Use cartController as needed
+    return ...;
+  }
+}
+```
+
+- Use `Modular.get<T>()` for global access (not recommended inside widgets).
+- Use `context.read<T>()` for widget-specific access (recommended for UI).
 
 ---
 
@@ -241,5 +289,10 @@ ElevatedButton(
 </div>
 
 </div>
+
+---
+
+
+```
 
 

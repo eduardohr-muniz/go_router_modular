@@ -1,5 +1,5 @@
 ---
-sidebar_position: 9
+sidebar_position: 12
 title: Loader System
 description: Custom loading indicators and async navigation
 ---

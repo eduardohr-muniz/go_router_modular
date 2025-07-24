@@ -61,12 +61,6 @@ class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ModularApp.router(
-      scrollBehavior: const MaterialScrollBehavior().copyWith(
-        dragDevices: {
-          PointerDeviceKind.touch,
-          PointerDeviceKind.mouse,
-        },
-      ),
       title: 'Modular GoRoute Example',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -102,7 +96,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Modular.configure(Modular.configure(
+  await Modular.configure(
     appModule: AppModule(), 
     initialRoute: "/",
     debugLogDiagnostics: true,
@@ -516,10 +510,10 @@ Build applications where **different teams** work on **different features** with
     Join thousands of developers building scalable Flutter applications with GoRouter Modular
   </p>
   <div className="text--center">
-    <a className="button button--primary button--lg margin-horiz--sm" href="/docs/installation">
+    <a className="button button--primary button--lg margin-horiz--sm" href="/go_router_modular/docs/installation">
       📦 Install Now
     </a>
-    <a className="button button--outline button--primary button--lg margin-horiz--sm" href="/docs/getting-started">
+    <a className="button button--outline button--primary button--lg margin-horiz--sm" href="/go_router_modular/docs/getting-started">
       🚀 Start Tutorial
     </a>
   </div>

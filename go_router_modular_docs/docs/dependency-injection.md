@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 9
 title: Dependency Injection
 description: Master the built-in DI system with auto-dispose
 ---
@@ -98,12 +98,34 @@ class AuthModule extends Module {
 class AuthModule extends Module {
   @override
   void dispose() {
-    // Clean up resources when module unloads
-    final authService = Modular.get<AuthService>();
-    authService.dispose();
+    // The dispose method is used when you want to execute an action when the module is disposed,
+    // for example, stop listening to a stream or disconnect from a websocket.
   }
 }
 ```
+
+## ⚡️ Asynchronous Binds
+
+You can use asynchronous binds to initialize dependencies that require async operations, such as fetching remote configuration or initializing plugins.
+
+**Example: Remote Config (e.g., Firebase Remote Config)**
+```dart
+class RemoteConfigModule extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() async {
+    // Fetch remote config asynchronously
+    final remoteConfig = await RemoteConfig.instance.fetchAndActivate();
+    return [
+      Bind.singleton<Dio>(
+        (i) => Dio(BaseOptions(baseUrl: remoteConfig.baseUrl)),
+      ),
+    ];
+  }
+}
+```
+
+> **Warning**
+> Asynchronous binds are strictly forbidden in the `AppModule`. Only use async binds in feature modules. The root `AppModule` must always use synchronous binds to ensure proper app initialization and avoid unpredictable behavior.
 
 ## 🎯 Advanced Patterns
 
@@ -153,17 +175,6 @@ class AppModule extends Module {
 - Prevents memory leaks
 - No manual cleanup required
 
-### **Manual Disposal**
-```dart
-class MyController {
-  Timer? _timer;
-  
-  void dispose() {
-    _timer?.cancel();
-    _timer = null;
-  }
-}
-```
 
 ## 📚 Related Topics
 
