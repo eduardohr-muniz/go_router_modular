@@ -12,7 +12,7 @@ const config: Config = {
   },
 
   url: 'https://eduardohr-muniz.github.io',
-  baseUrl: '/',
+  baseUrl: '/go_router_modular/',
 
   organizationName: 'eduardohr-muniz',
   projectName: 'go_router_modular',
@@ -113,7 +113,7 @@ const config: Config = {
             },
             {
               label: 'API Reference',
-              to: '/docs/api/module',
+              to: '/docs/api-reference',
             },
           ],
         },
@@ -155,8 +155,8 @@ const config: Config = {
           title: '🚀 More',
           items: [
             {
-              label: 'Examples',
-              to: '/docs/examples',
+              label: 'Quick Start',
+              to: '/docs/quick-start',
             },
             {
               label: 'Migration Guide',

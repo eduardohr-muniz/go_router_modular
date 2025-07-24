@@ -1,0 +1,23 @@
+{
+    "name": "go-router-modular",
+    "version": "1.0.0",
+    "description": "GoRouter Modular - Flutter modular architecture solution",
+    "scripts": {
+        "docs:dev": "cd go_router_modular_docs && npm start",
+        "docs:build": "cd go_router_modular_docs && npm run build",
+        "docs:serve": "cd go_router_modular_docs && npm run serve"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/eduardohr-muniz/go_router_modular.git"
+    },
+    "keywords": [
+        "flutter",
+        "modular",
+        "go-router",
+        "dependency-injection",
+        "micro-frontend"
+    ],
+    "author": "Eduardo Muniz",
+    "license": "MIT"
+}
