@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import '../go_router_modular_configure.dart';
 
 /// Stores all event subscriptions organized by EventBus and event type.
 ///

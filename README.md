@@ -39,24 +39,22 @@ Perfect for **micro frontends** and large-scale applications! 🚀
 
 ## ⚡ Quick Start
 
-<Tabs>
-<TabItem value="install" label="📦 Install" default>
+### 📦 Install
 
 ```bash
 flutter pub add go_router_modular
 ```
 
-```yaml title="pubspec.yaml"
+```yaml
 dependencies:
   flutter:
     sdk: flutter
   go_router_modular: ^any
 ```
 
-</TabItem>
-<TabItem value="module" label="🧩 Create principal files">
+### 🧩 Create core files
 
-> lib/src/app_widget.dart
+**lib/src/app_widget.dart**
 
 ```dart
 import 'dart:ui';
@@ -83,7 +81,8 @@ class AppWidget extends StatelessWidget {
   }
 }
 ```
-> lib/src/app_module.dart
+
+**lib/src/app_module.dart**
 
 ```dart
 import 'package:go_router_modular/go_router_modular.dart';
@@ -101,12 +100,11 @@ class AppModule extends Module {
 }
 ```
 
-</TabItem>
-<TabItem value="main" label="🚀 Configure App">
+### 🚀 Configure App
 
-> lib/main.dart
+**lib/main.dart**
 
-```dart 
+```dart
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -121,9 +119,6 @@ Future<void> main() async {
   runApp(AppWidget());
 }
 ```
-
-</TabItem>
-</Tabs>
 
 ---
 

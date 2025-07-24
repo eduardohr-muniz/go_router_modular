@@ -55,11 +55,13 @@ class ExampleEventPage extends StatelessWidget {
                 ));
 
                 Future.delayed(const Duration(seconds: 2), () {
-                  ModularEvent.fire(ShowModalEvent(
-                    context: context,
-                    title: 'Segundo Evento',
-                    message: 'Este modal foi disparado após 2 segundos!',
-                  ));
+                  if (context.mounted) {
+                    ModularEvent.fire(ShowModalEvent(
+                      context: context,
+                      title: 'Segundo Evento',
+                      message: 'Este modal foi disparado após 2 segundos!',
+                    ));
+                  }
                 });
               },
               child: const Text('Disparar Eventos em Sequência'),

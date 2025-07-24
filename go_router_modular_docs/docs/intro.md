@@ -48,7 +48,7 @@ dependencies:
 ```
 
 </TabItem>
-<TabItem value="module" label="🧩 Create principal files">
+<TabItem value="module" label="🧩 Create core files">
 
 ```dart title="lib/src/app_widget.dart"
 import 'dart:ui';
