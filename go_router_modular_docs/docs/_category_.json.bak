@@ -1,0 +1,8 @@
+{
+    "label": "📚 Documentation",
+    "position": 2,
+    "link": {
+        "type": "generated-index",
+        "description": "Complete guide to GoRouter Modular - from basic concepts to advanced patterns"
+    }
+}

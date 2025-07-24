@@ -1,92 +1,87 @@
+<div align="center">
+
 # 🧩 GoRouter Modular 💉
 
-## Simplifying modules dependency injections
+### Simplifying Flutter development with modular architecture
 
-GoRouter Modular simplifies Flutter development by implementing a modular architecture.
+[![Pub Version](https://img.shields.io/pub/v/go_router_modular?color=blue&style=for-the-badge)](https://pub.dev/packages/go_router_modular)
+[![GitHub Stars](https://img.shields.io/github/stars/eduardohr-muniz/go_router_modular?color=yellow&style=for-the-badge)](https://github.com/eduardohr-muniz/go_router_modular)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
 
-It utilizes GoRouter for route management 🧩 and supports per-module dependency injection with auto-dispose 💉.
+**GoRouter Modular** simplifies Flutter development by implementing a modular architecture with **GoRouter** for route management 🧩 and supports per-module **dependency injection** with auto-dispose 💉.
 
-With GoRouter Modular, you can easily organize your application into independent modules, streamlining code development and maintenance while promoting component reuse and project scalability.
+Perfect for **micro frontends** and large-scale applications! 🚀
 
-Simplify your Flutter app development and accelerate your workflow with GoRouter Modular.
+[**📖 Live Documentation**](https://eduardohr-muniz.github.io/go_router_modular/) • [**📦 Pub.dev**](https://pub.dev/packages/go_router_modular) • [**🐛 Issues**](https://github.com/eduardohr-muniz/go_router_modular/issues)
 
-# 🚀 Getting Started
+</div>
 
-1. Create an `app_module.dart`
-2. Create an `app_widget.dart`
-3. Configure your `main.dart`
+---
 
-> Below you will find examples of the structure and how each file should look.
+## ✨ Key Features
 
-### Project Structure Example
+<table>
+<tr>
+<td width="50%">
 
-```css
-📁 src
-   📁 modules
-      📁 home
-         📄 home_controller.dart
-         📄 home_page.dart
-         📄 home_module.dart
-   📄 app_module.dart
-   📄 app_widget.dart
-📄 main.dart
+### 🧩 **Modular Architecture**
+- Independent, reusable modules
+- Clear boundaries and responsibilities  
+- Team-friendly development
+
+### 💉 **Dependency Injection**
+- Built-in DI with auto-dispose
+- Module-scoped and global dependencies
+- Memory leak prevention
+
+### 🛣️ **GoRouter Integration**
+- Seamless GoRouter integration
+- Type-safe navigation
+- Declarative routing
+
+</td>
+<td width="50%">
+
+### 🎭 **Event System**
+- Event-driven communication
+- Perfect for **micro frontends**
+- Decoupled module interaction
+
+### 🚀 **Performance**
+- Lazy loading modules
+- Automatic disposal
+- Efficient memory management
+
+### 🛡️ **Type Safety**
+- Fully type-safe
+- Compile-time error detection
+- Excellent IDE support
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
+
+### 1️⃣ Installation
+
+```yaml
+dependencies:
+  go_router_modular: ^4.0.0
+  event_bus: ^2.0.0
 ```
 
-#### Main Example
-
-```dart
-import 'package:example/src/app_module.dart';
-import 'package:example/src/app_widget.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
-
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  if (kIsWeb) usePathUrlStrategy();
-
-  Modular.configure(appModule: AppModule(), initialRoute: "/"); // Configure Modular
-
-  runApp(AppWidget()); // Define AppWidget
-}
-```
-
-#### AppWidget Example
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
-
-class AppWidget extends StatelessWidget {
-  const AppWidget({super.key});
-
-  @override◊
-  Widget build(BuildContext context) {
-    return ModularApp.router( // Use ModularApp.router instead of MaterialApp.router
-      title: 'Modular GoRoute Example',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-    );
-  }
-}
-```
-
-#### AppModule Example
+### 2️⃣ Create App Module
 
 ```dart
 import 'package:go_router_modular/go_router_modular.dart';
-import 'modules/home/home_module.dart';
-import 'modules/shared/shared_module.dart';
 
 class AppModule extends Module {
   @override
-  FutureOr<List<Module>> imports() => [SharedModule()];
-
-  @override
   FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<AuthController>((i) => AuthController()), // Define global binds in app_module
+    Bind.singleton<AuthController>((i) => AuthController()),
   ];
 
   @override
@@ -96,29 +91,231 @@ class AppModule extends Module {
 }
 ```
 
-# 🎯 LOADER SYSTEM
-
-GoRouter Modular includes a built-in loader system that automatically shows during module registration and can be controlled manually.
-
-## Automatic Loader
-
-The loader automatically appears when navigating between modules during the dependency injection process.
-
-## Manual Loader Control
-
-You can manually control the loader in your code:
+### 3️⃣ Create App Widget
 
 ```dart
-// Show the loader
+class AppWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ModularApp.router(
+      title: 'My Modular App',
+      theme: ThemeData(primarySwatch: Colors.blue),
+    );
+  }
+}
+```
+
+### 4️⃣ Configure Main
+
+```dart
+void main() {
+  Modular.configure(appModule: AppModule(), initialRoute: "/");
+  runApp(AppWidget());
+}
+```
+
+---
+
+## 📚 Documentation
+
+<details>
+<summary><b>🏗️ Project Structure</b></summary>
+
+```
+📁 lib/
+  📁 src/
+    📁 modules/
+      📁 auth/
+        📄 auth_module.dart
+        📄 auth_controller.dart
+        📁 pages/
+          📄 login_page.dart
+      📁 home/
+        📄 home_module.dart
+        📁 pages/
+          📄 home_page.dart
+    📄 app_module.dart
+    📄 app_widget.dart
+  📄 main.dart
+```
+
+</details>
+
+<details>
+<summary><b>💉 Dependency Injection</b></summary>
+
+### Basic Usage
+
+```dart
+class HomeModule extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() => [
+    Bind.singleton<HomeController>((i) => HomeController()),
+    Bind.factory<UserRepository>((i) => UserRepository()),
+  ];
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (context, state) => HomePage()),
+  ];
+}
+```
+
+### Retrieving Dependencies
+
+```dart
+// Using context
+final controller = context.read<HomeController>();
+
+// Using Modular
+final controller = Modular.get<HomeController>();
+
+// Using Bind
+final controller = Bind.get<HomeController>();
+```
+
+### Module Lifecycle
+
+```dart
+class AuthModule extends Module {
+  @override
+  void initState(Injector i) {
+    // Initialize resources
+  }
+
+  @override
+  void dispose() {
+    // Clean up resources
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>🛣️ Routes</b></summary>
+
+### Child Routes
+
+```dart
+class HomeModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (context, state) => HomePage()),
+    ChildRoute('/profile', child: (context, state) => ProfilePage()),
+    ChildRoute('/user/:id', child: (context, state) => 
+      UserPage(id: state.pathParameters['id']!)),
+  ];
+}
+```
+
+### Module Routes
+
+```dart
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ModuleRoute("/", module: HomeModule()),
+    ModuleRoute("/auth", module: AuthModule()),
+  ];
+}
+```
+
+### Shell Routes
+
+```dart
+class ShellModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ShellModularRoute(
+      builder: (context, state, child) => ShellPage(child: child),
+      routes: [
+        ChildRoute("/dashboard", child: (context, state) => DashboardPage()),
+        ChildRoute("/settings", child: (context, state) => SettingsPage()),
+      ],
+    ),
+  ];
+}
+```
+
+### Navigation
+
+```dart
+// Navigate to route
+context.go('/user/123');
+
+// Push route
+context.push('/modal');
+
+// With query parameters
+context.go(Uri(path: '/search', queryParameters: {'q': 'flutter'}).toString());
+```
+
+</details>
+
+<details>
+<summary><b>🎭 Event System</b></summary>
+
+### Creating Event Modules
+
+```dart
+class NotificationModule extends EventModule {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (context, state) => NotificationPage()),
+  ];
+
+  @override
+  void listen() {
+    on<ShowNotificationEvent>((event, context) {
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(event.message)),
+        );
+      }
+    });
+  }
+}
+
+class ShowNotificationEvent {
+  final String message;
+  ShowNotificationEvent(this.message);
+}
+```
+
+### Global Events
+
+```dart
+// Register global listener
+ModularEvent.instance.on<UserLoggedOutEvent>((event, context) {
+  if (context != null) context.go('/login');
+});
+
+// Fire events
+ModularEvent.fire(UserLoggedOutEvent());
+modularEvent.fire(ShowNotificationEvent('Welcome!'));
+```
+
+</details>
+
+<details>
+<summary><b>🎯 Loader System</b></summary>
+
+### Automatic Loader
+
+The loader automatically appears during module loading and dependency injection.
+
+### Manual Control
+
+```dart
+// Show loader
 ModularLoader.show();
 
-// Hide the loader
+// Hide loader
 ModularLoader.hide();
 ```
 
-## Custom Loader
-
-You can customize the loader appearance by creating a `CustomModularLoader`:
+### Custom Loader
 
 ```dart
 class MyLoader extends CustomModularLoader {
@@ -126,406 +323,260 @@ class MyLoader extends CustomModularLoader {
   Color get backgroundColor => Colors.black87;
 
   @override
-  Widget get child => const Column(
+  Widget get child => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-      ),
+      CircularProgressIndicator(color: Colors.blue),
       SizedBox(height: 16),
-      Text(
-        'Carregando...',
-        style: TextStyle(color: Colors.white),
-      ),
+      Text('Loading...', style: TextStyle(color: Colors.white)),
     ],
   );
 }
-```
 
-Then use it in your `ModularApp.router`:
-
-```dart
-return ModularApp.router(
+// Use in app
+ModularApp.router(
   customModularLoader: MyLoader(),
   title: 'My App',
 );
 ```
 
-## Local Custom Loader
+### Async Navigation
 
-### goAsync
-
-The `goAsync` method is used to perform asynchronous navigation between pages. It allows you to `await` the navigation, making it possible to customize the loading indicator on your current page before navigating.
-
-- **`onComplete` Callback:** You can provide an optional `onComplete` function that will be executed automatically after navigation is complete. This is useful for actions such as displaying messages, updating state, or logging events.
-
-The same behavior applies to the following methods:
-
-- goAsync
-- goNamedAsync
-- pushAsync
-- pushNamedAsync
-- pushReplacementAsync
-- pushReplacementNamedAsync
-- replaceAsync
-- replaceNamedAsync
-
-### Usage Example
-
-````dart
 ```dart
 ElevatedButton(
   onPressed: () async {
     setState(() => isLoading = true);
-
-    /// Wait for the page to load
-    await context.goAsync(
-      '/user',
-      onComplete: () { // optional
-        print('Navigation completed');
-      },
-    );
-
+    
+    await context.goAsync('/heavy-page');
+    
     setState(() => isLoading = false);
   },
-)
-
-ElevatedButton(
-  onPressed: () async {
-    setState(() => isLoading = true);
-
-    /// Wait for the page to load
-    await context.goNamedAsync(
-      '/user',
-      onComplete: () { // optional
-        print('Navigation completed');
-      },
-    );
-
-    setState(() => isLoading = false);
-  },
-)
-````
-
-# 💉 DEPENDENCY INJECTION
-
-⚠️ **Attention**
-
-> Every dependency when placed in a **BIND** must be **TYPED** for correct operation.
-
-Example:
-
-```dart
-✅  Bind.singleton<HomeController>((i) => HomeController())
-✅  Bind.singleton((i) => HomeController())
+  child: Text('Navigate'),
+);
 ```
 
-### Injecting Dependencies
+</details>
 
-Create a class for your module and extend it from `Module`. Add your dependencies in the `binds()` method.
+---
 
-> As soon as there are no active routes for your module in the widget tree, the module will automatically dispose of the binds.
+## 🧩 Micro Frontend Architecture
 
-Example:
+Perfect for **teams working independently** on different features!
 
+### E-commerce Example
+
+<table>
+<tr>
+<td width="33%">
+
+**🛒 Cart Module (Team A)**
 ```dart
-import 'package:go_router_modular/go_router_modular.dart';
-import 'pages/home_page.dart';
-
-class HomeModule extends Module {
+class CartModule extends EventModule {
   @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<HomeController>((i) => HomeController()), // DEFINE BINDS FOR MODULE
-    Bind.factory<IUserRepository>((i) => UserRepository()),
-  ];
-
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/', child: (context, state) => const HomePage()),
-  ];
-}
-```
-
-### Module Imports
-
-You can import other modules to share their dependencies:
-
-```dart
-class UserModule extends Module {
-  @override
-  FutureOr<List<Module>> imports() => [SharedModule()];
-
-  @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<UserService>((i) => UserService()),
-  ];
-}
-```
-
-### Module Lifecycle
-
-Modules have lifecycle methods for initialization and cleanup:
-
-```dart
-class AuthModule extends Module {
-  bool _isInitialized = false;
-  Timer? _authTimer;
-
-  @override
-  void initState(Injector i) {
-    if (_isInitialized) return;
-
-    // Initialize module resources
-    _setupAuthListeners();
-    _loadAuthConfig();
-    _isInitialized = true;
-  }
-
-  @override
-  void dispose() {
-    // Clean up resources
-    _authTimer?.cancel();
-    _authTimer = null;
-    _isInitialized = false;
+  void listen() {
+    on<ProductAddedEvent>((event, context) {
+      // Add to cart logic
+      ModularEvent.fire(CartUpdatedEvent());
+    });
   }
 }
 ```
 
-### Global Dependencies
+</td>
+<td width="33%">
 
-Simply place your binds in your `AppModule`.
-
-> Your `AppModule` will never be disposed of.
-
+**🏪 Catalog Module (Team B)**
 ```dart
-class AppModule extends Module {
+class CatalogModule extends EventModule {
   @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<AuthController>((i) => AuthController()), // DEFINE GLOBAL BINDS IN APP_MODULE
-  ];
-}
-```
-
-### Retrieving Dependencies
-
-To retrieve a dependency, you have three options:
-
-```dart
-final homeController = context.read<HomeController>();
-// or
-final homeController = Modular.get<HomeController>();
-// or
-final homeController = Bind.get<HomeController>();
-```
-
-# 🛣️ ROUTES
-
-Route control is handled by GoRouter. The main difference is that we use **ChildRoute** for module route configurations, which has the same structure as GoRoute.
-
-You can follow the GoRouter documentation for navigation: [GoRouter Documentation](https://pub.dev/documentation/go_router/latest/topics/Get%20started-topic.html)
-
-**ChildRoute()** is equivalent to **GoRoute()**. You'll notice they have the same parameters.
-
-> Note that every module must have a root route ("/") that serves as the parent route for the module.
-
-### ChildRoutes
-
-```dart
-class HomeModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/', child: (context, state) => const HomePage()), // Required root route
-    ChildRoute('/config', child: (context, state) => const ConfigPage()),
-    ChildRoute('/info_product/:id', child: (context, state) =>
-      InfoProductPage(id: state.pathParameters['id']!)),
-  ];
-}
-```
-
-### Module Routes
-
-Your module can also have submodules:
-
-> Note that when a route calls a module, it will fall into the module's "/" route.
-
-```dart
-class AppModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute("/", module: HomeModule()),
-    ModuleRoute("/user", module: UserModule()),
-    ChildRoute('/splash', child: (context, state) => const SplashPage()),
-  ];
-}
-```
-
-### Shell Routes
-
-ShellModularRoute is the equivalent of Flutter Modular's RouteOutlet. It allows you to have a navigation window within a page, commonly used for menu construction where options change but only the screen content updates.
-
-> For more details: [GoRouter ShellRoute Documentation](https://pub.dev/documentation/go_router/latest/go_router/ShellRoute-class.html)
-
-```dart
-class HomeShellModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ShellModularRoute(
-      builder: (context, state, child) => ShellPageExample(shellChild: child),
-      routes: [
-        ChildRoute("/config", child: (context, state) => const ConfigPage()),
-        ChildRoute("/user", child: (context, state) => const UserPage()),
-        ChildRoute("/orders", child: (context, state) => const OrdersPage()),
-      ],
-    ),
-  ];
-}
-```
-
-#### ShellPageExample
-
-```dart
-class ShellPageExample extends StatefulWidget {
-  final Widget shellChild; // Request a child WIDGET to be rendered in the shell
-  const ShellPageExample({super.key, required this.shellChild});
-
-  @override
-  State<ShellPageExample> createState() => _ShellPageExampleState();
-}
-
-class _ShellPageExampleState extends State<ShellPageExample> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(children: [
-        Expanded(child: widget.shellChild), // Your routes will be re-rendered here
-        Row(
-          children: [
-            IconButton(
-              onPressed: () => context.go("/home"),
-              icon: const Icon(Icons.home),
-            ),
-            IconButton(
-              onPressed: () => context.go("/config"),
-              icon: const Icon(Icons.settings),
-            ),
-          ],
-        ),
-      ]),
-    );
+  void listen() {
+    on<CartUpdatedEvent>((event, context) {
+      // Update availability
+    });
   }
 }
 ```
 
-### Navigation Examples
+</td>
+<td width="33%">
 
-Navigating to a destination in GoRouter will replace the current stack of screens:
-
+**💳 Checkout Module (Team C)**
 ```dart
-build(BuildContext context) {
-  return TextButton(
-    onPressed: () => context.go('/users/123'),
-  );
+class CheckoutModule extends EventModule {
+  @override
+  void listen() {
+    on<CartUpdatedEvent>((event, context) {
+      // Update totals
+    });
+  }
 }
 ```
 
-> This is shorthand for calling `GoRouter.of(context).go('/users/123')`.
+</td>
+</tr>
+</table>
 
-To build a URI with query parameters, you can use the Uri class:
+### Benefits for Teams
 
-```dart
-context.go(Uri(path: '/users/123', queryParameters: {'filter': 'abc'}).toString());
-```
+- 🔄 **Decoupled Communication** - Teams develop independently
+- 📡 **Event-driven Integration** - Seamless module communication  
+- 🧪 **Easy Testing** - Test modules in isolation
+- 📦 **Independent Deployment** - Deploy modules separately
+- 🛡️ **Type Safety** - Compile-time error detection
 
-For more complete examples, visit the [GoRouter Documentation](https://pub.dev/documentation/go_router/latest/topics/Get%20started-topic.html)
+---
 
-# 🔄 MIGRATION GUIDE
+## 📖 Migration Guide
 
-## Migrating from Version 2.x to 4.x
+<details>
+<summary><b>🔄 From 2.x to 4.x</b></summary>
 
-### Breaking Changes Migration Steps
+### Breaking Changes
 
-1. **Update Root Routes**: Ensure every module has a root ChildRoute with path "/"
-2. **Convert Binds Getter**: Change `get binds =>` to `binds() =>`
-3. **Add Lifecycle Methods**: Implement `initState()` and `dispose()` if needed
-4. **Consider Module Imports**: Use `imports()` to share dependencies between modules
-5. **Use ModularApp.router**: Replace `MaterialApp.router` with `ModularApp.router`
+> ⚠️ **Important Changes:**
+> - Root routes now required
+> - `binds()` method replaces getter
+> - New lifecycle methods
+> - `ModularApp.router` replaces `MaterialApp.router`
 
-### Example Complete Migration
+### Migration Steps
+
+#### 1. Update Routes
 
 **Before (2.x):**
-
 ```dart
-class UserModule extends Module {
-  @override
-  List<Bind<Object>> get binds => [
-    Bind.singleton<UserService>((i) => UserService()),
-  ];
-
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/user', builder: (context, state) => const UserPage()),
-    ChildRoute('/profile', builder: (context, state) => const ProfilePage()),
-  ];
-}
-
-// AppWidget
-class AppWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: Modular.routerConfig,
-      title: 'My App',
-    );
-  }
-}
+List<ModularRoute> get routes => [
+  ChildRoute('/user', builder: (context, state) => UserPage()),
+];
 ```
 
 **After (4.x):**
-
 ```dart
-class UserModule extends Module {
-  @override
-  FutureOr<List<Module>> imports() => [SharedModule()];
+List<ModularRoute> get routes => [
+  ChildRoute('/', child: (context, state) => UserPage()), // Root required
+];
+```
 
-  @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<UserService>((i) => UserService()),
-  ];
+#### 2. Convert Binds
 
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/', child: (context, state) => const UserPage()), // ✅ Root route required
-    ChildRoute('/profile', child: (context, state) => const ProfilePage()),
-  ];
+**Before (2.x):**
+```dart
+@override
+List<Bind<Object>> get binds => [
+  Bind.singleton<UserService>((i) => UserService()),
+];
+```
 
-  @override
-  void initState(Injector i) {
-    // Initialize user-related services
-  }
+**After (4.x):**
+```dart
+@override
+FutureOr<List<Bind<Object>>> binds() => [
+  Bind.singleton<UserService>((i) => UserService()),
+];
+```
 
-  @override
-  void dispose() {
-    // Clean up user resources
-  }
-}
+#### 3. Update App Widget
 
-// AppWidget
-class AppWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ModularApp.router( // ✅ Use ModularApp.router
+**Before (2.x):**
+```dart
+return MaterialApp.router(
+  routerConfig: Modular.routerConfig,
+  title: 'My App',
+);
+```
 
-      title: 'My App',
-      loaderDecorator: CustomLoaderDecorator(), // ✅ Optional custom loader
-    );
-  }
+**After (4.x):**
+```dart
+return ModularApp.router(
+  title: 'My App',
+  theme: ThemeData(primarySwatch: Colors.blue),
+);
+```
+
+</details>
+
+---
+
+## 📋 API Reference
+
+<details>
+<summary><b>📚 Core Classes</b></summary>
+
+### Module
+```dart
+abstract class Module {
+  FutureOr<List<Module>> imports() => [];
+  FutureOr<List<Bind<Object>>> binds() => [];
+  List<ModularRoute> get routes;
+  
+  void initState(Injector i) {}
+  void dispose() {}
 }
 ```
 
-## Contributions
+### EventModule
+```dart
+abstract class EventModule extends Module {
+  void listen();
+  void on<T>(void Function(T event, NavigatorContext? context) callback);
+}
+```
+
+### Routes
+```dart
+// Child Route
+ChildRoute(String path, {required Widget Function(BuildContext, GoRouterState) child})
+
+// Module Route  
+ModuleRoute(String path, {required Module module})
+
+// Shell Route
+ShellModularRoute({
+  required Widget Function(BuildContext, GoRouterState, Widget) builder,
+  required List<ModularRoute> routes,
+})
+```
+
+### Dependency Injection
+```dart
+// Singleton
+Bind.singleton<T>((i) => implementation);
+
+// Factory
+Bind.factory<T>((i) => implementation);
+
+// Lazy Singleton
+Bind.lazySingleton<T>((i) => implementation);
+```
+
+</details>
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+- 🐛 **Report bugs** by creating issues
+- 💡 **Suggest features** through discussions
+- 🔧 **Submit pull requests** with improvements
+- 📖 **Improve documentation**
+- ⭐ **Star the repository** to show support
+
+<div align="center">
+
+### Contributors
 
 <a href="https://github.com/eduardohr-muniz/go_router_modular/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=eduardohr-muniz/go_router_modular" />
 </a>
 
-Made with [contrib.rocks](https://contrib.rocks).
+**Made with [contrib.rocks](https://contrib.rocks)**
+
+---
+
+### 🎉 **Happy Coding with GoRouter Modular!** 🎉
+
+*Transform your Flutter app into a scalable, modular masterpiece* ✨
+
+</div>

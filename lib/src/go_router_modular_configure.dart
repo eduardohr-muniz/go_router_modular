@@ -10,6 +10,8 @@ import 'package:go_router_modular/src/utils/page_transition_enum.dart';
 /// Alias to simplify the use of GoRouterModular.
 typedef Modular = GoRouterModular;
 
+late GlobalKey<NavigatorState> modularNavigatorKey;
+
 /// Main class to manage modular routing using GoRouter.
 class GoRouterModular {
   /// Private constructor to prevent direct instantiation.
@@ -146,7 +148,7 @@ class GoRouterModular {
       '❌ delayDisposeMilliseconds must be at least 500ms - Check `go_router_modular main.dart`.',
     );
     setModularDelayDisposeMiliseconds(delayDisposeMilliseconds);
-
+    modularNavigatorKey = navigatorKey ?? GlobalKey<NavigatorState>();
     _router = GoRouter(
       routes: appModule.configureRoutes(topLevel: true),
       initialLocation: initialRoute,
@@ -155,7 +157,7 @@ class GoRouterModular {
       errorPageBuilder: errorPageBuilder,
       extraCodec: extraCodec,
       initialExtra: initialExtra,
-      navigatorKey: navigatorKey,
+      navigatorKey: modularNavigatorKey,
       observers: observers,
       onException: onException,
       overridePlatformDefaultLocation: overridePlatformDefaultLocation,
