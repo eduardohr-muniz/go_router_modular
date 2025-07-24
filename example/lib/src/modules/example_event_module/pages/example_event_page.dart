@@ -26,7 +26,7 @@ class ExampleEventPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Disparar evento para mostrar modal
-                modularEvent.fire(ShowModalEvent(
+                ModularEvent.fire(ShowModalEvent(
                   context: context,
                   title: 'Modal Exemplo',
                   message: 'Este é um modal disparado por evento!',
@@ -38,7 +38,7 @@ class ExampleEventPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Disparar evento para mostrar snackbar
-                modularEvent.fire(ShowSnackBarEvent(
+                ModularEvent.fire(ShowSnackBarEvent(
                   context: context,
                   message: 'SnackBar disparado por evento!',
                 ));
@@ -49,13 +49,13 @@ class ExampleEventPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Exemplo de disparar múltiplos eventos em sequência
-                modularEvent.fire(ShowSnackBarEvent(
+                ModularEvent.fire(ShowSnackBarEvent(
                   context: context,
                   message: 'Primeiro evento disparado!',
                 ));
 
                 Future.delayed(const Duration(seconds: 2), () {
-                  modularEvent.fire(ShowModalEvent(
+                  ModularEvent.fire(ShowModalEvent(
                     context: context,
                     title: 'Segundo Evento',
                     message: 'Este modal foi disparado após 2 segundos!',

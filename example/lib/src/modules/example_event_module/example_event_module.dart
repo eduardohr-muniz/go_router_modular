@@ -9,12 +9,22 @@ class ExampleEventModule extends EventModule {
       ];
   @override
   void listen() {
-    on<ShowModalEvent>((event) {
-      showModalBottomSheet(context: event.context, builder: (context) => Text(event.title));
+    on<ShowModalEvent>((event, context) {
+      showModalBottomSheet(
+          context: event.context,
+          builder: (context) => BottomSheet(
+                onClosing: () {},
+                builder: (context) => Column(
+                  children: [
+                    Text(event.title),
+                    Text(event.message),
+                  ],
+                ),
+              ));
     });
 
-    on<ShowSnackBarEvent>((event) {
-      ScaffoldMessenger.of(event.context).showSnackBar(SnackBar(content: Text(event.message)));
+    on<ShowSnackBarEvent>((event, context) {
+      ScaffoldMessenger.of(context!).showSnackBar(SnackBar(content: Text(event.message)));
     });
   }
 }

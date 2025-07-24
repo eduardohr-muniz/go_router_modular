@@ -1,4 +1,17 @@
 {
     "dart.flutterSdkPath": "C:\\Users\\eduar\\.puro\\envs\\stable\\flutter",
-    "dart.sdkPath": "C:\\Users\\eduar\\.puro\\envs\\stable\\flutter\\bin\\cache\\dart-sdk"
+    "dart.sdkPath": "C:\\Users\\eduar\\.puro\\envs\\stable\\flutter\\bin\\cache\\dart-sdk",
+    "liveServer.settings.root": "/docs",
+    "liveServer.settings.CustomBrowser": "chrome",
+    "liveServer.settings.port": 5500,
+    "liveServer.settings.host": "localhost",
+    "html.format.enable": true,
+    "html.format.indentInnerHtml": true,
+    "css.format.enable": true,
+    "javascript.format.enable": true,
+    "files.associations": {
+        "*.html": "html",
+        "*.css": "css",
+        "*.js": "javascript"
+    }
 }
