@@ -23,8 +23,11 @@ class ExampleEventModule extends EventModule {
               ));
     });
 
-    on<ShowSnackBarEvent>((event, context) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(event.message)));
-    });
+    on<ShowSnackBarEvent>(
+      (event, context) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(event.message)));
+      },
+      autoDispose: false,
+    );
   }
 }

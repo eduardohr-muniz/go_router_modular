@@ -270,7 +270,6 @@ abstract class EventModule extends Module {
     });
 
     _disposeSubscriptions.remove(eventBusId);
-    _eventSubscriptions.remove(eventBusId);
 
     super.dispose();
   }
