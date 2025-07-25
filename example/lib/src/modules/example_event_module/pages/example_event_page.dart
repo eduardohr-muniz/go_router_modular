@@ -45,11 +45,16 @@ class ExampleEventPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 // Exemplo de disparar múltiplos eventos em sequência
                 ModularEvent.fire(ShowSnackBarEvent(
                   message: 'Primeiro evento disparado!',
                 ));
+
+                for (var i = 0; i < 10; i++) {
+                  print('waiting $i');
+                  await Future.delayed(const Duration(seconds: 1));
+                }
 
                 Future.delayed(const Duration(seconds: 2), () {
                   if (context.mounted) {

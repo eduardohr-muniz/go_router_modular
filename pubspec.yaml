@@ -1,6 +1,6 @@
 name: go_router_modular
 description: "go_router wrapper with a modular twist dependency injections and automatic dispose"
-version: 4.0.0+6
+version: 4.0.0+7
 homepage: https://noble-radiator-9bf.notion.site/749c9f720f004ce2a9a5c64723d208c1?v=e4e46890a8e94b5ca97a050d12b952ca&p=e379fa8efcb045eebf651203839f0b95&pm=s
 repository: https://github.com/eduardohr-muniz/go_router_modular
 issue_tracker: https://github.com/eduardohr-muniz/go_router_modular/issues

@@ -196,11 +196,9 @@ class NotificationModule extends EventModule {
   @override
   void listen() {
     on<ShowNotificationEvent>((event, context) {
-      if (context != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(event.message)),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(event.message)),
+      );
     });
   }
 }

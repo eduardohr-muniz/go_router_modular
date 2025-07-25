@@ -27,9 +27,7 @@ class AuthModule extends EventModule {
   @override
   void listen() {
     on<OnLoginSuccess>((event, context) {
-      if (context != null) {
-        context.go('/dashboard');
-      }
+      context.go('/dashboard');
     });
   }
 }
@@ -56,9 +54,7 @@ try {
 
 // In AuthModule or a global event listener
 ModularEvent.instance.on<RefreshTokenExpired>((event, context) {
-  if (context != null) {
-    context.go('/login');
-  }
+  context.go('/login');
 });
 ```
 
@@ -91,11 +87,11 @@ class NotificationModule extends EventModule {
   @override
   void listen() {
     on<ShowNotificationEvent>((event, context) {
-      if (context != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(event.message)),
-        );
-      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(event.message)),
+      );
+
     });
   }
 }
@@ -123,9 +119,9 @@ class AuthModule extends EventModule {
       print('User ${event.user.name} logged in at ${event.timestamp}');
       
       // Navigate to dashboard
-      if (context != null) {
-        context.go('/dashboard');
-      }
+   
+      context.go('/dashboard');
+      
     });
   }
 }
@@ -137,7 +133,7 @@ class AuthModule extends EventModule {
 ```dart
 // Register global listener
 ModularEvent.instance.on<UserLoggedOutEvent>((event, context) {
-  if (context != null) context.go('/login');
+  context.go('/login');
 });
 
 // Fire global events
@@ -168,7 +164,6 @@ class NotificationModule extends EventModule {
   @override
   void listen() {
     on<ShowDialogEvent>((event, context) {
-      if (context != null) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -182,7 +177,6 @@ class NotificationModule extends EventModule {
             ],
           ),
         );
-      }
     });
   }
 }
@@ -402,20 +396,7 @@ class ProductAddedEvent {
 }
 ```
 
-### **3. Context Safety**
-```dart
-// ✅ Good - Always check context
-on<ShowDialogEvent>((event, context) {
-  if (context != null) {
-    showDialog(context: context, ...);
-  }
-});
 
-// ❌ Avoid - Assuming context exists
-on<ShowDialogEvent>((event, context) {
-  showDialog(context: context!, ...); // Could crash
-});
-```
 
 ## 📚 Related Topics
 
