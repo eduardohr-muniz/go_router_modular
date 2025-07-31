@@ -1,4 +1,8 @@
 
+## 4.0.0+8
+
+### Fix
+ Dispose AppModule
 
 ## 4.0.0
 
