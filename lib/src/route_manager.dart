@@ -348,6 +348,7 @@ class RouteManager {
   }
 
   Future<void> unregisterModule(Module module) async {
+    if (module.runtimeType == _appModule?.runtimeType) return;
     return _enqueueOperation(() => _unregisterModuleInternal(module));
   }
 
