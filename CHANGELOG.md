@@ -1,3 +1,9 @@
+## 4.1.0
+### Fix
+* Added nullable context in EventModule to handle web scenarios where context might not be available during page refreshes or redirects
+
+### Feat
+* Added `autoDisposeEventBus` parameter in Modular.configure to customize whether events should be automatically disposed when modules are destroyed (default: true)
 
 ## 4.0.0+8
 

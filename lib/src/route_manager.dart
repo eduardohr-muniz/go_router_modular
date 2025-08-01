@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/debug.dart';
+import 'package:go_router_modular/src/utils/setup.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
 
 class RouteManager {
@@ -19,7 +19,7 @@ class RouteManager {
 
   final List<Function> _bindsToValidate = [];
 
-  bool get debugLog => DebugModular.instance.debugLogGoRouterModular;
+  bool get debugLog => SetupModular.instance.debugLogGoRouterModular;
 
   // Sistema de fila sequencial para operações de módulos
   final Queue<Future<void> Function()> _operationQueue = Queue<Future<void> Function()>();

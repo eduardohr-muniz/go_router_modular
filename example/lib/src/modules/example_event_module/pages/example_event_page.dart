@@ -52,7 +52,6 @@ class ExampleEventPage extends StatelessWidget {
                 ));
 
                 for (var i = 0; i < 10; i++) {
-                  print('waiting $i');
                   await Future.delayed(const Duration(seconds: 1));
                 }
 
