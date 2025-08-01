@@ -1,42 +1,48 @@
-class DebugModular {
-  static DebugModular? _instance;
-  DebugModular._();
-  static DebugModular get instance => _instance ??= DebugModular._();
+class SetupModular {
+  static SetupModular? _instance;
+  SetupModular._();
+  static SetupModular get instance => _instance ??= SetupModular._();
 
-  DebugModel _debug = DebugModel(
+  SetupModel _debug = SetupModel(
     debugLogEventBus: false,
     debugLogGoRouter: false,
     debugLogGoRouterModular: false,
+    autoDisposeEvents: true,
   );
   bool get debugLogEventBus => _debug.debugLogEventBus;
   bool get debugLogGoRouter => _debug.debugLogGoRouter;
   bool get debugLogGoRouterModular => _debug.debugLogGoRouterModular;
+  bool get autoDisposeEvents => _debug.autoDisposeEvents;
 
-  void setDebugModel(DebugModel value) {
+  void setDebugModel(SetupModel value) {
     _debug = value;
   }
 }
 
-class DebugModel {
+class SetupModel {
   final bool debugLogEventBus;
   final bool debugLogGoRouter;
   final bool debugLogGoRouterModular;
+  final bool autoDisposeEvents;
 
-  DebugModel({
+  SetupModel({
     required this.debugLogEventBus,
     required this.debugLogGoRouter,
     required this.debugLogGoRouterModular,
+    required this.autoDisposeEvents,
   });
 
-  DebugModel copyWith({
+  SetupModel copyWith({
     bool? debugLogEventBus,
     bool? debugLogGoRouter,
     bool? debugLogGoRouterModular,
+    bool? autoDisposeEvents,
   }) {
-    return DebugModel(
+    return SetupModel(
       debugLogEventBus: debugLogEventBus ?? this.debugLogEventBus,
       debugLogGoRouter: debugLogGoRouter ?? this.debugLogGoRouter,
       debugLogGoRouterModular: debugLogGoRouterModular ?? this.debugLogGoRouterModular,
+      autoDisposeEvents: autoDisposeEvents ?? this.autoDisposeEvents,
     );
   }
 }

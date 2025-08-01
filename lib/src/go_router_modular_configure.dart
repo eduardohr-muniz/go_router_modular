@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/bind.dart';
-import 'package:go_router_modular/src/utils/debug.dart';
+import 'package:go_router_modular/src/utils/setup.dart';
 import 'package:go_router_modular/src/utils/delay_dispose.dart';
 import 'package:go_router_modular/src/module.dart';
 import 'package:go_router_modular/src/utils/page_transition_enum.dart';
@@ -127,17 +127,19 @@ class GoRouterModular {
     PageTransition pageTransition = PageTransition.fade,
     int delayDisposeMilliseconds = 1000,
     bool debugLogEventBus = false,
+    bool autoDisposeEventsBus = true,
   }) async {
     if (_router != null) return _router!;
     _pageTansition = pageTransition;
 
     GoRouter.optionURLReflectsImperativeAPIs = true;
 
-    DebugModular.instance.setDebugModel(
-      DebugModel(
+    SetupModular.instance.setDebugModel(
+      SetupModel(
         debugLogEventBus: debugLogEventBus,
         debugLogGoRouter: debugLogDiagnosticsGoRouter,
         debugLogGoRouterModular: debugLogDiagnostics,
+        autoDisposeEvents: autoDisposeEventsBus,
       ),
     );
 

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/debug.dart';
+import 'package:go_router_modular/src/utils/setup.dart';
 
 /// Stores all event subscriptions organized by EventBus and event type.
 ///
@@ -30,9 +30,16 @@ final EventBus _eventBus = EventBus();
 /// ```
 // EventBus get modularEvent => _eventBus;
 
+/// Gets the current Navigator context from the modular navigator key.
+///
+/// This context is used in event callbacks to provide access to the current
+/// navigation state. Can be null in web applications during page refreshes
+/// or redirects before the widget tree is fully mounted.
 BuildContext? get _navigatorContext => modularNavigatorKey.currentContext;
 
-bool get _debugLog => DebugModular.instance.debugLogEventBus;
+bool get _debugLog => SetupModular.instance.debugLogEventBus;
+
+bool get _autoDisposeEvents => SetupModular.instance.autoDisposeEvents;
 
 /// Singleton class to manage global events in the application.
 ///
@@ -45,7 +52,9 @@ bool get _debugLog => DebugModular.instance.debugLogEventBus;
 /// // Register a listener
 /// ModularEvent.instance.on<LogoutEvent>((event, context) {
 ///   // logout logic
-///   context?.go('/login');
+///   if (context != null) {
+///     context.go('/login');
+///   }
 /// });
 ///
 /// // Fire an event
@@ -85,6 +94,33 @@ class ModularEvent {
   ///
   /// The callback will be executed whenever an event of type [T] is fired.
   /// The current Navigator context is provided automatically, but can be `null`.
+  ///
+  /// **Context Information:**
+  /// The [context] parameter is obtained from the NavigatorState using `modularNavigatorKey.currentContext`.
+  /// This context represents the current navigation context and can be used for navigation operations,
+  /// accessing Scaffold, and other Flutter widget operations.
+  ///
+  /// **Important Web Consideration:**
+  /// In web applications, especially during redirects or page refreshes, the context might not be
+  /// available (null) if the event is fired before the widget tree is fully mounted. This commonly
+  /// happens when:
+  /// - User refreshes the page and events are fired during the initial load
+  /// - Redirects occur before the navigation context is established
+  /// - Events are triggered during the app initialization phase
+  ///
+  /// **Best Practices:**
+  /// Always check if the context is not null before using it for navigation or widget operations:
+  /// ```dart
+  /// ModularEvent.instance.on<MyEvent>((event, context) {
+  ///   if (context != null) {
+  ///     // Safe to use context for navigation
+  ///     context.go('/some-route');
+  ///   } else {
+  ///     // Handle case where context is not available
+  ///     // Consider using alternative navigation methods or deferring the action
+  ///   }
+  /// });
+  /// ```
   ///
   /// Parameters:
   /// - [callback]: Function that will be executed when the event is received
@@ -164,7 +200,7 @@ class ModularEvent {
 ///     on<LogoutEvent>((event, context) {
 ///       // logout logic
 ///       if (context != null) {
-///       context?.go('/login');
+///         context.go('/login');
 ///       }
 ///     });
 ///   }
@@ -205,6 +241,9 @@ abstract class EventModule extends Module {
   ///     // Logic to show modal
   ///     if (context != null) {
   ///       context.go('/home');
+  ///     } else {
+  ///       // Handle case where context is not available
+  ///       // Consider using alternative navigation methods or deferring the action
   ///     }
   ///   });
   /// }
@@ -216,6 +255,33 @@ abstract class EventModule extends Module {
   /// This method should be used within the [listen] method to register
   /// event handlers. The listener will be automatically removed when
   /// the module is destroyed (if [autoDispose] is `true`).
+  ///
+  /// **Context Information:**
+  /// The [context] parameter is obtained from the NavigatorState using `modularNavigatorKey.currentContext`.
+  /// This context represents the current navigation context and can be used for navigation operations,
+  /// accessing Scaffold, and other Flutter widget operations.
+  ///
+  /// **Important Web Consideration:**
+  /// In web applications, especially during redirects or page refreshes, the context might not be
+  /// available (null) if the event is fired before the widget tree is fully mounted. This commonly
+  /// happens when:
+  /// - User refreshes the page and events are fired during the initial load
+  /// - Redirects occur before the navigation context is established
+  /// - Events are triggered during the app initialization phase
+  ///
+  /// **Best Practices:**
+  /// Always check if the context is not null before using it for navigation or widget operations:
+  /// ```dart
+  /// on<MyEvent>((event, context) {
+  ///   if (context != null) {
+  ///     // Safe to use context for navigation
+  ///     context.go('/some-route');
+  ///   } else {
+  ///     // Handle case where context is not available
+  ///     // Consider using alternative navigation methods or deferring the action
+  ///   }
+  /// });
+  /// ```
   ///
   /// Parameters:
   /// - [callback]: Function that will be executed when the event is received
@@ -236,7 +302,7 @@ abstract class EventModule extends Module {
   ///   // Logic that should persist
   /// }, autoDispose: false);
   /// ```
-  void on<T>(void Function(T event, BuildContext? context) callback, {bool autoDispose = true}) {
+  void on<T>(void Function(T event, BuildContext? context) callback, {bool? autoDispose}) {
     final eventBusId = _internalEventBus.hashCode;
 
     _eventSubscriptions[eventBusId] ??= {};
@@ -249,7 +315,7 @@ abstract class EventModule extends Module {
           return callback(event, _navigatorContext);
         }));
 
-    _disposeSubscriptions[eventBusId]![T] = autoDispose;
+    _disposeSubscriptions[eventBusId]![T] = autoDispose ?? _autoDisposeEvents;
   }
 
   @override
