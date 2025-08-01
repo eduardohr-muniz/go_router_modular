@@ -30,7 +30,7 @@ final EventBus _eventBus = EventBus();
 /// ```
 // EventBus get modularEvent => _eventBus;
 
-BuildContext get _navigatorContext => modularNavigatorKey.currentContext!;
+BuildContext? get _navigatorContext => modularNavigatorKey.currentContext;
 
 bool get _debugLog => DebugModular.instance.debugLogEventBus;
 
@@ -100,12 +100,12 @@ class ModularEvent {
   ///   }
   /// });
   /// ```
-  void on<T>(void Function(T event, BuildContext context) callback, {EventBus? eventBus}) {
+  void on<T>(void Function(T event, BuildContext? context) callback, {EventBus? eventBus}) {
     eventBus ??= _eventBus;
     _eventSubscriptions[eventBus.hashCode]?[T]?.cancel();
     _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) => Future.microtask(() {
           if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
-          return _navigatorContext.mounted ? callback(event, _navigatorContext) : throw Exception('Context is not mounted');
+          return callback(event, _navigatorContext);
         }));
   }
 
@@ -236,7 +236,7 @@ abstract class EventModule extends Module {
   ///   // Logic that should persist
   /// }, autoDispose: false);
   /// ```
-  void on<T>(void Function(T event, BuildContext context) callback, {bool autoDispose = true}) {
+  void on<T>(void Function(T event, BuildContext? context) callback, {bool autoDispose = true}) {
     final eventBusId = _internalEventBus.hashCode;
 
     _eventSubscriptions[eventBusId] ??= {};
@@ -246,7 +246,7 @@ abstract class EventModule extends Module {
 
     _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().listen((event) => Future.microtask(() {
           if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
-          return _navigatorContext.mounted ? callback(event, _navigatorContext) : throw Exception('Context is not mounted');
+          return callback(event, _navigatorContext);
         }));
 
     _disposeSubscriptions[eventBusId]![T] = autoDispose;

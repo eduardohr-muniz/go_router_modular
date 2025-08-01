@@ -19,5 +19,5 @@ export 'package:go_router_modular/src/utils/material_app_router.dart';
 export 'package:go_router_modular/src/utils/modular_loader.dart';
 
 // Event System exports
-export 'src/utils/event_module.dart' show EventModule, ModularEvent, NavigatorContext, modularEvent;
+export 'src/utils/event_module.dart' show EventModule, ModularEvent;
 export 'package:event_bus/event_bus.dart';
