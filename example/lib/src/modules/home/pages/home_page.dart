@@ -70,6 +70,22 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _navigateToBindsByKey() async {
+    setState(() => isLoading = true);
+    _showSnackBar('🧪 Navegando para BindsByKey...', Colors.blue);
+
+    try {
+      await context.pushAsync('/binds-by-key', onComplete: () {
+        print('✅ Navegação para BindsByKey completada');
+      });
+    } catch (e) {
+      print('❌ Erro na navegação: $e');
+      _showSnackBar('❌ Erro na navegação: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   Future<void> _navigateToUser() async {
     setState(() => isLoading = true);
     _showSnackBar('👤 Navegando para User...', Colors.purple);
@@ -267,6 +283,15 @@ class _HomePageState extends State<HomePage> {
                           label: const Text('4. Testar Event Module'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isLoading ? null : _navigateToBindsByKey,
+                          icon: const Icon(Icons.layers),
+                          label: const Text('5. Testar BindsByKey'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
                             foregroundColor: Colors.white,
                           ),
                         ),

@@ -1,0 +1,29 @@
+import 'dart:async';
+
+import 'package:go_router_modular/go_router_modular.dart';
+import 'pages/bind_by_key_page.dart';
+
+class BindsByKeyModule extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() {
+    return [
+      Bind.singleton((i) => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local'),
+      Bind.singleton((i) => DioFake(baseUrl: 'https://api.github.com'), key: 'dio_remote'),
+    ];
+  }
+
+  @override
+  List<ModularRoute> get routes {
+    return [
+      ChildRoute(
+        '/',
+        child: (context, state) => const BindByKeyPage(),
+      ),
+    ];
+  }
+}
+
+class DioFake {
+  final String baseUrl;
+  DioFake({required this.baseUrl});
+}

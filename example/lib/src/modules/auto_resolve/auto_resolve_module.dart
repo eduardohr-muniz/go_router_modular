@@ -11,6 +11,7 @@ class AutoResolveModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
+      Bind.singleton((i) => HomeService()),
       Bind.singleton((i) => A(i.get())),
       Bind.singleton((i) => B(i.get())),
       Bind.factory((i) => Z(i.get())),

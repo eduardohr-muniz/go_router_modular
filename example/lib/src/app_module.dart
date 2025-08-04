@@ -1,4 +1,5 @@
 import 'package:example/src/modules/auto_resolve/auto_resolve_module.dart';
+import 'package:example/src/modules/binds_by_key/binds_by_key_module.dart';
 import 'package:example/src/modules/example_event_module/example_event_module.dart';
 import 'package:example/src/modules/home/home_module.dart';
 import 'package:example/src/modules/shell_example/shell_module.dart';
@@ -16,6 +17,10 @@ class AppModule extends Module {
         ModuleRoute(
           '/shell',
           module: ShellModule(),
+        ),
+        ModuleRoute(
+          '/binds-by-key',
+          module: BindsByKeyModule(),
         )
       ];
 }
