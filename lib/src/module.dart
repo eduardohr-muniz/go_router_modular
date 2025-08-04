@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/internal_logs.dart';
 import 'package:go_router_modular/src/utils/parent_widget_observer.dart';
 
 abstract class Module {
@@ -186,8 +185,6 @@ abstract class Module {
 
   Widget _buildRouteChild(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
     // Executa registro com prioridade (fire and forget - não bloqueia UI)
-    iLog('📱 BUILD ChildRoute: ${state.path} - Módulo: $runtimeType', name: "BUILD_DEBUG");
-    iLog('📍 CHAMANDO _register de _buildRouteChild', name: "BUILD_DEBUG");
 
     return route.child(context, state);
   }

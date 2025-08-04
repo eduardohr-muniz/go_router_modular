@@ -4,10 +4,6 @@ import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/utils/setup.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
-import 'package:go_router_modular/src/utils/exception.dart';
-import 'package:go_router_modular/src/utils/injector.dart';
-import 'package:go_router_modular/src/bind.dart';
-import 'package:go_router_modular/src/module.dart';
 
 /// ValueObject para representar um bind único (Type + Key)
 class BindIdentifier {
@@ -26,7 +22,7 @@ class BindIdentifier {
   int get hashCode => type.hashCode ^ (key?.hashCode ?? 0);
 
   @override
-  String toString() => 'BindIdentifier($type${key != null ? ', key: $key' : ''})';
+  String toString() => '$type(${key != null ? (key == type.toString() ? '' : 'key: $key') : ''})';
 }
 
 class RouteManager {
@@ -68,7 +64,6 @@ class RouteManager {
           if (e is GoRouterModularException) {
             rethrow;
           }
-          iLog('❌ Erro na operação da fila: $e', name: "ROUTE_MANAGER");
         }
       }
     } finally {
@@ -113,10 +108,6 @@ class RouteManager {
 
   bool _isBindForAppModule(BindIdentifier bindId) {
     final isForAppModule = _moduleBindTypes[_appModule]?.contains(bindId) ?? false;
-    iLog('🔍 DEBUG: _isBindForAppModule($bindId) = $isForAppModule', name: "ROUTE_MANAGER");
-    if (isForAppModule) {
-      iLog('🔍 DEBUG: Bind $bindId é do AppModule', name: "ROUTE_MANAGER");
-    }
     return isForAppModule;
   }
 
@@ -166,12 +157,18 @@ class RouteManager {
 
     _recursiveRegisterBinds(allBinds);
     _moduleBindTypes[module] = allBinds.map((e) => BindIdentifier(e.instance.runtimeType, e.key ?? e.instance.runtimeType.toString())).toSet();
-    iLog('🔍 DEBUG: Módulo ${module.runtimeType} registrou tipos: ${allBinds.map((e) => e.instance.runtimeType).toList()}', name: "ROUTE_MANAGER");
 
     module.initState(_injector);
 
     if (debugLog) {
-      log('💉 INJECTED: ${module.runtimeType} BINDS: ${allBinds.map((e) => e.instance.runtimeType.toString()).toList()}', name: "GO_ROUTER_MODULAR");
+      log(
+          '💉 INJECTED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${allBinds.isEmpty ? '😴 EMPTY' : ''}${allBinds.map(
+                (e) {
+                  final type = e.instance.runtimeType.toString();
+                  return '♻️ $type(${e.key != null ? (e.key == type ? '' : 'key: ${e.key}') : ''})';
+                },
+              ).toList().join('\n')} \n}',
+          name: "GO_ROUTER_MODULAR");
     }
 
     // Validação simples após 500ms
@@ -303,12 +300,9 @@ class RouteManager {
         final type = bind.instance.runtimeType;
         final key = bind.key ?? type.toString();
         final bindId = BindIdentifier(type, key);
-        iLog('🔍 DEBUG: Processando bind: $bindId', name: "ROUTE_MANAGER");
         _incrementBindReference(bindId);
         Bind.register(bind);
-        iLog('✅ DEBUG: Bind $bindId registrado com sucesso', name: "ROUTE_MANAGER");
       } catch (e) {
-        iLog('❌ DEBUG: Erro ao registrar bind: $e', name: "ROUTE_MANAGER");
         failedBinds.add(bind);
       }
     }
@@ -335,38 +329,26 @@ class RouteManager {
 
     List<BindIdentifier> disposedBinds = [];
 
-    iLog('🔍 DEBUG: Binds para dispose: $bindsToDispose', name: "ROUTE_MANAGER");
-
     // Decrementar referências para cada bind único
     for (var bindId in bindsToDispose) {
       try {
-        iLog('🔍 DEBUG: Decrementando referência para $bindId', name: "ROUTE_MANAGER");
-
         // Decrementar a referência para cada bind do módulo
         final disposed = _decrementBindReference(bindId);
-        iLog('🔍 DEBUG: Decremento para $bindId - disposed: $disposed', name: "ROUTE_MANAGER");
 
         if (disposed) {
           disposedBinds.add(bindId);
           // Só fazer dispose quando não há mais referências
           final isForAppModule = _isBindForAppModule(bindId);
-          iLog('🔍 DEBUG: Verificando se bind é do AppModule: $bindId -> $isForAppModule', name: "ROUTE_MANAGER");
 
           if (!isForAppModule) {
-            iLog('🗑️ DEBUG: Chamando disposeByType para: ${bindId.type}', name: "ROUTE_MANAGER");
             Bind.disposeByType(bindId.type);
-            iLog('✅ DEBUG: disposeByType concluído para: ${bindId.type}', name: "ROUTE_MANAGER");
-          } else {
-            iLog('⚠️ DEBUG: Bind $bindId é do AppModule - não fazendo dispose', name: "ROUTE_MANAGER");
           }
-        } else {
-          iLog('⚠️ DEBUG: Bind $bindId não foi disposed (ainda tem referências)', name: "ROUTE_MANAGER");
         }
       } catch (_) {}
     }
 
     if (debugLog) {
-      log('🗑️ DISPOSED: ${module.runtimeType} BINDS: ${disposedBinds.map((e) => e.toString()).toList()}', name: "GO_ROUTER_MODULAR");
+      log('🗑️ DISPOSED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${disposedBinds.isEmpty ? '😴 EMPTY' : ''}${disposedBinds.map((e) => '💥 ${e.toString()}').toList().join('\n')} \n}', name: "GO_ROUTER_MODULAR");
     }
 
     // Remover o código problemático que sempre fazia dispose
@@ -380,31 +362,21 @@ class RouteManager {
   }
 
   void _incrementBindReference(BindIdentifier bindId) {
-    iLog('🔍 DEBUG: _incrementBindReference($bindId)', name: "ROUTE_MANAGER");
-
     if (_bindReferences.containsKey(bindId)) {
       _bindReferences[bindId] = (_bindReferences[bindId] ?? 0) + 1;
-      iLog('🔍 DEBUG: Incrementou referência para $bindId -> ${_bindReferences[bindId]}', name: "ROUTE_MANAGER");
     } else {
       _bindReferences[bindId] = 1;
-      iLog('🔍 DEBUG: Nova referência para $bindId -> 1', name: "ROUTE_MANAGER");
     }
   }
 
   bool _decrementBindReference(BindIdentifier bindId) {
-    iLog('🔍 DEBUG: _decrementBindReference($bindId) - _bindReferences: $_bindReferences', name: "ROUTE_MANAGER");
-
     if (_bindReferences.containsKey(bindId)) {
       _bindReferences[bindId] = (_bindReferences[bindId] ?? 1) - 1;
-      iLog('🔍 DEBUG: Decrementou referência para $bindId -> ${_bindReferences[bindId]}', name: "ROUTE_MANAGER");
 
       if (_bindReferences[bindId] == 0) {
         _bindReferences.remove(bindId);
-        iLog('✅ DEBUG: Removendo $bindId do _bindReferences', name: "ROUTE_MANAGER");
         return true;
       }
-    } else {
-      iLog('⚠️ DEBUG: Bind $bindId não encontrado em _bindReferences', name: "ROUTE_MANAGER");
     }
     return false;
   }
@@ -434,9 +406,6 @@ class RouteManager {
           // Se for GoRouterModularException, propaga para o usuário
           if (e is GoRouterModularException) {
             rethrow;
-          }
-          if (debugLog) {
-            iLog('❌ Erro na validação: $e', name: "BIND_VALIDATION");
           }
         }
       }

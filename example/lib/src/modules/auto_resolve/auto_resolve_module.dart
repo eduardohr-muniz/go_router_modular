@@ -13,7 +13,7 @@ class AutoResolveModule extends Module {
     return [
       Bind.singleton((i) => HomeService()),
       Bind.singleton((i) => A(i.get())),
-      Bind.singleton((i) => B(i.get())),
+      Bind.factory((i) => B(i.get())),
       Bind.factory((i) => Z(i.get())),
       Bind.singleton((i) => C(i.get())),
       Bind.singleton((i) => D(i.get())),
