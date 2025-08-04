@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/bind.dart';
+import 'package:go_router_modular/src/utils/asserts/go_router_modular_configure_assert.dart';
 import 'package:go_router_modular/src/utils/setup.dart';
 import 'package:go_router_modular/src/utils/delay_dispose.dart';
 import 'package:go_router_modular/src/module.dart';
@@ -23,7 +24,7 @@ class GoRouterModular {
   /// Returns the configured [GoRouter] instance.
   /// Throws an exception if [configure] has not been called yet.
   static GoRouter get routerConfig {
-    assert(_router != null, 'Add GoRouterModular.configure in main.dart');
+    assert(_router != null, GoRouterModularConfigureAssert.goRouterModularConfigureAssert());
     return _router!;
   }
 
