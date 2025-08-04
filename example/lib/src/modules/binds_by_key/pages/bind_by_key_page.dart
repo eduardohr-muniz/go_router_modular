@@ -93,6 +93,24 @@ class _BindByKeyPageState extends State<BindByKeyPage> {
                           ),
                         ),
                         ElevatedButton.icon(
+                          onPressed: _testGoogleDio,
+                          icon: const Icon(Icons.search),
+                          label: const Text('Dio Google'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: _testPadraoDio,
+                          icon: const Icon(Icons.search),
+                          label: const Text('Dio Padrao'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
                           onPressed: _testBothDios,
                           icon: const Icon(Icons.compare),
                           label: const Text('Comparar Todos'),
@@ -107,15 +125,6 @@ class _BindByKeyPageState extends State<BindByKeyPage> {
                           label: const Text('Key Inválida'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: _testGoogleDio,
-                          icon: const Icon(Icons.search),
-                          label: const Text('Dio Google'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
                           ),
                         ),
@@ -311,6 +320,30 @@ Este DioFake vem do módulo importado BindsByKeyImportTest.
         result = '❌ Erro ao buscar Dio Google: $e';
       });
       _showSnackBar('❌ Erro no Dio Google: $e', Colors.red);
+    }
+  }
+
+  void _testPadraoDio() {
+    try {
+      final dioPadrao = Modular.get<DioFake>();
+
+      setState(() {
+        result = '''
+✅ Dio Padrão encontrado!
+Base URL: ${dioPadrao.baseUrl}
+Runtime Type: ${dioPadrao.runtimeType}
+Hash Code: ${dioPadrao.hashCode}
+
+Este DioFake vem do bind sem chave (key: null).
+        ''';
+      });
+
+      _showSnackBar('✅ Dio Padrão funcionando!', Colors.amber);
+    } catch (e) {
+      setState(() {
+        result = '❌ Erro ao buscar Dio Padrão: $e';
+      });
+      _showSnackBar('❌ Erro no Dio Padrão: $e', Colors.red);
     }
   }
 

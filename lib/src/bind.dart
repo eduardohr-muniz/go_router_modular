@@ -161,23 +161,12 @@ class Bind<T> {
             return instance;
           }
         } else {
-          // Se não foi fornecida uma key, busca por um bind que não tenha key explícita
+          // Se não foi fornecida uma key, busca APENAS por binds que não tenham key explícita
           for (var entry in _bindsMap.entries) {
             if (entry.value.instance is T && entry.value.key == null) {
               bind = Bind<T>((injector) => entry.value.instance as T, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy, key: entry.value.key);
               _bindsMap[type] = bind;
               break;
-            }
-          }
-
-          // Se ainda não encontrou e não foi especificada uma key, busca por qualquer bind compatível
-          if (bind == null && key == null) {
-            for (var entry in _bindsMap.entries) {
-              if (entry.value.instance is T) {
-                bind = Bind<T>((injector) => entry.value.instance as T, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy, key: entry.value.key);
-                _bindsMap[type] = bind;
-                break;
-              }
             }
           }
         }

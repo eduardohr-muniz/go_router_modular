@@ -15,7 +15,8 @@ class BindsByKeyModule extends Module {
   FutureOr<List<Bind<Object>>> binds() {
     return [
       Bind.singleton((i) => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local'),
-      Bind.singleton((i) => DioFake(baseUrl: 'https://api.github.com'), key: 'dio_remote'),
+      Bind.singleton((i) => DioFake(baseUrl: 'http://api.remote.com'), key: 'dio_remote'),
+      Bind.singleton((i) => DioFake(baseUrl: 'https://padrao.com')),
     ];
   }
 
