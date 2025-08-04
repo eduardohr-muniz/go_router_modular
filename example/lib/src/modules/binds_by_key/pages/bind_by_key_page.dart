@@ -95,7 +95,7 @@ class _BindByKeyPageState extends State<BindByKeyPage> {
                         ElevatedButton.icon(
                           onPressed: _testBothDios,
                           icon: const Icon(Icons.compare),
-                          label: const Text('Comparar Ambos'),
+                          label: const Text('Comparar Todos'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.purple,
                             foregroundColor: Colors.white,
@@ -107,6 +107,15 @@ class _BindByKeyPageState extends State<BindByKeyPage> {
                           label: const Text('Key Inválida'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: _testGoogleDio,
+                          icon: const Icon(Icons.search),
+                          label: const Text('Dio Google'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
                           ),
                         ),
@@ -181,8 +190,9 @@ class _BindByKeyPageState extends State<BindByKeyPage> {
                     Text(
                       '• Dio Local: Busca por key "dio_local"\n'
                       '• Dio Remote: Busca por key "dio_remote"\n'
+                      '• Dio Google: Busca por key "dio_google" (módulo importado)\n'
                       '• Key Inválida: Testa exceção para key inexistente\n'
-                      '• Comparar: Mostra as diferenças entre as instâncias',
+                      '• Comparar: Mostra as diferenças entre todas as instâncias',
                       style: TextStyle(fontSize: 14),
                     ),
                   ],
@@ -246,6 +256,7 @@ Hash Code: ${dioRemote.hashCode}
       final injector = Injector();
       final dioLocal = injector.get<DioFake>(key: 'dio_local');
       final dioRemote = injector.get<DioFake>(key: 'dio_remote');
+      final dioGoogle = injector.get<DioFake>(key: 'dio_google');
 
       setState(() {
         result = '''
@@ -259,7 +270,13 @@ Hash Code: ${dioRemote.hashCode}
   Base URL: ${dioRemote.baseUrl}
   Hash Code: ${dioRemote.hashCode}
 
-${dioLocal.hashCode == dioRemote.hashCode ? '⚠️ Mesma instância!' : '✅ Instâncias diferentes!'}
+🔍 Dio Google:
+  Base URL: ${dioGoogle.baseUrl}
+  Hash Code: ${dioGoogle.hashCode}
+
+${dioLocal.hashCode == dioRemote.hashCode ? '⚠️ Local e Remote são a mesma instância!' : '✅ Local e Remote são instâncias diferentes!'}
+${dioLocal.hashCode == dioGoogle.hashCode ? '⚠️ Local e Google são a mesma instância!' : '✅ Local e Google são instâncias diferentes!'}
+${dioRemote.hashCode == dioGoogle.hashCode ? '⚠️ Remote e Google são a mesma instância!' : '✅ Remote e Google são instâncias diferentes!'}
         ''';
       });
 
@@ -269,6 +286,31 @@ ${dioLocal.hashCode == dioRemote.hashCode ? '⚠️ Mesma instância!' : '✅ In
         result = '❌ Erro na comparação: $e';
       });
       _showSnackBar('❌ Erro na comparação: $e', Colors.red);
+    }
+  }
+
+  void _testGoogleDio() {
+    try {
+      final injector = Injector();
+      final dioGoogle = injector.get<DioFake>(key: 'dio_google');
+
+      setState(() {
+        result = '''
+✅ Dio Google encontrado!
+Base URL: ${dioGoogle.baseUrl}
+Runtime Type: ${dioGoogle.runtimeType}
+Hash Code: ${dioGoogle.hashCode}
+
+Este DioFake vem do módulo importado BindsByKeyImportTest.
+        ''';
+      });
+
+      _showSnackBar('✅ Dio Google funcionando!', Colors.orange);
+    } catch (e) {
+      setState(() {
+        result = '❌ Erro ao buscar Dio Google: $e';
+      });
+      _showSnackBar('❌ Erro no Dio Google: $e', Colors.red);
     }
   }
 

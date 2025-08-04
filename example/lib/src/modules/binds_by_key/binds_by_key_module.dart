@@ -5,6 +5,13 @@ import 'pages/bind_by_key_page.dart';
 
 class BindsByKeyModule extends Module {
   @override
+  FutureOr<List<Module>> imports() {
+    return [
+      BindsByKeyImportTest(),
+    ];
+  }
+
+  @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
       Bind.singleton((i) => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local'),
@@ -19,6 +26,15 @@ class BindsByKeyModule extends Module {
         '/',
         child: (context, state) => const BindByKeyPage(),
       ),
+    ];
+  }
+}
+
+class BindsByKeyImportTest extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() {
+    return [
+      Bind.singleton((i) => DioFake(baseUrl: 'https://google.com'), key: 'dio_google'),
     ];
   }
 }
