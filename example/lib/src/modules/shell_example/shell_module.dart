@@ -12,7 +12,7 @@ class ShellModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
-      Bind.singleton<ShellService>((i) => ShellService()),
+      Bind.singleton((i) => ShellService()),
     ];
   }
 

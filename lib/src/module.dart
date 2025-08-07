@@ -15,7 +15,7 @@ abstract class Module {
 
   List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
     List<RouteBase> result = [];
-    RouteManager.instance.registerAppModule(this);
+    InjectionsManager.instance.registerAppModule(this);
 
     result.addAll(_createChildRoutes(topLevel: topLevel));
     result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
@@ -204,12 +204,12 @@ abstract class Module {
   }
 
   Future<void> _registerModule(Module module) async {
-    await RouteManager.instance.registerBindsModule(module);
+    await InjectionsManager.instance.registerBindsModule(module);
   }
 
   void _disposeModule(Module module) {
     if (didChangeGoingReference.contains(module)) return;
-    RouteManager.instance.unregisterModule(module);
+    InjectionsManager.instance.unregisterModule(module);
   }
 
   String _parsePath(String path) {

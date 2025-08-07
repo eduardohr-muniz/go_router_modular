@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:example/src/modules/auto_resolve/auto_resolve_module.dart';
 import 'package:example/src/modules/binds_by_key/binds_by_key_module.dart';
 import 'package:example/src/modules/example_event_module/example_event_module.dart';
@@ -6,6 +8,13 @@ import 'package:example/src/modules/shell_example/shell_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() {
+    return [
+      Bind.singleton((i) => DioFake(baseUrl: 'https://padrao.com')),
+    ];
+  }
+
   @override
   List<ModularRoute> get routes => [
         ModuleRoute('/', module: HomeModule()),

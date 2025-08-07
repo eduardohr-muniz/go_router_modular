@@ -111,6 +111,15 @@ class _BindByKeyPageState extends State<BindByKeyPage> {
                           ),
                         ),
                         ElevatedButton.icon(
+                          onPressed: _testApiRemote,
+                          icon: const Icon(Icons.search),
+                          label: const Text('Api Remote'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
                           onPressed: _testBothDios,
                           icon: const Icon(Icons.compare),
                           label: const Text('Comparar Todos'),
@@ -333,6 +342,30 @@ Este DioFake vem do módulo importado BindsByKeyImportTest.
 Base URL: ${dioPadrao.baseUrl}
 Runtime Type: ${dioPadrao.runtimeType}
 Hash Code: ${dioPadrao.hashCode}
+
+Este DioFake vem do bind sem chave (key: null).
+        ''';
+      });
+
+      _showSnackBar('✅ Dio Padrão funcionando!', Colors.amber);
+    } catch (e) {
+      setState(() {
+        result = '❌ Erro ao buscar Dio Padrão: $e';
+      });
+      _showSnackBar('❌ Erro no Dio Padrão: $e', Colors.red);
+    }
+  }
+
+  void _testApiRemote() {
+    try {
+      final apiRemote = Modular.get<ApiFake>();
+
+      setState(() {
+        result = '''
+✅ Api Remote encontrado!
+Base URL: ${apiRemote.dio.baseUrl}
+Runtime Type: ${apiRemote.runtimeType}
+Hash Code: ${apiRemote.hashCode}
 
 Este DioFake vem do bind sem chave (key: null).
         ''';

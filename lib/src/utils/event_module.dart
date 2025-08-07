@@ -139,10 +139,10 @@ class ModularEvent {
   void on<T>(void Function(T event, BuildContext? context) callback, {EventBus? eventBus}) {
     eventBus ??= _eventBus;
     _eventSubscriptions[eventBus.hashCode]?[T]?.cancel();
-    _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) => Future.microtask(() {
-          if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
-          return callback(event, _navigatorContext);
-        }));
+    _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) {
+      if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+      return callback(event, _navigatorContext);
+    });
   }
 
   /// Fires an event in the application.
@@ -310,10 +310,10 @@ abstract class EventModule extends Module {
 
     _eventSubscriptions[eventBusId]?[T]?.cancel();
 
-    _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().listen((event) => Future.microtask(() {
-          if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
-          return callback(event, _navigatorContext);
-        }));
+    _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().listen((event) {
+      if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+      return callback(event, _navigatorContext);
+    });
 
     _disposeSubscriptions[eventBusId]![T] = autoDispose ?? _autoDisposeEvents;
   }

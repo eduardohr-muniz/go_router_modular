@@ -2,33 +2,16 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/utils/bind_indentifier.dart';
 import 'package:go_router_modular/src/utils/setup.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
 
 /// ValueObject para representar um bind único (Type + Key)
-class BindIdentifier {
-  final Type type;
-  final String? key;
 
-  const BindIdentifier(this.type, [this.key]);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is BindIdentifier && other.type == type && other.key == key;
-  }
-
-  @override
-  int get hashCode => type.hashCode ^ (key?.hashCode ?? 0);
-
-  @override
-  String toString() => '$type(${key != null ? (key == type.toString() ? '' : 'key: $key') : ''})';
-}
-
-class RouteManager {
-  static RouteManager? _instance;
-  RouteManager._();
-  static RouteManager get instance => _instance ??= RouteManager._();
+class InjectionsManager {
+  static InjectionsManager? _instance;
+  InjectionsManager._();
+  static InjectionsManager get instance => _instance ??= InjectionsManager._();
 
   final Map<BindIdentifier, int> _bindReferences = {};
   Module? _appModule;
