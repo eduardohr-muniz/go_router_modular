@@ -102,7 +102,6 @@ class InjectionsManager {
     final binds = await module.binds();
     _recursiveRegisterBinds(binds);
     _moduleBindTypes[module] = binds.map((e) => BindIdentifier(e.instance.runtimeType, e.key ?? e.instance.runtimeType.toString())).toSet();
-    module.initState(_injector);
 
     if (debugLog) {
       log(
@@ -119,6 +118,7 @@ class InjectionsManager {
     for (var import in imports) {
       await registerBindsModule(import);
     }
+    module.initState(_injector);
   }
 
   /// Coleta recursivamente todos os binds de imports aninhados
