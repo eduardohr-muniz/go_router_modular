@@ -24,13 +24,20 @@ class Bind<T> {
   static void register<T>(Bind<T> bind) {
     final type = bind.instance.runtimeType;
 
+    print('[GO_ROUTER_MODULAR] 📝 REGISTERING bind for type: ${type.toString()} with key: ${bind.key}');
+
     // Registrar por tipo
     _bindsMap[type] = bind;
+    print('[GO_ROUTER_MODULAR] ✅ Registered in _bindsMap with type: ${type.toString()}');
 
     // Registrar por key se fornecida
     if (bind.key != null) {
       _bindsMapByKey[bind.key!] = bind;
+      print('[GO_ROUTER_MODULAR] ✅ Registered in _bindsMapByKey with key: ${bind.key}');
     }
+
+    print('[GO_ROUTER_MODULAR] 📊 Current _bindsMap size: ${_bindsMap.length}');
+    print('[GO_ROUTER_MODULAR] 📊 Current _bindsMapByKey size: ${_bindsMapByKey.length}');
   }
 
   static void dispose<T>() {
@@ -166,12 +173,23 @@ class Bind<T> {
             if (entry.value.instance is T && entry.value.key == null) {
               bind = Bind<T>((injector) => entry.value.instance as T, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy, key: entry.value.key);
               _bindsMap[type] = bind;
-              break;
+
+              // Retorna a instância após criar o bind
+              if (!bind.isSingleton) {
+                final instance = bind.factoryFunction(Injector()) as T;
+                _searchAttempts.remove(type);
+                return instance;
+              } else {
+                final instance = bind.instance as T;
+                _searchAttempts.remove(type);
+                return instance;
+              }
             }
           }
         }
       }
 
+      // Se chegou aqui e bind ainda é null, não encontrou
       if (bind == null) {
         // Se uma key específica foi solicitada e não foi encontrada, falha imediatamente
         if (key != null) {
@@ -179,16 +197,32 @@ class Bind<T> {
           throw GoRouterModularException(errorMessage);
         }
 
-        // Só loga erro detalhado se for a última tentativa ou se atingir limite
+        // Log detalhado apenas na última tentativa
         if (isLastAttempt) {
+          print('[GO_ROUTER_MODULAR] ❌ Bind not found for type: ${type.toString()}');
+          print('[GO_ROUTER_MODULAR] 📊 Available binds: ${_bindsMap.keys.map((k) => k.toString()).join(', ')}');
+
+          // Log detalhado de cada bind disponível
+          print('[GO_ROUTER_MODULAR] 🔍 Detailed bind analysis:');
+          for (var entry in _bindsMap.entries) {
+            print('[GO_ROUTER_MODULAR]   - Type: ${entry.key}');
+            print('[GO_ROUTER_MODULAR]   - Instance: ${entry.value.instance.runtimeType}');
+            print('[GO_ROUTER_MODULAR]   - Key: ${entry.value.key}');
+            print('[GO_ROUTER_MODULAR]   - IsSingleton: ${entry.value.isSingleton}');
+            print('[GO_ROUTER_MODULAR]   - IsLazy: ${entry.value.isLazy}');
+            print('[GO_ROUTER_MODULAR]   ---');
+          }
+
           final errorMessage = 'Bind not found for type ${type.toString()}';
           throw GoRouterModularException(errorMessage);
         } else {
-          // Para tentativas intermediárias, só log discreto
+          // Para tentativas intermediárias, retorna null para continuar tentando
+          return _find<T>(key: key);
         }
       }
 
-      final instance = bind?.instance as T;
+      // Se chegou aqui, bind não é null
+      final instance = bind.instance as T;
 
       // Sucesso: limpar contador de tentativas
       _searchAttempts.remove(type);
@@ -200,12 +234,17 @@ class Bind<T> {
   }
 
   static T get<T>({String? key}) {
+    print('[GO_ROUTER_MODULAR] 🔍 GETTING bind for type: ${T.toString()} with key: $key');
     // Se não foi passada uma key, busca por tipo (sem key)
     if (key == null) {
-      return _find<T>(key: null);
+      final instance = _find<T>(key: null);
+      print('[GO_ROUTER_MODULAR] ✅ Found instance for type: ${T.toString()} (no key)');
+      return instance;
     }
 
-    return _find<T>(key: key);
+    final instance = _find<T>(key: key);
+    print('[GO_ROUTER_MODULAR] ✅ Found instance for type: ${T.toString()} with key: $key');
+    return instance;
   }
 
   /// Gets all available keys in the bind system.

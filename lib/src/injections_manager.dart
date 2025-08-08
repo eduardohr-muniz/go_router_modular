@@ -94,12 +94,31 @@ class InjectionsManager {
     return isForAppModule;
   }
 
-  void registerAppModule(Module module) {
+  Future<void> registerAppModule(Module module) async {
     if (_appModule != null) {
       return;
     }
     _appModule = module;
-    registerBindsModule(module);
+    final binds = await module.binds();
+    _recursiveRegisterBinds(binds);
+    _moduleBindTypes[module] = binds.map((e) => BindIdentifier(e.instance.runtimeType, e.key ?? e.instance.runtimeType.toString())).toSet();
+    module.initState(_injector);
+
+    if (debugLog) {
+      log(
+          '💉 INJECTED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${binds.isEmpty ? '😴 EMPTY' : ''}${binds.map(
+                (e) {
+                  final type = e.instance.runtimeType.toString();
+                  return '♻️ $type(${e.key != null ? (e.key == type ? '' : 'key: ${e.key}') : ''})';
+                },
+              ).toList().join('\n')} \n}',
+          name: "GO_ROUTER_MODULAR");
+    }
+
+    final imports = await module.imports();
+    for (var import in imports) {
+      await registerBindsModule(import);
+    }
   }
 
   /// Coleta recursivamente todos os binds de imports aninhados
