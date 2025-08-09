@@ -64,7 +64,7 @@ const config: Config = {
       title: 'GoRouter Modular',
       logo: {
         alt: 'GoRouter Modular Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
       },
       items: [
         {
