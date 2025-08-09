@@ -311,7 +311,7 @@ abstract class EventModule extends Module {
   /// }, autoDispose: false);
   /// ```
   void on<T>(void Function(T event, BuildContext? context) callback, {bool? autoDispose, bool broadcast = true}) {
-    final eventBusId = _internalEventBus.hashCode;
+    final eventBusId = _internalEventBus.hashCode + runtimeType.hashCode;
 
     _eventSubscriptions[eventBusId] ??= {};
     _disposeSubscriptions[eventBusId] ??= {};

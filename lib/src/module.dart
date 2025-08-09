@@ -101,24 +101,19 @@ abstract class Module {
     required bool topLevel,
     FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
   }) async {
-    if (RouteWithCompleterService.hasRouteCompleter()) {
-      final completer = RouteWithCompleterService.getLastCompleteRoute();
+    final shouldShowLoader = !RouteWithCompleterService.hasRouteCompleter();
 
+    try {
+      final completer = RouteWithCompleterService.getLastCompleteRoute();
+      if (shouldShowLoader) ModularLoader.show();
       await _registerModule(module);
-      completer.complete();
-    } else {
-      try {
-        ModularLoader.show();
-        await _registerModule(module);
-      } catch (e) {
-        // Se for GoRouterModularException, propaga para o usuário
-        if (e is GoRouterModularException) {
-          rethrow;
-        }
-        // Para outros erros, continua normalmente
-      } finally {
-        ModularLoader.hide();
+      Future.microtask(() => completer.complete()); //TODO: TALVEZ TIRAR
+    } catch (e) {
+      if (e is GoRouterModularException) {
+        rethrow;
       }
+    } finally {
+      if (shouldShowLoader) ModularLoader.hide();
     }
 
     if (context.mounted) return redirect?.call(context, state);

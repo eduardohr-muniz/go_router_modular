@@ -196,6 +196,11 @@ class RouteWithCompleterService {
   static bool hasRouteCompleter() {
     return _stackCompleters.isNotEmpty;
   }
+
+  static Future<void> awaitCompleteRoute() async {
+    if (_stackCompleters.isEmpty) return;
+    await _stackCompleters.first.future;
+  }
 }
 
 /// Extension to add functionalities to [BuildContext] for GoRouter.
