@@ -2,20 +2,23 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/utils/bind_indentifier.dart';
 import 'package:go_router_modular/src/utils/setup.dart';
 import 'package:go_router_modular/src/utils/internal_logs.dart';
 
-class RouteManager {
-  static RouteManager? _instance;
-  RouteManager._();
-  static RouteManager get instance => _instance ??= RouteManager._();
+/// ValueObject para representar um bind único (Type + Key)
 
-  final Map<Type, int> _bindReferences = {};
+class InjectionsManager {
+  static InjectionsManager? _instance;
+  InjectionsManager._();
+  static InjectionsManager get instance => _instance ??= InjectionsManager._();
+
+  final Map<BindIdentifier, int> _bindReferences = {};
   Module? _appModule;
 
   final Injector _injector = Injector();
 
-  final Map<Module, Set<Type>> _moduleBindTypes = {};
+  final Map<Module, Set<BindIdentifier>> _moduleBindTypes = {};
 
   final List<Function> _bindsToValidate = [];
 
@@ -44,7 +47,6 @@ class RouteManager {
           if (e is GoRouterModularException) {
             rethrow;
           }
-          iLog('❌ Erro na operação da fila: $e', name: "ROUTE_MANAGER");
         }
       }
     } finally {
@@ -87,16 +89,36 @@ class RouteManager {
     });
   }
 
-  bool _isBindForAppModule(Type type) {
-    return _moduleBindTypes[_appModule]?.contains(type) ?? false;
+  bool _isBindForAppModule(BindIdentifier bindId) {
+    final isForAppModule = _moduleBindTypes[_appModule]?.contains(bindId) ?? false;
+    return isForAppModule;
   }
 
-  void registerAppModule(Module module) {
+  Future<void> registerAppModule(Module module) async {
     if (_appModule != null) {
       return;
     }
     _appModule = module;
-    registerBindsModule(module);
+    final binds = await module.binds();
+    _recursiveRegisterBinds(binds);
+    _moduleBindTypes[module] = binds.map((e) => BindIdentifier(e.instance.runtimeType, e.key ?? e.instance.runtimeType.toString())).toSet();
+
+    if (debugLog) {
+      log(
+          '💉 INJECTED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${binds.isEmpty ? '😴 EMPTY' : ''}${binds.map(
+                (e) {
+                  final type = e.instance.runtimeType.toString();
+                  return '♻️ $type(${e.key != null ? (e.key == type ? '' : 'key: ${e.key}') : ''})';
+                },
+              ).toList().join('\n')} \n}',
+          name: "GO_ROUTER_MODULAR");
+    }
+
+    final imports = await module.imports();
+    for (var import in imports) {
+      await registerBindsModule(import);
+    }
+    module.initState(_injector);
   }
 
   /// Coleta recursivamente todos os binds de imports aninhados
@@ -136,12 +158,19 @@ class RouteManager {
     List<Bind<Object>> allBinds = [...moduleBinds, ...importedBinds];
 
     _recursiveRegisterBinds(allBinds);
-    _moduleBindTypes[module] = allBinds.map((e) => e.instance.runtimeType).toSet();
+    _moduleBindTypes[module] = allBinds.map((e) => BindIdentifier(e.instance.runtimeType, e.key ?? e.instance.runtimeType.toString())).toSet();
 
     module.initState(_injector);
 
     if (debugLog) {
-      log('💉 INJECTED: ${module.runtimeType} BINDS: ${allBinds.map((e) => e.instance.runtimeType.toString()).toList()}', name: "GO_ROUTER_MODULAR");
+      log(
+          '💉 INJECTED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${allBinds.isEmpty ? '😴 EMPTY' : ''}${allBinds.map(
+                (e) {
+                  final type = e.instance.runtimeType.toString();
+                  return '♻️ $type(${e.key != null ? (e.key == type ? '' : 'key: ${e.key}') : ''})';
+                },
+              ).toList().join('\n')} \n}',
+          name: "GO_ROUTER_MODULAR");
     }
 
     // Validação simples após 500ms
@@ -191,7 +220,7 @@ class RouteManager {
             final stackTrace = bind.stackTrace.toString();
             final normalizedStack = _normalizeStackTrace(stackTrace);
             log('❌ $bindType FAILED: $e \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
-            throw GoRouterModularException('Bind not found for type ${bindType.toString()}');
+            throw GoRouterModularException('❌ Bind not found for type ${bindType.toString()}');
           }
         }
       }
@@ -271,7 +300,9 @@ class RouteManager {
       try {
         // Captura erro ao acessar instance
         final type = bind.instance.runtimeType;
-        _incrementBindReference(type);
+        final key = bind.key ?? type.toString();
+        final bindId = BindIdentifier(type, key);
+        _incrementBindReference(bindId);
         Bind.register(bind);
       } catch (e) {
         failedBinds.add(bind);
@@ -286,7 +317,7 @@ class RouteManager {
         final stackTrace = bind.stackTrace.toString();
         final normalizedStack = _normalizeStackTrace(stackTrace);
         log('❌ ${bind.instance.runtimeType} FAILED:  \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
-        throw GoRouterModularException('Bind not found for type ${bind.instance.runtimeType.toString()}');
+        throw GoRouterModularException('❌ Bind not found for type ${bind.instance.runtimeType.toString()}');
       }
     }
   }
@@ -296,25 +327,30 @@ class RouteManager {
       return;
     }
 
-    final Set<Type> bindsToDispose = _moduleBindTypes[module] ?? {};
+    final Set<BindIdentifier> bindsToDispose = _moduleBindTypes[module] ?? {};
 
-    List<Type> disposedBinds = [];
+    List<BindIdentifier> disposedBinds = [];
 
-    for (var bind in bindsToDispose) {
+    // Decrementar referências para cada bind único
+    for (var bindId in bindsToDispose) {
       try {
-        final disposed = _decrementBindReference(bind);
+        // Decrementar a referência para cada bind do módulo
+        final disposed = _decrementBindReference(bindId);
+
         if (disposed) {
-          disposedBinds.add(bind);
+          disposedBinds.add(bindId);
           // Só fazer dispose quando não há mais referências
-          if (!_isBindForAppModule(bind)) {
-            Bind.disposeByType(bind);
+          final isForAppModule = _isBindForAppModule(bindId);
+
+          if (!isForAppModule) {
+            Bind.disposeByType(bindId.type);
           }
         }
       } catch (_) {}
     }
 
     if (debugLog) {
-      log('🗑️ DISPOSED: ${module.runtimeType} BINDS: ${disposedBinds.map((e) => e.toString()).toList()}', name: "GO_ROUTER_MODULAR");
+      log('🗑️ DISPOSED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${disposedBinds.isEmpty ? '😴 EMPTY' : ''}${disposedBinds.map((e) => '💥 ${e.toString()}').toList().join('\n')} \n}', name: "GO_ROUTER_MODULAR");
     }
 
     // Remover o código problemático que sempre fazia dispose
@@ -327,20 +363,20 @@ class RouteManager {
     bindsToDispose.clear();
   }
 
-  void _incrementBindReference(Type type) {
-    if (_bindReferences.containsKey(type)) {
-      _bindReferences[type] = (_bindReferences[type] ?? 0) + 1;
+  void _incrementBindReference(BindIdentifier bindId) {
+    if (_bindReferences.containsKey(bindId)) {
+      _bindReferences[bindId] = (_bindReferences[bindId] ?? 0) + 1;
     } else {
-      _bindReferences[type] = 1;
+      _bindReferences[bindId] = 1;
     }
   }
 
-  bool _decrementBindReference(Type type) {
-    if (_bindReferences.containsKey(type)) {
-      _bindReferences[type] = (_bindReferences[type] ?? 1) - 1;
-      if (_bindReferences[type] == 0) {
-        _bindReferences.remove(type);
+  bool _decrementBindReference(BindIdentifier bindId) {
+    if (_bindReferences.containsKey(bindId)) {
+      _bindReferences[bindId] = (_bindReferences[bindId] ?? 1) - 1;
 
+      if (_bindReferences[bindId] == 0) {
+        _bindReferences.remove(bindId);
         return true;
       }
     }
@@ -372,9 +408,6 @@ class RouteManager {
           // Se for GoRouterModularException, propaga para o usuário
           if (e is GoRouterModularException) {
             rethrow;
-          }
-          if (debugLog) {
-            iLog('❌ Erro na validação: $e', name: "BIND_VALIDATION");
           }
         }
       }

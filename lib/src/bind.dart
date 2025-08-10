@@ -2,74 +2,94 @@ import 'dart:developer';
 
 import 'package:go_router_modular/src/utils/exception.dart';
 import 'package:go_router_modular/src/utils/injector.dart';
-import 'package:go_router_modular/src/utils/internal_logs.dart';
 
 class Bind<T> {
   final T Function(Injector i) factoryFunction;
   final bool isSingleton;
   final bool isLazy;
-  T? _instance;
+  final String? key;
   final StackTrace stackTrace;
+  T? _cachedInstance;
 
-  Bind(
-    this.factoryFunction, {
-    this.isSingleton = true,
-    this.isLazy = true,
-  }) : stackTrace = StackTrace.current;
+  Bind(this.factoryFunction, {this.isSingleton = true, this.isLazy = false, this.key}) : stackTrace = StackTrace.current;
 
   T get instance {
-    if (_instance == null || !isSingleton) {
-      _instance = factoryFunction(Injector());
+    if (_cachedInstance == null || !isSingleton) {
+      _cachedInstance = factoryFunction(Injector());
     }
-    return _instance!;
+    return _cachedInstance!;
   }
 
   static final Map<Type, Bind> _bindsMap = {};
+  static final Map<String, Bind> _bindsMapByKey = {};
 
   static void register<T>(Bind<T> bind) {
     final type = bind.instance.runtimeType;
-    iLog('📝 Registrando bind: $type (isSingleton: ${bind.isSingleton}, isLazy: ${bind.isLazy})', name: "BIND_DEBUG");
 
-    if (!_bindsMap.containsKey(type)) {
-      _bindsMap[type] = bind;
-      iLog('✅ Bind registrado com sucesso: $type', name: "BIND_DEBUG");
-      return;
-    }
-
-    Bind<T> existingBind = _bindsMap[type] as Bind<T>;
-    iLog('⚠️ Bind já existe para $type (isLazy: ${existingBind.isLazy}, isSingleton: ${existingBind.isSingleton})', name: "BIND_DEBUG");
-
-    if (existingBind.isLazy || existingBind.isSingleton) {
-      iLog('🚫 Mantendo bind existente para $type', name: "BIND_DEBUG");
-      return;
-    }
-
+    // Registrar por tipo
     _bindsMap[type] = bind;
-    iLog('🔄 Bind substituído para $type', name: "BIND_DEBUG");
+
+    // Registrar por key se fornecida
+    if (bind.key != null) {
+      _bindsMapByKey[bind.key!] = bind;
+    }
   }
 
-  static void dispose<T>(Bind<T> bind) {
-    if (T.toString() == "Object") {
-      iLog('🚫 Tentativa de dispose para tipo Object - ignorando', name: "BIND_DEBUG");
+  static void dispose<T>() {
+    if (T == Object) {
       return;
     }
 
-    iLog('🗑️ Fazendo dispose do bind: ${T.toString()}', name: "BIND_DEBUG");
     final removed = _bindsMap.remove(T);
     if (removed != null) {
-      iLog('✅ Bind removido com sucesso: ${T.toString()}', name: "BIND_DEBUG");
-    } else {
-      iLog('⚠️ Bind não encontrado para remoção: ${T.toString()}', name: "BIND_DEBUG");
+      if (removed.key != null) {
+        _bindsMapByKey.remove(removed.key);
+      }
+    }
+  }
+
+  static void disposeByKey(String key) {
+    final bind = _bindsMapByKey.remove(key);
+    if (bind != null) {
+      _bindsMap.remove(bind.instance.runtimeType);
     }
   }
 
   static void disposeByType(Type type) {
-    iLog('🗑️ Fazendo dispose por tipo: $type', name: "BIND_DEBUG");
-    final removed = _bindsMap.remove(type);
-    if (removed != null) {
-      iLog('✅ Bind removido com sucesso por tipo: $type', name: "BIND_DEBUG");
-    } else {
-      iLog('⚠️ Bind não encontrado para remoção por tipo: $type', name: "BIND_DEBUG");
+    // Remove por tipo
+    _bindsMap.remove(type);
+
+    // Remove todas as keys associadas a este tipo
+    final keysToRemove = <String>[];
+    for (var entry in _bindsMapByKey.entries) {
+      // Verifica se o tipo é compatível (pode ser o mesmo tipo ou um subtipo)
+      final instance = entry.value.instance;
+
+      // Verifica se é o mesmo tipo
+      bool isCompatible = instance.runtimeType == type;
+
+      if (isCompatible) {
+        keysToRemove.add(entry.key);
+      }
+    }
+
+    // Remove as keys marcadas
+    for (var key in keysToRemove) {
+      _bindsMapByKey.remove(key);
+    }
+
+    // Remove também os binds do mapa por tipo que são compatíveis com o tipo base
+    final typesToRemove = <Type>[];
+    for (var entry in _bindsMap.entries) {
+      final instance = entry.value.instance;
+
+      if (instance.runtimeType == type) {
+        typesToRemove.add(entry.key);
+      }
+    }
+
+    for (var typeToRemove in typesToRemove) {
+      _bindsMap.remove(typeToRemove);
     }
   }
 
@@ -78,13 +98,12 @@ class Bind<T> {
   static final Set<Type> _currentlySearching = {};
   static const int _maxSearchAttempts = 1000;
 
-  static T _find<T>() {
+  static T _find<T>({String? key}) {
     final type = T;
 
     // Proteção contra múltiplas buscas simultâneas do mesmo tipo
     if (_currentlySearching.contains(type)) {
-      iLog('🚫 BLOQUEIO: Busca já em andamento para ${type.toString()}', name: "BIND_DEBUG");
-      throw GoRouterModularException('Circular dependency detected for type ${type.toString()}');
+      throw GoRouterModularException('❌ Oops! I couldn\'t find a compatible bind for "${type.toString()}". Please add the bind before trying to use it.');
     }
 
     // Controle de tentativas para evitar loops infinitos
@@ -92,51 +111,113 @@ class Bind<T> {
     final isLastAttempt = _searchAttempts[type]! >= _maxSearchAttempts;
 
     if (_searchAttempts[type]! > _maxSearchAttempts) {
-      iLog('💥 LIMITE EXCEDIDO: Máximo de tentativas atingido para ${type.toString()} (${_searchAttempts[type]} tentativas)', name: "BIND_DEBUG");
       _searchAttempts.remove(type);
-      throw GoRouterModularException('Too many search attempts for type ${type.toString()}. Possible infinite loop detected.');
+      throw GoRouterModularException('❌ Too many search attempts for type "${type.toString()}". Possible infinite loop detected.');
     }
 
     _currentlySearching.add(type);
 
     try {
-      iLog('🔍 Procurando bind para tipo: ${type.toString()} (tentativa ${_searchAttempts[type]})', name: "BIND_DEBUG");
-      iLog('📊 Binds disponíveis no mapa: ${_bindsMap.keys.map((k) => k.toString()).toList()}', name: "BIND_DEBUG");
+      Bind? bind;
 
-      var bind = _bindsMap[type];
-
-      if (bind == null) {
-        iLog('❌ Bind não encontrado diretamente no mapa para ${type.toString()}', name: "BIND_DEBUG");
-        iLog('🔄 Iniciando busca por instância compatível...', name: "BIND_DEBUG");
-
-        for (var entry in _bindsMap.entries) {
-          iLog('🧪 Testando se ${entry.value.instance.runtimeType} é compatível com ${type.toString()}', name: "BIND_DEBUG");
-          if (entry.value.instance is T) {
-            iLog('✅ Encontrado bind compatível: ${entry.value.instance.runtimeType} -> ${type.toString()}', name: "BIND_DEBUG");
-            bind = Bind<T>((injector) => entry.value.instance, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy);
-            _bindsMap[type] = bind; // Atualiza o mapa com o novo Bind encontrado
-            iLog('📝 Bind atualizado no mapa para ${type.toString()}', name: "BIND_DEBUG");
-            break;
-          }
-        }
-
-        if (bind == null) {
-          // Só loga erro detalhado se for a última tentativa ou se atingir limite
-          if (isLastAttempt) {
-            log('💥 ERROR: when injecting: ${type.toString()}', name: "GO_ROUTER_MODULAR");
-            throw GoRouterModularException('Bind not found for type ${type.toString()} ');
-            // log('💥 ERROR: Bind not found: ${type.toString()} \n📋 Available binds: ${_bindsMap.entries.map((e) => '${e.value.instance.runtimeType}').toList()}', name: "GO_ROUTER_MODULAR");
+      // Se uma key foi fornecida, busca primeiro por key
+      if (key != null) {
+        bind = _bindsMapByKey[key];
+        if (bind != null) {
+          // Verifica se o bind encontrado é compatível com o tipo solicitado
+          if (bind.instance is T) {
+            // Para factory, executa a função a cada chamada
+            if (!bind.isSingleton) {
+              final instance = bind.factoryFunction(Injector()) as T;
+              _searchAttempts.remove(type);
+              return instance;
+            } else {
+              // Para singleton, usa a instância já criada
+              final instance = bind.instance as T;
+              _searchAttempts.remove(type);
+              return instance;
+            }
           } else {
-            // Para tentativas intermediárias, só log discreto
-            iLog('⏳ Bind não encontrado para ${type.toString()} (tentativa ${_searchAttempts[type]}/$_maxSearchAttempts) - tentando novamente...', name: "BIND_DEBUG");
+            bind = null;
           }
+        } else {
+          // Se uma key foi fornecida mas não encontrada, falha imediatamente
+          final errorMessage = '❌ Bind not found for type "${type.toString()}" with key: $key';
+          throw GoRouterModularException(errorMessage);
         }
-      } else {
-        iLog('✅ Bind encontrado diretamente no mapa para ${type.toString()}', name: "BIND_DEBUG");
       }
 
-      final instance = bind?.instance as T;
-      iLog('🎯 Retornando instância: ${instance.runtimeType} para ${type.toString()}', name: "BIND_DEBUG");
+      // Se não encontrou por key ou não foi fornecida, busca por tipo
+      if (bind == null) {
+        bind = _bindsMap[type];
+        if (bind != null) {
+          // Para factory, executa a função a cada chamada
+          if (!bind.isSingleton) {
+            final instance = bind.factoryFunction(Injector()) as T;
+            _searchAttempts.remove(type);
+            return instance;
+          } else {
+            // Para singleton, usa a instância já criada
+            final instance = bind.instance as T;
+            _searchAttempts.remove(type);
+            return instance;
+          }
+        } else {
+          // Se não foi fornecida uma key, busca APENAS por binds que não tenham key explícita
+          for (var entry in _bindsMap.entries) {
+            if (entry.value.instance is T && entry.value.key == null) {
+              bind = Bind<T>((injector) => entry.value.instance as T, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy, key: entry.value.key);
+              _bindsMap[type] = bind;
+
+              // Retorna a instância após criar o bind
+              if (!bind.isSingleton) {
+                final instance = bind.factoryFunction(Injector()) as T;
+                _searchAttempts.remove(type);
+                return instance;
+              } else {
+                final instance = bind.instance as T;
+                _searchAttempts.remove(type);
+                return instance;
+              }
+            }
+          }
+        }
+      }
+
+      // Se chegou aqui e bind ainda é null, não encontrou
+      if (bind == null) {
+        // Se uma key específica foi solicitada e não foi encontrada, falha imediatamente
+        if (key != null) {
+          final errorMessage = '❌ Bind not found for type "${type.toString()}" with key: $key';
+          throw GoRouterModularException(errorMessage);
+        }
+
+        // Log detalhado apenas na última tentativa
+        if (isLastAttempt) {
+          log('[GO_ROUTER_MODULAR] ❌ Bind not found for type: "${type.toString()}"');
+          log('[GO_ROUTER_MODULAR] 📊 Available binds: ${_bindsMap.keys.map((k) => k.toString()).join(', ')}');
+
+          // Log detalhado de cada bind disponível
+          log('[GO_ROUTER_MODULAR] 🔍 Detailed bind analysis:');
+          for (var entry in _bindsMap.entries) {
+            log('[GO_ROUTER_MODULAR]   - Type: ${entry.key}');
+            log('[GO_ROUTER_MODULAR]   - Instance: ${entry.value.instance.runtimeType}');
+            log('[GO_ROUTER_MODULAR]   - Key: ${entry.value.key}');
+            log('[GO_ROUTER_MODULAR]   - IsSingleton: ${entry.value.isSingleton}');
+            log('[GO_ROUTER_MODULAR]   - IsLazy: ${entry.value.isLazy}');
+            log('[GO_ROUTER_MODULAR]   ---');
+          }
+
+          final errorMessage = 'Bind not found for type ${type.toString()}';
+          throw GoRouterModularException(errorMessage);
+        } else {
+          // Para tentativas intermediárias, retorna null para continuar tentando
+          return _find<T>(key: key);
+        }
+      }
+
+      // Se chegou aqui, bind não é null
+      final instance = bind.instance as T;
 
       // Sucesso: limpar contador de tentativas
       _searchAttempts.remove(type);
@@ -147,23 +228,49 @@ class Bind<T> {
     }
   }
 
-  static T get<T>() {
-    iLog('🎯 SOLICITAÇÃO DE BIND: ${T.toString()}', name: "BIND_DEBUG");
-    return _find<T>();
+  static T get<T>({String? key}) {
+    // Se não foi passada uma key, busca por tipo (sem key)
+    if (key == null) {
+      final instance = _find<T>(key: null);
+      return instance;
+    }
+
+    final instance = _find<T>(key: key);
+    return instance;
   }
 
-  static Bind<T> singleton<T>(T Function(Injector i) builder) {
-    final bind = Bind<T>(builder, isSingleton: true, isLazy: false);
+  /// Gets all available keys in the bind system.
+  ///
+  /// Returns:
+  /// - List of all registered keys
+  ///
+  /// Example:
+  /// ```dart
+  /// var allKeys = Bind.getAllKeys();
+  /// print('Available keys: $allKeys');
+  /// ```
+  static List<String> getAllKeys() {
+    return _bindsMapByKey.keys.toList();
+  }
+
+  /// Clears all binds from the system.
+  ///
+  /// This method removes all registered binds from both the type map and key map.
+  /// Useful for testing or when you need to reset the entire bind system.
+  static void clearAll() {
+    _bindsMap.clear();
+    _bindsMapByKey.clear();
+    _searchAttempts.clear();
+    _currentlySearching.clear();
+  }
+
+  static Bind<T> singleton<T>(T Function(Injector i) builder, {String? key}) {
+    final bind = Bind<T>(builder, isSingleton: true, isLazy: false, key: key);
     return bind;
   }
 
-  // static Bind<T> _lazySingleton<T>(T Function(Injector i) builder) {
-  //   final bind = Bind<T>(builder, isSingleton: true, isLazy: true);
-  //   return bind;
-  // }
-
-  static Bind<T> factory<T>(T Function(Injector i) builder) {
-    final bind = Bind<T>(builder, isSingleton: false, isLazy: false);
+  static Bind<T> factory<T>(T Function(Injector i) builder, {String? key}) {
+    final bind = Bind<T>(builder, isSingleton: false, isLazy: false, key: key);
     return bind;
   }
 }

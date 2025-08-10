@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/internal_logs.dart';
+import 'package:go_router_modular/src/utils/asserts/module_assert.dart';
 import 'package:go_router_modular/src/utils/parent_widget_observer.dart';
 
 abstract class Module {
@@ -15,7 +16,7 @@ abstract class Module {
 
   List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
     List<RouteBase> result = [];
-    RouteManager.instance.registerAppModule(this);
+    InjectionsManager.instance.registerAppModule(this);
 
     result.addAll(_createChildRoutes(topLevel: topLevel));
     result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
@@ -64,12 +65,11 @@ abstract class Module {
     final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').firstOrNull;
     final isShell = module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
     if (!isShell) {
-      assert(childRoute != null, 'Module ${module.module.runtimeType} must HAVE a ChildRoute with path "/" because it serves as the parent route for the module');
+      assert(childRoute != null, ModuleAssert.childRouteAssert(module.module.runtimeType.toString()));
     }
 
     // Para módulos shell, não precisa de um builder específico, apenas as rotas
     if (isShell) {
-      assert(childRoute == null, 'Shell module ${module.module.runtimeType} cannot have a ChildRoute with path "/" - Shell modules only serve as wrappers for other routes');
       return GoRoute(
         path: _normalizePath(path: module.path, topLevel: topLevel),
         name: module.name,
@@ -102,24 +102,20 @@ abstract class Module {
     required bool topLevel,
     FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
   }) async {
-    if (RouteWithCompleterService.hasRouteCompleter()) {
-      final completer = RouteWithCompleterService.getLastCompleteRoute();
+    final shouldShowLoader = !RouteWithCompleterService.hasRouteCompleter();
 
+    try {
+      final completer = RouteWithCompleterService.getLastCompleteRoute();
+      if (shouldShowLoader) ModularLoader.show();
       await _registerModule(module);
       completer.complete();
-    } else {
-      try {
-        ModularLoader.show();
-        await _registerModule(module);
-      } catch (e) {
-        // Se for GoRouterModularException, propaga para o usuário
-        if (e is GoRouterModularException) {
-          rethrow;
-        }
-        // Para outros erros, continua normalmente
-      } finally {
-        ModularLoader.hide();
+    } catch (e) {
+      if (e is GoRouterModularException) {
+        log('${e.message}', name: 'GO_ROUTER_MODULAR');
+        rethrow;
       }
+    } finally {
+      if (shouldShowLoader) ModularLoader.hide();
     }
 
     if (context.mounted) return redirect?.call(context, state);
@@ -134,6 +130,9 @@ abstract class Module {
 
   List<RouteBase> _createShellRoutes(bool topLevel, String modulePath) {
     return routes.whereType<ShellModularRoute>().map((shellRoute) {
+      final existsChildRouteIncorrect = shellRoute.routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) == '/').isNotEmpty;
+      assert(!existsChildRouteIncorrect, ModuleAssert.shellRouteAssert(runtimeType.toString()));
+
       return ShellRoute(
         builder: (context, state, child) => shellRoute.builder!(
           context,
@@ -186,8 +185,6 @@ abstract class Module {
 
   Widget _buildRouteChild(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
     // Executa registro com prioridade (fire and forget - não bloqueia UI)
-    iLog('📱 BUILD ChildRoute: ${state.path} - Módulo: $runtimeType', name: "BUILD_DEBUG");
-    iLog('📍 CHAMANDO _register de _buildRouteChild', name: "BUILD_DEBUG");
 
     return route.child(context, state);
   }
@@ -204,12 +201,12 @@ abstract class Module {
   }
 
   Future<void> _registerModule(Module module) async {
-    await RouteManager.instance.registerBindsModule(module);
+    await InjectionsManager.instance.registerBindsModule(module);
   }
 
   void _disposeModule(Module module) {
     if (didChangeGoingReference.contains(module)) return;
-    RouteManager.instance.unregisterModule(module);
+    InjectionsManager.instance.unregisterModule(module);
   }
 
   String _parsePath(String path) {

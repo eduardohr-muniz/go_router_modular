@@ -136,13 +136,21 @@ class ModularEvent {
   ///   }
   /// });
   /// ```
-  void on<T>(void Function(T event, BuildContext? context) callback, {EventBus? eventBus}) {
+  void on<T>(void Function(T event, BuildContext? context) callback, {EventBus? eventBus, bool broadcast = true}) {
     eventBus ??= _eventBus;
     _eventSubscriptions[eventBus.hashCode]?[T]?.cancel();
-    _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) => Future.microtask(() {
-          if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
-          return callback(event, _navigatorContext);
-        }));
+    if (broadcast) {
+      _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().asBroadcastStream().listen((event) {
+        if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        return callback(event, _navigatorContext);
+      });
+    }
+    if (broadcast == false) {
+      _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) {
+        if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        return callback(event, _navigatorContext);
+      });
+    }
   }
 
   /// Fires an event in the application.
@@ -302,18 +310,27 @@ abstract class EventModule extends Module {
   ///   // Logic that should persist
   /// }, autoDispose: false);
   /// ```
-  void on<T>(void Function(T event, BuildContext? context) callback, {bool? autoDispose}) {
-    final eventBusId = _internalEventBus.hashCode;
+  void on<T>(void Function(T event, BuildContext? context) callback, {bool? autoDispose, bool broadcast = true}) {
+    final eventBusId = _internalEventBus.hashCode + runtimeType.hashCode;
 
     _eventSubscriptions[eventBusId] ??= {};
     _disposeSubscriptions[eventBusId] ??= {};
 
     _eventSubscriptions[eventBusId]?[T]?.cancel();
 
-    _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().listen((event) => Future.microtask(() {
-          if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
-          return callback(event, _navigatorContext);
-        }));
+    if (broadcast) {
+      _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().asBroadcastStream().listen((event) {
+        if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        return callback(event, _navigatorContext);
+      });
+    }
+
+    if (broadcast == false) {
+      _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().listen((event) {
+        if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        return callback(event, _navigatorContext);
+      });
+    }
 
     _disposeSubscriptions[eventBusId]![T] = autoDispose ?? _autoDisposeEvents;
   }

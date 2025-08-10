@@ -15,7 +15,7 @@ class HomeModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
-      Bind.singleton<HomeService>((i) => HomeService()),
+      Bind.singleton((i) => HomeService()),
     ];
   }
 

@@ -1,8 +1,14 @@
 <div align="center">
 
+<img src="assets/go-router-modular-banner.png" alt="Go Router Modular banner" style="width: 100%; max-width: 100%; aspect-ratio: 3 / 1; object-fit: cover;" />
+
 # 🧩 GoRouter Modular 💉
 
-### Simplifying Flutter development with modular architecture
+<h3>Dependency injection and route management</h3>
+<p style="margin-top: 4px;">
+  <em>Perfect for micro-frontends and event-driven communication</em>
+  
+</p>
 
 [![Pub Version](https://img.shields.io/pub/v/go_router_modular?color=blue&style=for-the-badge)](https://pub.dev/packages/go_router_modular)
 [![GitHub Stars](https://img.shields.io/github/stars/eduardohr-muniz/go_router_modular?color=yellow&style=for-the-badge)](https://github.com/eduardohr-muniz/go_router_modular)
@@ -26,6 +32,18 @@ Perfect for **micro frontends** and large-scale applications! 🚀
 
 ---
 
+## Contents
+
+- [Key Features](#key-features)
+- [Why GoRouter Modular?](#-why-gorouter-modular)
+- [Quick Start](#quick-start)
+- [Dependency injection](#-dependency-injection)
+- [Event System](#-event-system)
+- [Navigation Examples](#-navigation-examples)
+- [Useful Links](#-useful-links)
+- [Contributing](#-contributing)
+- [License](#-license)
+
 ## ✨ Key Features
 
 - 🧩 **Modular Architecture** - Independent, reusable modules
@@ -34,6 +52,16 @@ Perfect for **micro frontends** and large-scale applications! 🚀
 - 🎭 **Event System** - Event-driven communication between modules
 - 🚀 **Performance** - Lazy loading and efficient memory management
 - 🛡️ **Type Safety** - Fully type-safe with compile-time error detection
+
+---
+
+## 🧠 Why GoRouter Modular?
+
+- **Real scalability**: independent modules and lazy loading keep your app lightweight.
+- **Clear organization**: routes and injections live within their features, improving maintainability.
+- **Dependency isolation**: each module manages its own binds with automatic disposal.
+- **Decoupled communication**: built-in event system across modules.
+- **Developer productivity**: simple API on top of GoRouter without sacrificing flexibility.
 
 ---
 
@@ -271,6 +299,19 @@ ElevatedButton(
 
 ---
 
+## 🤝 Contributing
+
+Contributions are very welcome! Open an issue to discuss major changes and submit a PR with clear descriptions of the edits.
+
+- Follow the project conventions and keep docs updated.
+- Add small usage examples when introducing new features.
+
+## 📄 License
+
+This project is distributed under the **MIT** license. See [`LICENSE`](LICENSE) for details.
+
+---
+
 <div align="center">
 
 ### 🎉 **Happy Coding with GoRouter Modular!** 🎉
@@ -289,8 +330,3 @@ ElevatedButton(
 </div>
 
 ---
-
-
-```
-
-

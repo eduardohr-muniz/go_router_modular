@@ -11,8 +11,9 @@ class AutoResolveModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
+      Bind.singleton((i) => HomeService()),
       Bind.singleton((i) => A(i.get())),
-      Bind.singleton((i) => B(i.get())),
+      Bind.factory((i) => B(i.get())),
       Bind.factory((i) => Z(i.get())),
       Bind.singleton((i) => C(i.get())),
       Bind.singleton((i) => D(i.get())),
@@ -73,7 +74,6 @@ class _AutoResolveModuleWidgetState extends State<AutoResolveModuleWidget> {
     } catch (e) {
       z = null;
       errorMessage = 'Erro ao carregar dependências: $e';
-      print('Erro no AutoResolveModuleWidget: $e');
     }
   }
 
