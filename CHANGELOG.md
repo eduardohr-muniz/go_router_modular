@@ -1,3 +1,18 @@
+## 4.2.0
+
+### Feat
+* **Enhanced Event Broadcasting**: Improved Module event system with broadcast capabilities
+  - Added support for broadcasting events across multiple modules
+  - Enhanced event propagation and subscription management
+  - Better integration with module lifecycle
+
+### Improved
+* **Error Messages**: Enhanced error messages throughout the system
+  - More descriptive and user-friendly error messages
+  - Better debugging information for dependency injection issues
+  - Clearer guidance for common configuration mistakes
+  - Improved exception handling with actionable feedback
+
 ## 4.1.0
 ### Fix
 * Added nullable context in EventModule to handle web scenarios where context might not be available during page refreshes or redirects
