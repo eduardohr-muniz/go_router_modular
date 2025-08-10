@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/go-router-modular-banner.png" alt="Go Router Modular banner" style="width: 100%; max-width: 100%; aspect-ratio: 3 / 1; object-fit: cover;" />
+![Go Router Modular Banner](assets/go-router-modular-banner.png)
 
 # 🧩 GoRouter Modular 💉
 
@@ -285,7 +285,7 @@ ElevatedButton(
     ModularLoader.hide();
   },
   child: Text('Navigate with Loading'),
-),
+ ),
 ```
 
 ---
