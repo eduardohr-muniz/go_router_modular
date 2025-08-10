@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:go_router_modular/src/utils/exception.dart';
 import 'package:go_router_modular/src/utils/injector.dart';
 
@@ -24,20 +26,13 @@ class Bind<T> {
   static void register<T>(Bind<T> bind) {
     final type = bind.instance.runtimeType;
 
-    print('[GO_ROUTER_MODULAR] 📝 REGISTERING bind for type: ${type.toString()} with key: ${bind.key}');
-
     // Registrar por tipo
     _bindsMap[type] = bind;
-    print('[GO_ROUTER_MODULAR] ✅ Registered in _bindsMap with type: ${type.toString()}');
 
     // Registrar por key se fornecida
     if (bind.key != null) {
       _bindsMapByKey[bind.key!] = bind;
-      print('[GO_ROUTER_MODULAR] ✅ Registered in _bindsMapByKey with key: ${bind.key}');
     }
-
-    print('[GO_ROUTER_MODULAR] 📊 Current _bindsMap size: ${_bindsMap.length}');
-    print('[GO_ROUTER_MODULAR] 📊 Current _bindsMapByKey size: ${_bindsMapByKey.length}');
   }
 
   static void dispose<T>() {
@@ -108,7 +103,7 @@ class Bind<T> {
 
     // Proteção contra múltiplas buscas simultâneas do mesmo tipo
     if (_currentlySearching.contains(type)) {
-      throw GoRouterModularException('Circular dependency detected for type ${type.toString()}');
+      throw GoRouterModularException('❌ Oops! I couldn\'t find a compatible bind for "${type.toString()}". Please add the bind before trying to use it.');
     }
 
     // Controle de tentativas para evitar loops infinitos
@@ -117,7 +112,7 @@ class Bind<T> {
 
     if (_searchAttempts[type]! > _maxSearchAttempts) {
       _searchAttempts.remove(type);
-      throw GoRouterModularException('Too many search attempts for type ${type.toString()}. Possible infinite loop detected.');
+      throw GoRouterModularException('❌ Too many search attempts for type "${type.toString()}". Possible infinite loop detected.');
     }
 
     _currentlySearching.add(type);
@@ -147,7 +142,7 @@ class Bind<T> {
           }
         } else {
           // Se uma key foi fornecida mas não encontrada, falha imediatamente
-          final errorMessage = 'Bind not found for type ${type.toString()} with key: $key';
+          final errorMessage = '❌ Bind not found for type "${type.toString()}" with key: $key';
           throw GoRouterModularException(errorMessage);
         }
       }
@@ -193,24 +188,24 @@ class Bind<T> {
       if (bind == null) {
         // Se uma key específica foi solicitada e não foi encontrada, falha imediatamente
         if (key != null) {
-          final errorMessage = 'Bind not found for type ${type.toString()} with key: $key';
+          final errorMessage = '❌ Bind not found for type "${type.toString()}" with key: $key';
           throw GoRouterModularException(errorMessage);
         }
 
         // Log detalhado apenas na última tentativa
         if (isLastAttempt) {
-          print('[GO_ROUTER_MODULAR] ❌ Bind not found for type: ${type.toString()}');
-          print('[GO_ROUTER_MODULAR] 📊 Available binds: ${_bindsMap.keys.map((k) => k.toString()).join(', ')}');
+          log('[GO_ROUTER_MODULAR] ❌ Bind not found for type: "${type.toString()}"');
+          log('[GO_ROUTER_MODULAR] 📊 Available binds: ${_bindsMap.keys.map((k) => k.toString()).join(', ')}');
 
           // Log detalhado de cada bind disponível
-          print('[GO_ROUTER_MODULAR] 🔍 Detailed bind analysis:');
+          log('[GO_ROUTER_MODULAR] 🔍 Detailed bind analysis:');
           for (var entry in _bindsMap.entries) {
-            print('[GO_ROUTER_MODULAR]   - Type: ${entry.key}');
-            print('[GO_ROUTER_MODULAR]   - Instance: ${entry.value.instance.runtimeType}');
-            print('[GO_ROUTER_MODULAR]   - Key: ${entry.value.key}');
-            print('[GO_ROUTER_MODULAR]   - IsSingleton: ${entry.value.isSingleton}');
-            print('[GO_ROUTER_MODULAR]   - IsLazy: ${entry.value.isLazy}');
-            print('[GO_ROUTER_MODULAR]   ---');
+            log('[GO_ROUTER_MODULAR]   - Type: ${entry.key}');
+            log('[GO_ROUTER_MODULAR]   - Instance: ${entry.value.instance.runtimeType}');
+            log('[GO_ROUTER_MODULAR]   - Key: ${entry.value.key}');
+            log('[GO_ROUTER_MODULAR]   - IsSingleton: ${entry.value.isSingleton}');
+            log('[GO_ROUTER_MODULAR]   - IsLazy: ${entry.value.isLazy}');
+            log('[GO_ROUTER_MODULAR]   ---');
           }
 
           final errorMessage = 'Bind not found for type ${type.toString()}';
@@ -234,16 +229,13 @@ class Bind<T> {
   }
 
   static T get<T>({String? key}) {
-    print('[GO_ROUTER_MODULAR] 🔍 GETTING bind for type: ${T.toString()} with key: $key');
     // Se não foi passada uma key, busca por tipo (sem key)
     if (key == null) {
       final instance = _find<T>(key: null);
-      print('[GO_ROUTER_MODULAR] ✅ Found instance for type: ${T.toString()} (no key)');
       return instance;
     }
 
     final instance = _find<T>(key: key);
-    print('[GO_ROUTER_MODULAR] ✅ Found instance for type: ${T.toString()} with key: $key');
     return instance;
   }
 

@@ -74,7 +74,6 @@ class _AutoResolveModuleWidgetState extends State<AutoResolveModuleWidget> {
     } catch (e) {
       z = null;
       errorMessage = 'Erro ao carregar dependências: $e';
-      print('Erro no AutoResolveModuleWidget: $e');
     }
   }
 

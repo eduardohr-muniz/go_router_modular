@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
@@ -107,9 +108,10 @@ abstract class Module {
       final completer = RouteWithCompleterService.getLastCompleteRoute();
       if (shouldShowLoader) ModularLoader.show();
       await _registerModule(module);
-      Future.microtask(() => completer.complete()); //TODO: TALVEZ TIRAR
+      completer.complete();
     } catch (e) {
       if (e is GoRouterModularException) {
+        log('${e.message}', name: 'GO_ROUTER_MODULAR');
         rethrow;
       }
     } finally {

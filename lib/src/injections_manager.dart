@@ -220,7 +220,7 @@ class InjectionsManager {
             final stackTrace = bind.stackTrace.toString();
             final normalizedStack = _normalizeStackTrace(stackTrace);
             log('❌ $bindType FAILED: $e \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
-            throw GoRouterModularException('Bind not found for type ${bindType.toString()}');
+            throw GoRouterModularException('❌ Bind not found for type ${bindType.toString()}');
           }
         }
       }
@@ -317,7 +317,7 @@ class InjectionsManager {
         final stackTrace = bind.stackTrace.toString();
         final normalizedStack = _normalizeStackTrace(stackTrace);
         log('❌ ${bind.instance.runtimeType} FAILED:  \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
-        throw GoRouterModularException('Bind not found for type ${bind.instance.runtimeType.toString()}');
+        throw GoRouterModularException('❌ Bind not found for type ${bind.instance.runtimeType.toString()}');
       }
     }
   }
