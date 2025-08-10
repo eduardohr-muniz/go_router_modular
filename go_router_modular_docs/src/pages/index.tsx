@@ -15,7 +15,7 @@ export default function Home(): React.JSX.Element {
                     }}
                 >
                     <img
-                        src="/home/img/banner.png"
+                        src="/go_router_modular/img/banner.png"
                         alt="Go Router Modular banner"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -36,7 +36,7 @@ export default function Home(): React.JSX.Element {
                                 background: '#ffffff',
                                 color: '#0b0b0b',
                             }}
-                            to="/home/docs/intro"
+                            to="/go_router_modular/docs/intro"
                         >
                             GO DOCS
                         </Link>

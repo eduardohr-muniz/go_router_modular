@@ -29,7 +29,7 @@ Perfect for **micro frontends** and large-scale applications! 🚀
 
 
 
-[![Documentação](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/docs.svg)](https://eduardohr-muniz.github.io/go_router_modular/home)
+[![Documentação](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/docs.svg)](https://eduardohr-muniz.github.io/go_router_modular)
 
 
 </div>
@@ -296,7 +296,7 @@ ElevatedButton(
 
 ## 📚 Useful Links
 
-- 📖 **[Complete Documentation](https://eduardohr-muniz.github.io/go_router_modular/home)**
+- 📖 **[Complete Documentation](https://eduardohr-muniz.github.io/go_router_modular)**
 - 📦 **[Pub.dev](https://pub.dev/packages/go_router_modular)**
 - 🐛 **[Issues](https://github.com/eduardohr-muniz/go_router_modular/issues)**
 - ⭐ **[GitHub](https://github.com/eduardohr-muniz/go_router_modular)**

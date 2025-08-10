@@ -12,7 +12,7 @@ const config: Config = {
   },
 
   url: 'https://eduardohr-muniz.github.io',
-  baseUrl: '/home/',
+  baseUrl: '/go_router_modular/',
 
   organizationName: 'eduardohr-muniz',
   projectName: 'go_router_modular',
