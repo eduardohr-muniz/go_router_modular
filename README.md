@@ -1,6 +1,8 @@
 <div align="center">
 
-![Go Router Modular Banner](assets/go-router-modular-banner.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eduardohr-muniz/go_router_modular/master/assets/go-router-modular-banner.png" alt="Go Router Modular Banner" />
+</p>
 
 # 🧩 GoRouter Modular 💉
 
