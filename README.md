@@ -23,16 +23,18 @@ Perfect for **micro frontends** and large-scale applications! 🚀
 </div>
 
 ---
+## Complete Documentation
 
-<div align="center">
+<div align="left">
 
-## 📖 [**Complete Documentation**](https://eduardohr-muniz.github.io/go_router_modular)
 
-[![Documentation](https://img.shields.io/badge/📖-Complete%20Documentation-blue?style=for-the-badge&logo=book)](https://eduardohr-muniz.github.io/go_router_modular)
+
+[![Documentação](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/docs.svg)](https://eduardohr-muniz.github.io/go_router_modular/home)
+
 
 </div>
 
----
+
 
 ## Contents
 
@@ -294,7 +296,7 @@ ElevatedButton(
 
 ## 📚 Useful Links
 
-- 📖 **[Complete Documentation](https://eduardohr-muniz.github.io/go_router_modular)**
+- 📖 **[Complete Documentation](https://eduardohr-muniz.github.io/go_router_modular/home)**
 - 📦 **[Pub.dev](https://pub.dev/packages/go_router_modular)**
 - 🐛 **[Issues](https://github.com/eduardohr-muniz/go_router_modular/issues)**
 - ⭐ **[GitHub](https://github.com/eduardohr-muniz/go_router_modular)**
