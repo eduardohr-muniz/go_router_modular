@@ -7,7 +7,7 @@ export 'src/go_router_modular_configure.dart';
 export 'src/module.dart';
 export 'src/utils/injector.dart';
 export 'src/utils/page_transition_enum.dart';
-export 'src/injections_manager.dart';
+export 'src/injection_manager.dart';
 export 'src/routes/route_model.dart';
 export 'src/utils/transition.dart';
 export 'src/routes/child_route.dart';

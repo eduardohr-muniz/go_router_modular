@@ -8,10 +8,10 @@ import 'package:go_router_modular/src/utils/internal_logs.dart';
 
 /// ValueObject para representar um bind único (Type + Key)
 
-class InjectionsManager {
-  static InjectionsManager? _instance;
-  InjectionsManager._();
-  static InjectionsManager get instance => _instance ??= InjectionsManager._();
+class InjectionManager {
+  static InjectionManager? _instance;
+  InjectionManager._();
+  static InjectionManager get instance => _instance ??= InjectionManager._();
 
   final Map<BindIdentifier, int> _bindReferences = {};
   Module? _appModule;
@@ -99,26 +99,8 @@ class InjectionsManager {
       return;
     }
     _appModule = module;
-    final binds = await module.binds();
-    _recursiveRegisterBinds(binds);
-    _moduleBindTypes[module] = binds.map((e) => BindIdentifier(e.instance.runtimeType, e.key ?? e.instance.runtimeType.toString())).toSet();
 
-    if (debugLog) {
-      log(
-          '💉 INJECTED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${binds.isEmpty ? '😴 EMPTY' : ''}${binds.map(
-                (e) {
-                  final type = e.instance.runtimeType.toString();
-                  return '♻️ $type(${e.key != null ? (e.key == type ? '' : 'key: ${e.key}') : ''})';
-                },
-              ).toList().join('\n')} \n}',
-          name: "GO_ROUTER_MODULAR");
-    }
-
-    final imports = await module.imports();
-    for (var import in imports) {
-      await registerBindsModule(import);
-    }
-    module.initState(_injector);
+    await registerBindsModule(module);
   }
 
   /// Coleta recursivamente todos os binds de imports aninhados
