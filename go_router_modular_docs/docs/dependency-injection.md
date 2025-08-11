@@ -122,7 +122,22 @@ class RemoteConfigModule extends Module {
     ];
   }
 }
+
+class SharedPreferencesModule extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() async {
+    // Initialize SharedPreferences asynchronously
+    final prefs = await SharedPreferences.getInstance();
+    return [
+      Bind.singleton<SharedPreferences>((i) => prefs),
+      Bind.singleton<LocalStorageService>((i) => LocalStorageService(prefs)),
+    ];
+  }
+}
+
+
 ```
+> **⚠️ Important Note**: In async `binds()` methods, avoid using `Modular.get<T>()` because the bind might not have been injected yet. Always use the `Injector` parameter or create dependencies directly.
 
 > **Warning**
 > Asynchronous binds are strictly forbidden in the `AppModule`. Only use async binds in feature modules. The root `AppModule` must always use synchronous binds to ensure proper app initialization and avoid unpredictable behavior.
