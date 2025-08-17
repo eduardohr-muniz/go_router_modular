@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'pages/bind_by_key_page.dart';
 
@@ -14,6 +15,7 @@ class BindsByKeyModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
+      Bind.singleton((i) => BindSingleton()),
       Bind.singleton((i) => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local'),
       Bind.factory((i) => DioFake(baseUrl: 'http://api.remote.com'), key: 'dio_remote'),
       Bind.factory((i) => ApiFake(dio: i.get(key: 'dio_remote'))),

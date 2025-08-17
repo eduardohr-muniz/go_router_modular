@@ -1,3 +1,4 @@
+import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import '../binds_by_key_module.dart';
@@ -134,6 +135,15 @@ class _BindByKeyPageState extends State<BindByKeyPage> {
                           label: const Text('Key Inválida'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: _testBindSingleton,
+                          icon: const Icon(Icons.error),
+                          label: const Text('Bind Singleton'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
                           ),
                         ),
@@ -354,6 +364,11 @@ Este DioFake vem do bind sem chave (key: null).
       });
       _showSnackBar('❌ Erro no Dio Padrão: $e', Colors.red);
     }
+  }
+
+  void _testBindSingleton() {
+    final bindSingleton = Modular.get<IBindSingleton>();
+    bindSingleton.printHash();
   }
 
   void _testApiRemote() {

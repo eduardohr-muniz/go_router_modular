@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print, deprecated_member_use
 
+import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:example/src/modules/shared/shared_service.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:flutter/material.dart';
@@ -52,6 +53,11 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       print('SnackBar: $message');
     }
+  }
+
+  void _veryHashBindSingleton() {
+    final bindSingleton = Modular.get<IBindSingleton>();
+    bindSingleton.printHash();
   }
 
   Future<void> _navigateToAutoResolve() async {
@@ -287,9 +293,18 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         ElevatedButton.icon(
+                          onPressed: isLoading ? null : _veryHashBindSingleton,
+                          icon: const Icon(Icons.layers),
+                          label: const Text('5. Testar hash singleton'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
                           onPressed: isLoading ? null : _navigateToBindsByKey,
                           icon: const Icon(Icons.layers),
-                          label: const Text('5. Testar BindsByKey'),
+                          label: const Text('6. Testar BindsByKey'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             foregroundColor: Colors.white,

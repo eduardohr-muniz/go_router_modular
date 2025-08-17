@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:example/src/modules/shared/shared_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
@@ -9,7 +10,7 @@ import 'pages/demo_page.dart';
 class HomeModule extends Module {
   @override
   FutureOr<List<Module>> imports() {
-    return [SharedModule()];
+    return [SharedModule(), ModuleSingleton()];
   }
 
   @override
