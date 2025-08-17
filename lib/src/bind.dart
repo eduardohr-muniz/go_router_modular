@@ -26,7 +26,11 @@ class Bind<T> {
   static void register<T>(Bind<T> bind) {
     final type = bind.instance.runtimeType;
 
-    // Registrar por tipo
+    if (bind.isSingleton) {
+      final singleton = _bindsMap[type];
+      if (singleton != null && singleton.key == bind.key) return;
+    }
+
     _bindsMap[type] = bind;
 
     // Registrar por key se fornecida
