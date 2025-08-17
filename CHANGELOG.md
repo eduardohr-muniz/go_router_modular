@@ -1,3 +1,7 @@
+## 4.2.0+4
+### Fix
+* Added validation to prevent overwriting already registered singletons for the same type and key, avoiding multiple instances and preserving the expected singleton behavior.
+
 ## 4.2.0+3
 ### Feat
   - Update Readme
