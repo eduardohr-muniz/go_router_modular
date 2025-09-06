@@ -1,1 +1,1 @@
-self.__NEXT_FONT_MANIFEST="{\"pages\":{\"/routes\":[],\"/getting-started\":[],\"/event-system\":[],\"/\":[],\"/quick-start\":[],\"/installation\":[]},\"app\":{},\"appUsingSizeAdjust\":false,\"pagesUsingSizeAdjust\":false}"
+self.__NEXT_FONT_MANIFEST="{\"pages\":{\"/\":[],\"/getting-started\":[],\"/installation\":[],\"/event-system\":[]},\"app\":{},\"appUsingSizeAdjust\":false,\"pagesUsingSizeAdjust\":false}"

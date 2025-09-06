@@ -2,10 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/getting-started": "pages/getting-started.js",
   "/": "pages/index.js",
   "/installation": "pages/installation.js",
-  "/quick-start": "pages/quick-start.js",
-  "/event-system": "pages/event-system.js",
-  "/getting-started": "pages/getting-started.js",
-  "/routes": "pages/routes.js"
+  "/event-system": "pages/event-system.js"
 }

@@ -38,16 +38,6 @@ self.__BUILD_MANIFEST = {
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/installation.js"
-    ],
-    "/quick-start": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/quick-start.js"
-    ],
-    "/routes": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/routes.js"
     ]
   },
   "ampFirstPages": []
