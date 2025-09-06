@@ -1,0 +1,15 @@
+{
+    "index": "Introduction",
+    "getting-started": "Getting Started",
+    "installation": "Installation",
+    "quick-start": "Quick Start",
+    "routes": "Routes Overview",
+    "child_and_module_routes": "Child and Module Routes",
+    "dependency-injection": "Dependency Injection",
+    "event-system": "Event System",
+    "loader-system": "Loader System",
+    "navigation": "Navigation",
+    "shell": "Shell",
+    "micro-frontend": "Micro Frontend",
+    "migration": "Migration Guide"
+}
