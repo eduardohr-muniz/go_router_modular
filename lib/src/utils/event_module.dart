@@ -219,6 +219,8 @@ abstract class EventModule extends Module {
 
   late final EventBus _internalEventBus;
 
+  int get _eventBusId => _internalEventBus.hashCode + runtimeType.hashCode;
+
   /// Creates an instance of EventModule.
   ///
   /// Parameters:
@@ -311,28 +313,26 @@ abstract class EventModule extends Module {
   /// }, autoDispose: false);
   /// ```
   void on<T>(void Function(T event, BuildContext? context) callback, {bool? autoDispose, bool broadcast = true}) {
-    final eventBusId = _internalEventBus.hashCode + runtimeType.hashCode;
+    _eventSubscriptions[_eventBusId] ??= {};
+    _disposeSubscriptions[_eventBusId] ??= {};
 
-    _eventSubscriptions[eventBusId] ??= {};
-    _disposeSubscriptions[eventBusId] ??= {};
-
-    _eventSubscriptions[eventBusId]?[T]?.cancel();
+    _eventSubscriptions[_eventBusId]?[T]?.cancel();
 
     if (broadcast) {
-      _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().asBroadcastStream().listen((event) {
+      _eventSubscriptions[_eventBusId]![T] = _internalEventBus.on<T>().asBroadcastStream().listen((event) {
         if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
       });
     }
 
     if (broadcast == false) {
-      _eventSubscriptions[eventBusId]![T] = _internalEventBus.on<T>().listen((event) {
+      _eventSubscriptions[_eventBusId]![T] = _internalEventBus.on<T>().listen((event) {
         if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
       });
     }
 
-    _disposeSubscriptions[eventBusId]![T] = autoDispose ?? _autoDisposeEvents;
+    _disposeSubscriptions[_eventBusId]![T] = autoDispose ?? _autoDisposeEvents;
   }
 
   @override
@@ -343,16 +343,16 @@ abstract class EventModule extends Module {
 
   @override
   void dispose() {
-    final eventBusId = _internalEventBus.hashCode;
+    final _eventBusId = _internalEventBus.hashCode + runtimeType.hashCode;
 
-    _disposeSubscriptions[eventBusId]?.forEach((key, value) {
+    _disposeSubscriptions[_eventBusId]?.forEach((key, value) {
       if (value) {
-        _eventSubscriptions[eventBusId]?[key]?.cancel();
-        _eventSubscriptions[eventBusId]?.remove(key);
+        _eventSubscriptions[_eventBusId]?[key]?.cancel();
+        _eventSubscriptions[_eventBusId]?.remove(key);
       }
     });
 
-    _disposeSubscriptions.remove(eventBusId);
+    _disposeSubscriptions.remove(_eventBusId);
 
     super.dispose();
   }
