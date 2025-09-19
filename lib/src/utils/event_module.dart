@@ -312,7 +312,12 @@ abstract class EventModule extends Module {
   ///   // Logic that should persist
   /// }, autoDispose: false);
   /// ```
-  void on<T>(void Function(T event, BuildContext? context) callback, {bool? autoDispose, bool broadcast = true}) {
+  void on<T>(
+    void Function(T event, BuildContext? context) callback, {
+    bool? autoDispose,
+    @Deprecated('Use exclusive parameter instead. broadcast will be removed in a future version.') bool broadcast = true,
+    bool exclusive = false,
+  }) {
     _eventSubscriptions[_eventBusId] ??= {};
     _disposeSubscriptions[_eventBusId] ??= {};
 
