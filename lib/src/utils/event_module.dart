@@ -136,16 +136,23 @@ class ModularEvent {
   ///   }
   /// });
   /// ```
-  void on<T>(void Function(T event, BuildContext? context) callback, {EventBus? eventBus, bool broadcast = true}) {
+  void on<T>(
+    void Function(T event, BuildContext? context) callback, {
+    EventBus? eventBus,
+    @Deprecated('Use exclusive parameter instead. broadcast will be removed in a future version. 4.0') bool? broadcast,
+    bool exclusive = false,
+  }) {
+    exclusive = broadcast ?? exclusive;
+
     eventBus ??= _eventBus;
     _eventSubscriptions[eventBus.hashCode]?[T]?.cancel();
-    if (broadcast) {
+    if (exclusive) {
       _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().asBroadcastStream().listen((event) {
         if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
       });
     }
-    if (broadcast == false) {
+    if (exclusive == false) {
       _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) {
         if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
@@ -315,22 +322,24 @@ abstract class EventModule extends Module {
   void on<T>(
     void Function(T event, BuildContext? context) callback, {
     bool? autoDispose,
-    @Deprecated('Use exclusive parameter instead. broadcast will be removed in a future version.') bool broadcast = true,
+    @Deprecated('Use exclusive parameter instead. broadcast will be removed in a future version. 4.0') bool? broadcast,
     bool exclusive = false,
   }) {
+    exclusive = broadcast ?? exclusive;
+
     _eventSubscriptions[_eventBusId] ??= {};
     _disposeSubscriptions[_eventBusId] ??= {};
 
     _eventSubscriptions[_eventBusId]?[T]?.cancel();
 
-    if (broadcast) {
+    if (exclusive) {
       _eventSubscriptions[_eventBusId]![T] = _internalEventBus.on<T>().asBroadcastStream().listen((event) {
         if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
       });
     }
 
-    if (broadcast == false) {
+    if (exclusive == false) {
       _eventSubscriptions[_eventBusId]![T] = _internalEventBus.on<T>().listen((event) {
         if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
