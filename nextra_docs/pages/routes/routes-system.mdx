@@ -163,11 +163,11 @@ class ECommerceModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // Shared dependencies for all e-commerce modules
-    i.addSingleton<ECommerceService>(ECommerceService.new);
-    i.addSingleton<PaymentService>(PaymentService.new);
-  }
+    Bind.singleton<ECommerceService>((i) => ECommerceService()),
+    Bind.singleton<PaymentService>((i) => PaymentService()),
+  ];
 }
 
 // Individual feature modules
@@ -180,11 +180,11 @@ class ProductModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // Product-specific dependencies
-    i.addSingleton<ProductRepository>(ProductRepository.new);
-    i.addFactory<ProductBloc>(ProductBloc.new);
-  }
+    Bind.singleton<ProductRepository>((i) => ProductRepository()),
+    Bind.factory<ProductBloc>((i) => ProductBloc()),
+  ];
 }
 ```
 
@@ -646,11 +646,11 @@ class AppModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // App-wide dependencies
-    i.addSingleton<ApiService>(ApiService.new);
-    i.addSingleton<AuthService>(AuthService.new);
-  }
+    Bind.singleton<ApiService>((i) => ApiService()),
+    Bind.singleton<AuthService>((i) => AuthService()),
+  ];
 }
 
 // Feature modules can contain sub-modules
@@ -664,11 +664,11 @@ class AdminModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // Admin-specific dependencies
-    i.addSingleton<AdminService>(AdminService.new);
-    i.addFactory<AdminRepository>(AdminRepository.new);
-  }
+    Bind.singleton<AdminService>((i) => AdminService()),
+    Bind.factory<AdminRepository>((i) => AdminRepository()),
+  ];
 }
 
 // Deep nesting example
@@ -725,11 +725,11 @@ class ShopModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // Shared shopping dependencies
-    i.addSingleton<ShoppingCartService>(ShoppingCartService.new);
-    i.addSingleton<ProductService>(ProductService.new);
-  }
+    Bind.singleton<ShoppingCartService>((i) => ShoppingCartService()),
+    Bind.singleton<ProductService>((i) => ProductService()),
+  ];
 }
 
 class CartModule extends Module {
@@ -740,13 +740,13 @@ class CartModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // Cart-specific dependencies that can access shopping services
-    i.addFactory<CartBloc>(() => CartBloc(
-      cartService: i.get<ShoppingCartService>(), // From parent module
-      productService: i.get<ProductService>(),   // From parent module
-    ));
-  }
+    Bind.factory<CartBloc>((i) => CartBloc(
+      cartService: i.get<ShoppingCartService>(),
+      productService: i.get<ProductService>(),
+    )),
+  ];
 }
 ```
 
@@ -897,21 +897,21 @@ class BadUserModule extends Module {
 // ✅ GOOD: Proper dependency scoping
 class UserModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // User-specific dependencies
-    i.addSingleton<UserRepository>(UserRepository.new);
-    i.addFactory<UserBloc>(UserBloc.new);
-    i.addLazySingleton<UserCache>(UserCache.new);
-  }
+    Bind.singleton<UserRepository>((i) => UserRepository()),
+    Bind.factory<UserBloc>((i) => UserBloc()),
+    Bind.lazySingleton<UserCache>((i) => UserCache()),
+  ];
 }
 
 class AppModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // App-wide dependencies
-    i.addSingleton<ApiService>(ApiService.new);
-    i.addSingleton<AuthService>(AuthService.new);
-  }
+    Bind.singleton<ApiService>((i) => ApiService()),
+    Bind.singleton<AuthService>((i) => AuthService()),
+  ];
 }
 ```
 
@@ -962,12 +962,12 @@ class ECommerceApp extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureOr<List<Bind<Object>>> binds() => [
     // Core app services
-    i.addSingleton<ApiService>(ApiService.new);
-    i.addSingleton<AuthService>(AuthService.new);
-    i.addSingleton<CartService>(CartService.new);
-  }
+    Bind.singleton<ApiService>((i) => ApiService()),
+    Bind.singleton<AuthService>((i) => AuthService()),
+    Bind.singleton<CartService>((i) => CartService()),
+  ];
 }
 
 // Shopping shell with persistent navigation
@@ -1000,11 +1000,11 @@ class ProductModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
-    i.addSingleton<ProductRepository>(ProductRepository.new);
-    i.addFactory<ProductBloc>(ProductBloc.new);
-    i.addLazySingleton<ProductCache>(ProductCache.new);
-  }
+  FutureOr<List<Bind<Object>>> binds() => [
+    Bind.singleton<ProductRepository>((i) => ProductRepository()),
+    Bind.factory<ProductBloc>((i) => ProductBloc()),
+    Bind.lazySingleton<ProductCache>((i) => ProductCache()),
+  ];
 }
 
 // Shopping shell implementation

@@ -86,10 +86,10 @@ class AppModule extends Module {
   @override
   void binds(Injector i) {
     // Serviços globais
-    i.addSingleton<ApiService>(ApiService.new);
-    i.addSingleton<AuthService>(AuthService.new);
-    i.addSingleton<CartService>(CartService.new);
-    i.addSingleton<NavigationService>(NavigationService.new);
+    i.addSingleton<ApiService>(() => ApiService());
+    i.addSingleton<AuthService>(() => AuthService());
+    i.addSingleton<CartService>(() => CartService());
+    i.addSingleton<NavigationService>(() => NavigationService());
   }
 }
 ```
@@ -114,8 +114,8 @@ class ProductModule extends EventModule {
 
   @override
   void binds(Injector i) {
-    i.addSingleton<ProductRepository>(ProductRepository.new);
-    i.addFactory<ProductBloc>(ProductBloc.new);
+    i.addSingleton<ProductRepository>(() => ProductRepository());
+    i.addFactory<ProductBloc>(() => ProductBloc());
   }
 
   @override
@@ -160,7 +160,7 @@ class CartModule extends EventModule {
 
   @override
   void binds(Injector i) {
-    i.addFactory<CartBloc>(CartBloc.new);
+    i.addFactory<CartBloc>(() => CartBloc());
   }
 
   @override
@@ -224,9 +224,9 @@ class CheckoutModule extends EventModule {
 
   @override
   void binds(Injector i) {
-    i.addSingleton<PaymentService>(PaymentService.new);
-    i.addSingleton<OrderService>(OrderService.new);
-    i.addFactory<CheckoutBloc>(CheckoutBloc.new);
+    i.addSingleton<PaymentService>(() => PaymentService());
+    i.addSingleton<OrderService>(() => OrderService());
+    i.addFactory<CheckoutBloc>(() => CheckoutBloc());
   }
 
   @override
