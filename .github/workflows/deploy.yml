@@ -36,7 +36,7 @@ jobs:
       - name: Build Nextra website
         run: |
           cd nextra_docs
-          npm run build
+          GITHUB_ACTIONS=true GITHUB_REPOSITORY=${{ github.repository }} npm run build
           touch out/.nojekyll
 
       - name: Setup Pages
