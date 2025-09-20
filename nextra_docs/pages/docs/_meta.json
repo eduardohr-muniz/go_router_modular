@@ -1,26 +1,26 @@
 {
-    "installation": "📦 Instalação",
+    "installation": "📦 Installation",
     "quick-start": "🏁 Quick Start",
-    "getting-started": "📖 Primeiros Passos",
+    "getting-started": "📖 Getting Started",
     "---": {
         "type": "separator"
     },
-    "routes": "🛣️ Sistema de Rotas",
-    "navigation": "🧭 Navegação",
-    "dependency-injection": "💉 Injeção de Dependências",
-    "loader-system": "⏳ Sistema de Loading",
+    "routes": "🛣️ Routes System",
+    "navigation": "🧭 Navigation",
+    "dependency-injection": "💉 Dependency Injection",
+    "loader-system": "⏳ Loader System",
     "---2": {
         "type": "separator"
     },
     "event-module": "🎭 EventModule",
-    "event-module-kids": "👶 EventModule para Crianças",
+    "event-module-kids": "👶 EventModule for Kids",
     "---3": {
         "type": "separator"
     },
     "microfrontends": "🏗️ Microfrontends",
-    "microfrontends-kids": "👶 Microfrontends para Crianças",
+    "microfrontends-kids": "👶 Microfrontends for Kids",
     "---4": {
         "type": "separator"
     },
-    "keys": "🔑 Sistema de Chaves"
+    "keys": "🔑 Keys System"
 }

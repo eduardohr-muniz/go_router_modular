@@ -1,192 +1,192 @@
-# 🏗️ EventModule para Microfrontends: Como Construir uma Cidade de Apps!
+# 🏗️ EventModule for Microfrontends: How to Build a City of Apps!
 
-Imagina que você vai construir uma **cidade inteira** com diferentes bairros! 🏙️✨
+Imagine you're going to build an **entire city** with different neighborhoods! 🏙️✨
 
-## 🏘️ O que são Microfrontends?
+## 🏘️ What are Microfrontends?
 
-Pense nos microfrontends como **bairros diferentes** da sua cidade-app:
+Think of microfrontends as **different neighborhoods** in your app-city:
 
-- 🏪 **Bairro do Shopping** - onde as pessoas compram coisas
-- 🏥 **Bairro da Saúde** - onde cuidam da saúde  
-- 🎮 **Bairro dos Jogos** - onde se divertem
-- 🏦 **Bairro dos Bancos** - onde cuidam do dinheiro
-- 📚 **Bairro da Escola** - onde aprendem coisas
+- 🏪 **Shopping District** - where people buy things
+- 🏥 **Health District** - where they take care of health  
+- 🎮 **Gaming District** - where they have fun
+- 🏦 **Banking District** - where they manage money
+- 📚 **School District** - where they learn things
 
 ```
-🏙️ MINHA CIDADE-APP:
+🏙️ MY APP-CITY:
 ┌─────────────────────────────────────────┐
-│  🏪 Shopping     🏥 Saúde     🎮 Jogos  │
+│  🏪 Shopping     🏥 Health     🎮 Games  │
 │     App            App         App      │
 │                                         │
-│  🏦 Banking      📚 Escola    📱 Chat   │
+│  🏦 Banking      📚 School    📱 Chat   │
 │     App            App         App      │
 └─────────────────────────────────────────┘
 ```
 
-## 📞 O Problema: Como os Bairros Conversam?
+## 📞 The Problem: How Do Districts Talk?
 
-Imagina se cada bairro fosse uma **ilha isolada**:
+Imagine if each district was an **isolated island**:
 
-### 😰 Sem EventModule (Ilha Triste):
+### 😰 Without EventModule (Sad Island):
 ```
 🏪 Shopping Island     🏥 Health Island     🎮 Games Island
-    "Socorro!"            "Oi? Oi?"           "Alguém aí?"
+    "Help!"               "Hello? Hello?"      "Anyone there?"
        |                     |                    |
-   💔 Sozinho            💔 Sozinho          💔 Sozinho
+   💔 Alone               💔 Alone            💔 Alone
 ```
 
-**Problemas das Ilhas:**
-- 🚫 **Não conversam** entre si
-- 😵 **Confusão total** quando precisam trabalhar juntos
-- 🐌 **Muito devagar** para fazer coisas em equipe
-- 💸 **Desperdício** - cada um faz a mesma coisa
+**Problems of the Islands:**
+- 🚫 **Don't talk** to each other
+- 😵 **Total confusion** when they need to work together
+- 🐌 **Very slow** to do things as a team
+- 💸 **Waste** - everyone does the same thing
 
-### 🎉 Com EventModule (Cidade Conectada):
+### 🎉 With EventModule (Connected City):
 ```
-🏪 Shopping ←→ 📞 CENTRAL ←→ 🏥 Health
-               TELEFÔNICA
-🎮 Games   ←→    MÁGICA   ←→ 🏦 Banking
+🏪 Shopping ←→ 📞 PHONE ←→ 🏥 Health
+               CENTRAL
+🎮 Games   ←→   MAGIC   ←→ 🏦 Banking
 ```
 
-**Benefícios da Cidade Conectada:**
-- 📞 **Todos conversam** através da central mágica
-- ⚡ **Super rápido** para coordenar
-- 🤝 **Trabalham em equipe** perfeitamente
-- 🎯 **Cada um faz sua especialidade**
+**Benefits of Connected City:**
+- 📞 **Everyone talks** through the magic central
+- ⚡ **Super fast** to coordinate
+- 🤝 **Work as a team** perfectly
+- 🎯 **Each does their specialty**
 
-## 🎭 Como Funciona a Mágica?
+## 🎭 How the Magic Works
 
-### 🛍️ Exemplo: Comprando um Jogo
+### 🛍️ Example: Buying a Game
 
-Vamos ver como a cidade funciona quando João quer comprar um jogo:
+Let's see how the city works when John wants to buy a game:
 
 ```
-👦 João: "Quero comprar Minecraft!"
+👦 John: "I want to buy Minecraft!"
    ↓
-🏪 Shopping App: "Ok! Vendendo Minecraft por R$ 30"
-   ↓ 📢 (grita para toda cidade)
-   💬 "PurchaseEvent: João comprou Minecraft por R$ 30!"
+🏪 Shopping App: "OK! Selling Minecraft for $30"
+   ↓ 📢 (shouts to the whole city)
+   💬 "PurchaseEvent: John bought Minecraft for $30!"
    ↓
-📞 Central Telefônica EventModule espalha a notícia:
+📞 EventModule Phone Central spreads the news:
    ↓                    ↓                    ↓
 🏦 Banking App:      🎮 Games App:       📱 Chat App:
-"Cobrando R$ 30      "Liberando         "João comprou
- da conta do João"    Minecraft"          um jogo!"
+"Charging $30        "Unlocking         "John bought
+ from John's account"  Minecraft"         a game!"
 ```
 
-### 🎊 O Resultado Mágico:
+### 🎊 The Magic Result:
 
-1. **🏪 Shopping**: "Venda concluída! ✅"
-2. **🏦 Banking**: "Dinheiro debitado! 💳"  
-3. **🎮 Games**: "Jogo liberado! 🎮"
-4. **📱 Chat**: "Amigos sabem da compra! 💬"
+1. **🏪 Shopping**: "Sale completed! ✅"
+2. **🏦 Banking**: "Money debited! 💳"  
+3. **🎮 Games**: "Game unlocked! 🎮"
+4. **📱 Chat**: "Friends know about the purchase! 💬"
 
-**Tudo acontece automaticamente, como mágica!** ✨
+**Everything happens automatically, like magic!** ✨
 
-## 🎪 Mais Exemplos da Vida Real
+## 🎪 More Real Life Examples
 
-### 🎂 Festa de Aniversário Digital
+### 🎂 Digital Birthday Party
 
 ```dart
-// 👦 João faz aniversário!
+// 👦 John's birthday!
 ModularEvent.fire(BirthdayEvent(
-  name: 'João',
+  name: 'John',
   age: 10,
   date: DateTime.now(),
 ));
 ```
 
-**O que acontece na cidade:**
+**What happens in the city:**
 
-- 🎮 **Games App**: "🎁 Libera skin especial de aniversário!"
-- 💰 **Banking App**: "🎈 Bônus de R$ 10 de presente!"
-- 📱 **Chat App**: "🎂 Avisa todos os amigos!"
-- 🏪 **Shopping App**: "🛍️ Desconto especial hoje!"
-- 📚 **School App**: "📖 Dia livre de lição de casa!"
+- 🎮 **Games App**: "🎁 Unlocks special birthday skin!"
+- 💰 **Banking App**: "🎈 $10 birthday bonus!"
+- 📱 **Chat App**: "🎂 Tells all friends!"
+- 🏪 **Shopping App**: "🛍️ Special discount today!"
+- 📚 **School App**: "📖 No homework day!"
 
-### 🏆 Conquista no Jogo
+### 🏆 Game Achievement
 
 ```dart
-// 🎮 João passou de fase!
+// 🎮 John beat the level!
 ModularEvent.fire(AchievementEvent(
-  player: 'João',
-  achievement: 'Primeiro Boss Derrotado',
+  player: 'John',
+  achievement: 'First Boss Defeated',
   points: 1000,
 ));
 ```
 
-**A cidade comemora:**
+**The city celebrates:**
 
-- 🎮 **Games App**: "🏆 Conquista desbloqueada!"
-- 💰 **Banking App**: "💎 +1000 moedas virtuais!"  
-- 📱 **Chat App**: "📢 Conta pra todos os amigos!"
-- 🎪 **Rewards App**: "🎁 Novo troféu disponível!"
+- 🎮 **Games App**: "🏆 Achievement unlocked!"
+- 💰 **Banking App**: "💎 +1000 virtual coins!"  
+- 📱 **Chat App**: "📢 Tell all friends!"
+- 🎪 **Rewards App**: "🎁 New trophy available!"
 
-## 🌟 Os Super Poderes dos Microfrontends
+## 🌟 Super Powers of Microfrontends
 
-### 1. 🚀 **Velocidade de Foguete**
+### 1. 🚀 **Rocket Speed**
 ```
-❌ App Monólito (Uma cidade gigante):
-🏗️ █████████████████████ 20 segundos para carregar
+❌ Monolith App (One giant city):
+🏗️ █████████████████████ 20 seconds to load
 
-✅ Microfrontends (Bairros pequenos):
-🏪 ███ 3 segundos - Shopping
-🎮 ███ 3 segundos - Games  
-🏦 ███ 3 segundos - Banking
+✅ Microfrontends (Small districts):
+🏪 ███ 3 seconds - Shopping
+🎮 ███ 3 seconds - Games  
+🏦 ███ 3 seconds - Banking
 ```
 
-### 2. 👥 **Equipes Especializadas**
+### 2. 👥 **Specialized Teams**
 ```
 🏪 Shopping Team:
-👨‍💻 Pedro (Expert em vendas)
-👩‍💻 Ana (Expert em produtos)
+👨‍💻 Peter (Sales expert)
+👩‍💻 Anna (Products expert)
 
 🎮 Games Team:  
-👨‍💻 Carlos (Expert em jogos)
-👩‍💻 Maria (Expert em diversão)
+👨‍💻 Carlos (Games expert)
+👩‍💻 Maria (Fun expert)
 
 🏦 Banking Team:
-👨‍💻 João (Expert em dinheiro)
-👩‍💻 Sara (Expert em segurança)
+👨‍💻 John (Money expert)
+👩‍💻 Sara (Security expert)
 ```
 
-**Cada equipe é especialista no seu bairro!** 🎯
+**Each team is a specialist in their district!** 🎯
 
-### 3. 🔧 **Manutenção Fácil**
+### 3. 🔧 **Easy Maintenance**
 ```
-🔨 Reforma no Shopping:
+🔨 Renovating the Shopping:
 ┌─────────────────────┐
-│ 🏪 Shopping App     │ ← Só mexe aqui!
-│    (em obras)       │
+│ 🏪 Shopping App     │ ← Only work here!
+│    (under construction) │
 └─────────────────────┘
 │
 🎮 Games   🏦 Banking   📱 Chat
  (normal)   (normal)    (normal)
 ```
 
-**Se um bairro quebra, os outros continuam funcionando!** 💪
+**If one district breaks, the others keep working!** 💪
 
-### 4. 🌍 **Escala Mundial**
+### 4. 🌍 **Global Scale**
 ```
-🌎 Servidor Brasil:     🌍 Servidor EUA:      🌏 Servidor Japão:
-🏪 Shopping Brasil      🎮 Games Global       🎌 Anime Store
-🏦 Banking Brasil       📱 Chat Global        🍱 Food Delivery
+🌎 Brazil Server:      🌍 USA Server:        🌏 Japan Server:
+🏪 Shopping Brazil     🎮 Games Global       🎌 Anime Store
+🏦 Banking Brazil      📱 Chat Global        🍱 Food Delivery
 ```
 
-**Cada bairro pode estar em um país diferente!** 🛫
+**Each district can be in a different country!** 🛫
 
-## 🎨 Criando Sua Própria Cidade
+## 🎨 Creating Your Own City
 
-### 🏗️ Passo 1: Definir os Bairros
+### 🏗️ Step 1: Define the Districts
 
 ```dart
-// 🏪 Bairro do Shopping
+// 🏪 Shopping District
 class ShoppingModule extends EventModule {
   @override
   void listen() {
     on<WantToBuyEvent>((WantToBuyEvent event, BuildContext? context) {
-      print('🛍️ ${event.person} quer comprar ${event.item}');
-      // Processar venda...
+      print('🛍️ ${event.person} wants to buy ${event.item}');
+      // Process sale...
       ModularEvent.fire(PurchaseCompletedEvent(
         buyer: event.person,
         item: event.item,
@@ -196,13 +196,13 @@ class ShoppingModule extends EventModule {
   }
 }
 
-// 🎮 Bairro dos Jogos  
+// 🎮 Games District  
 class GamesModule extends EventModule {
   @override
   void listen() {
     on<PurchaseCompletedEvent>((PurchaseCompletedEvent event, BuildContext? context) {
       if (event.item.contains('Game')) {
-        print('🎮 Liberando jogo ${event.item} para ${event.buyer}');
+        print('🎮 Unlocking game ${event.item} for ${event.buyer}');
         ModularEvent.fire(GameUnlockedEvent(
           player: event.buyer,
           game: event.item,
@@ -213,28 +213,28 @@ class GamesModule extends EventModule {
 }
 ```
 
-### 🏗️ Passo 2: Conectar na Central
+### 🏗️ Step 2: Connect to the Central
 
 ```dart
-// 📞 Central Telefônica da Cidade
+// 📞 City Phone Central
 class CityApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: '🏙️ Minha Cidade App',
+      title: '🏙️ My City App',
       routerConfig: GoRouterModular.routerConfig,
     );
   }
 }
 
-// 🏛️ Prefeitura (Módulo Principal)
+// 🏛️ City Hall (Main Module)
 class CityModule extends Module {
   @override
   List<Module> get imports => [
-    ShoppingModule(),    // 🏪 Bairro do Shopping
-    GamesModule(),       // 🎮 Bairro dos Jogos
-    BankingModule(),     // 🏦 Bairro do Banking
-    ChatModule(),        // 📱 Bairro do Chat
+    ShoppingModule(),    // 🏪 Shopping District
+    GamesModule(),       // 🎮 Games District
+    BankingModule(),     // 🏦 Banking District
+    ChatModule(),        // 📱 Chat District
   ];
 
   @override
@@ -244,29 +244,29 @@ class CityModule extends Module {
 }
 ```
 
-### 🏗️ Passo 3: Ativar a Magia
+### 🏗️ Step 3: Activate the Magic
 
 ```dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 🎭 Ativando a central telefônica mágica!
+  // 🎭 Activating the magical phone central!
   await GoRouterModular.configure(
     appModule: CityModule(),
     initialRoute: '/',
-    debugLogEventBus: true, // Ver a mágica acontecendo!
+    debugLogEventBus: true, // See the magic happen!
   );
   
   runApp(CityApp());
 }
 ```
 
-## 🎪 Eventos da Cidade
+## 🎪 City Events
 
-### 🎊 Eventos de Diversão
+### 🎊 Fun Events
 
 ```dart
-// 🎮 Jogos e conquistas
+// 🎮 Games and achievements
 class GameLevelUpEvent {
   final String player;
   final int newLevel;
@@ -279,7 +279,7 @@ class AchievementUnlockedEvent {
   final int points;
 }
 
-// 🎵 Música e entretenimento  
+// 🎵 Music and entertainment  
 class MusicPlayEvent {
   final String song;
   final String artist;
@@ -287,10 +287,10 @@ class MusicPlayEvent {
 }
 ```
 
-### 💰 Eventos de Dinheiro
+### 💰 Money Events
 
 ```dart
-// 🏦 Banking e pagamentos
+// 🏦 Banking and payments
 class MoneyTransferEvent {
   final String from;
   final String to;
@@ -305,10 +305,10 @@ class BalanceUpdatedEvent {
 }
 ```
 
-### 🛍️ Eventos de Compras
+### 🛍️ Shopping Events
 
 ```dart
-// 🛒 Shopping e produtos
+// 🛒 Shopping and products
 class AddToCartEvent {
   final String userId;
   final String productId;
@@ -323,38 +323,38 @@ class CheckoutEvent {
 }
 ```
 
-## 🌈 Benefícios Mágicos
+## 🌈 Magic Benefits
 
-### 🚀 **Para as Crianças (Usuários)**
-- ⚡ **Apps super rápidos** - carrega só o que precisa
-- 🎯 **Experiência personalizada** - cada bairro é especializado
-- 🔄 **Atualizações sem interrupção** - mexe em um bairro, outros continuam
-- 🎮 **Mais diversão** - bairros trabalham juntos para criar experiências incríveis
+### 🚀 **For Kids (Users)**
+- ⚡ **Super fast apps** - loads only what you need
+- 🎯 **Personalized experience** - each district is specialized
+- 🔄 **Updates without interruption** - fix one district, others continue
+- 🎮 **More fun** - districts work together to create amazing experiences
 
-### 👨‍💻 **Para os Desenvolvedores (Construtores)**
-- 🏗️ **Construção em paralelo** - cada equipe trabalha no seu bairro
-- 🔧 **Manutenção fácil** - problema em um bairro não afeta outros
-- 📈 **Escala simples** - adiciona novos bairros quando quiser
-- 🎨 **Tecnologias diferentes** - cada bairro pode usar ferramentas diferentes
+### 👨‍💻 **For Developers (Builders)**
+- 🏗️ **Parallel building** - each team works on their district
+- 🔧 **Easy maintenance** - problem in one district doesn't affect others
+- 📈 **Simple scaling** - add new districts when you want
+- 🎨 **Different technologies** - each district can use different tools
 
-### 🏢 **Para a Empresa (Prefeito)**
-- 💰 **Economia de dinheiro** - equipes pequenas são mais eficientes
-- 📊 **Dados precisos** - cada bairro relata suas métricas
-- 🚀 **Lançamento rápido** - um bairro pronto já pode funcionar
-- 🌍 **Expansão global** - bairros podem estar em qualquer lugar
+### 🏢 **For the Company (Mayor)**
+- 💰 **Save money** - small teams are more efficient
+- 📊 **Precise data** - each district reports its metrics
+- 🚀 **Fast launch** - one ready district can already work
+- 🌍 **Global expansion** - districts can be anywhere
 
-## 🎯 Conclusão: Sua Cidade Digital
+## 🎯 Conclusion: Your Digital City
 
-Com EventModule e microfrontends, você constrói uma **cidade digital incrível** onde:
+With EventModule and microfrontends, you build an **incredible digital city** where:
 
-- 🏘️ **Cada bairro é especialista** no que faz
-- 📞 **Todos conversam** através da central mágica
-- ⚡ **Tudo funciona super rápido** e eficiente
-- 🎪 **Experiências mágicas** acontecem quando trabalham juntos
-- 🛠️ **Fácil de construir e manter** 
+- 🏘️ **Each district is a specialist** in what it does
+- 📞 **Everyone talks** through the magic central
+- ⚡ **Everything works super fast** and efficient
+- 🎪 **Magic experiences** happen when they work together
+- 🛠️ **Easy to build and maintain** 
 
-**Agora você pode ser o arquiteto da sua própria cidade de apps!** 🏗️✨
+**Now you can be the architect of your own app city!** 🏗️✨
 
 ---
 
-*"Na cidade digital, cada app é um bairro, mas juntos formam uma metrópole incrível!"* 🌆🎉
+*"In the digital city, each app is a district, but together they form an incredible metropolis!"* 🌆🎉

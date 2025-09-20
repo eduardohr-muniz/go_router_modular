@@ -1,8 +1,8 @@
 {
-    "index": "🏠 Início",
-    "docs": "📚 Documentação",
-    "guides": "🎯 Guias",
-    "examples": "💡 Exemplos",
+    "index": "🏠 Home",
+    "docs": "📚 Documentation",
+    "guides": "🎯 Guides",
+    "examples": "💡 Examples",
     "---": {
         "type": "separator"
     },

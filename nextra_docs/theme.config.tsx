@@ -52,17 +52,17 @@ const config: DocsThemeConfig = {
         toggleButton: true
     },
     search: {
-        placeholder: 'Buscar documentação...'
+        placeholder: 'Search documentation...'
     },
     editLink: {
-        text: 'Editar esta página no GitHub →'
+        text: 'Edit this page on GitHub →'
     },
     feedback: {
-        content: 'Dúvidas? Nos dê feedback →',
+        content: 'Question? Give us feedback →',
         labels: 'feedback'
     },
     toc: {
-        title: 'Nesta página'
+        title: 'On This Page'
     },
     navigation: {
         prev: true,
@@ -70,7 +70,7 @@ const config: DocsThemeConfig = {
     },
     gitTimestamp: ({ timestamp }) => (
         <div style={{ fontSize: '14px', color: 'var(--nextra-colors-gray-500)' }}>
-            Última atualização: {timestamp.toLocaleDateString('pt-BR')}
+            Last updated: {timestamp.toLocaleDateString('en-US')}
         </div>
     ),
     head: () => {
@@ -83,7 +83,7 @@ const config: DocsThemeConfig = {
             <>
                 <meta property="og:url" content={url} />
                 <meta property="og:title" content={frontMatter.title || 'GoRouter Modular'} />
-                <meta property="og:description" content={frontMatter.description || 'Documentação oficial do GoRouter Modular - Sistema modular de navegação para Flutter.'} />
+                <meta property="og:description" content={frontMatter.description || 'Official GoRouter Modular documentation - Modular navigation system for Flutter.'} />
                 <meta property="og:image" content="/banner.png" />
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:image" content="/banner.png" />

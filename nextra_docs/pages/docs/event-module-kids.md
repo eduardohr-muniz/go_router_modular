@@ -1,368 +1,448 @@
-# 🎭 EventModule: Como uma Central Telefônica Mágica! 
+# 🎭 EventModule: Like a Magical Phone Central! 
 
-Imagine que o EventModule é como uma **central telefônica mágica** da sua cidade! 📞✨
+Imagine that EventModule is like a **magical phone central** in your city! 📞✨
 
-## 🏠 O que é um EventModule?
+## 🏠 What is an EventModule?
 
-Pense no EventModule como **casas diferentes** na sua cidade. Cada casa (módulo) pode:
-- 👂 **Escutar** ligações telefônicas especiais
-- 📢 **Mandar** mensagens para outras casas
-- 🔔 **Receber** notificações importantes
+Think of EventModule as **different houses** in your city. Each house (module) can:
+- 👂 **Listen** to special phone calls
+- 📢 **Send** messages to other houses
+- 🔔 **Receive** important notifications
 
 ```dart
 class LoginEventModule extends EventModule {
   @override
   void listen() {
-    // Esta casa escuta quando alguém faz login! 👋
-    on<LoginEvent>((event, context) {
-      print('🎉 Bem-vindo, ${event.username}!');
+    // This house listens when someone logs in! 👋
+    on<LoginEvent>((LoginEvent event, BuildContext? context) {
+      print('🎉 Welcome, ${event.username}!');
       if (context != null) {
-        context.go('/home'); // Vai para a página inicial
+        context.go('/home'); // Goes to home page
       }
     });
   }
 }
 ```
 
-## 📞 Como Funciona a Central Telefônica?
+## 📞 How Does the Phone Central Work?
 
-### 1. 📢 Mandando Mensagens (Firing Events)
+### 1. 📢 Sending Messages (Firing Events)
 
-Quando algo importante acontece, você "grita" para toda a cidade:
+When something important happens, you "shout" to the whole city:
 
 ```dart
-// 🗣️ "OI PESSOAL! João acabou de fazer login!"
-ModularEvent.fire(LoginEvent(username: 'João'));
+// 🗣️ "HEY EVERYONE! John just logged in!"
+ModularEvent.fire(LoginEvent(username: 'John'));
 
-// 🗣️ "ATENÇÃO! Chegou uma mensagem nova!"
-ModularEvent.fire(NotificationEvent(message: 'Você tem um presente!'));
+// 🗣️ "ATTENTION! A new message arrived!"
+ModularEvent.fire(NotificationEvent(message: 'You have a gift!'));
 
-// 🗣️ "CUIDADO! Algo deu errado!"
-ModularEvent.fire(ErrorEvent(error: 'Internet lenta'));
+// 🗣️ "CAREFUL! Something went wrong!"
+ModularEvent.fire(ErrorEvent(error: 'Slow internet'));
 ```
 
-### 2. 👂 Escutando Mensagens (Listening Events)
+### 2. 👂 Listening to Messages (Listening Events)
 
-Cada casa pode escolher quais tipos de "gritos" ela quer escutar:
+Each house can choose which types of "shouts" it wants to listen to:
 
 ```dart
 class NotificationModule extends EventModule {
   @override
   void listen() {
-    // 🔔 Esta casa escuta notificações
-    on<NotificationEvent>((event, context) {
-      showDialog(
-        context: context!,
-        builder: (context) => AlertDialog(
-          title: Text('📬 Nova Mensagem!'),
-          content: Text(event.message),
-        ),
-      );
+    // Listen to login events
+    on<LoginEvent>((LoginEvent event, BuildContext? context) {
+      print('📱 User ${event.username} is online!');
+      _showWelcomeNotification(event.username);
     });
 
-    // ❌ Esta casa também escuta erros
-    on<ErrorEvent>((event, context) {
-      ScaffoldMessenger.of(context!).showSnackBar(
-        SnackBar(
-          content: Text('💥 Ops! ${event.error}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    // Listen to error events
+    on<ErrorEvent>((ErrorEvent event, BuildContext? context) {
+      print('❌ Error: ${event.error}');
+      _showErrorDialog(event.error);
     });
+  }
+
+  void _showWelcomeNotification(String username) {
+    // Show welcome notification
+  }
+
+  void _showErrorDialog(String error) {
+    // Show error dialog
   }
 }
 ```
 
-## 🎵 O Sistema Exclusive: Como um Rádio Especial
+## 🎪 Real World Examples
 
-Imagine que você tem um **rádio muito especial** que só pode tocar uma música por vez! 🎵
+### 🎮 Video Game Example
 
-### 📻 Modo Normal (Non-Exclusive)
-```dart
-// 🎶 TODAS as casas escutam a mesma música ao mesmo tempo
-on<MusicEvent>((event, context) {
-  print('🎵 Tocando: ${event.songName}');
-}); // exclusive: false (padrão)
-```
-
-**O que acontece:**
-- Casa do João: 🎵 "Tocando: Parabéns pra você"
-- Casa da Maria: 🎵 "Tocando: Parabéns pra você"  
-- Casa do Pedro: 🎵 "Tocando: Parabéns pra você"
-
-### 📻 Modo Exclusive (Fila do Rádio)
-```dart
-// 🎯 Apenas UMA casa pode ouvir por vez!
-on<MusicEvent>((event, context) {
-  print('🎵 Só eu escuto: ${event.songName}');
-}, exclusive: true);
-```
-
-**O que acontece:**
-1. 🏠 **Casa do João** entra na fila primeiro → 🎵 Ele escuta a música
-2. 🏠 **Casa da Maria** entra na fila → ⏳ Fica esperando
-3. 🏠 **Casa do Pedro** entra na fila → ⏳ Fica esperando
-
-```
-📋 FILA DO RÁDIO:
-┌─────────────────────────┐
-│ 🎵 João (tocando agora) │ ← Ativo
-│ ⏳ Maria (esperando)    │ ← Próxima
-│ ⏳ Pedro (esperando)    │ ← Depois
-└─────────────────────────┘
-```
-
-### 🏃‍♂️ Quando Alguém Sai da Fila
-
-Se João sair de casa (dispose), o rádio **automaticamente** vai para Maria:
-
-```
-📋 APÓS JOÃO SAIR:
-┌─────────────────────────┐
-│ 🎵 Maria (tocando agora)│ ← Agora é ativa!
-│ ⏳ Pedro (esperando)    │ ← Próximo
-└─────────────────────────┘
-```
-
-## 🎪 Exemplos do Mundo Real
-
-### 🔐 Sistema de Login
-```dart
-class LoginModule extends EventModule {
-  @override
-  void listen() {
-    // Quando alguém faz login
-    on<LoginEvent>((event, context) {
-      print('👋 Olá, ${event.username}!');
-      // Ir para a tela principal
-      context?.go('/dashboard');
-    });
-
-    // Quando alguém faz logout  
-    on<LogoutEvent>((event, context) {
-      print('👋 Tchau, ${event.username}!');
-      // Voltar para tela de login
-      context?.go('/login');
-    });
-  }
-}
-
-// Como usar:
-ModularEvent.fire(LoginEvent(username: 'Ana'));
-ModularEvent.fire(LogoutEvent(username: 'Ana'));
-```
-
-### 🛒 Carrinho de Compras
-```dart
-class ShoppingModule extends EventModule {
-  @override
-  void listen() {
-    // Quando adiciona produto
-    on<AddToCartEvent>((event, context) {
-      print('🛒 Adicionado: ${event.productName}');
-      ScaffoldMessenger.of(context!).showSnackBar(
-        SnackBar(content: Text('✅ ${event.productName} no carrinho!'))
-      );
-    });
-
-    // Quando finaliza compra
-    on<PurchaseEvent>((event, context) {
-      print('💳 Compra de R\$ ${event.total} finalizada!');
-      context?.go('/success');
-    });
-  }
-}
-
-// Como usar:
-ModularEvent.fire(AddToCartEvent(productName: 'Bicicleta', price: 500.0));
-ModularEvent.fire(PurchaseEvent(total: 500.0));
-```
-
-### 🎮 Sistema de Jogo
-```dart
-class GameModule extends EventModule {
-  @override
-  void listen() {
-    // Sistema de pontuação (exclusive - só um contador)
-    on<ScoreEvent>((event, context) {
-      print('🏆 Nova pontuação: ${event.points}');
-      updateScoreboard(event.points);
-    }, exclusive: true);
-
-    // Efeitos sonoros (normal - todos escutam)
-    on<SoundEvent>((event, context) {
-      print('🔊 Som: ${event.soundName}');
-      playSound(event.soundName);
-    });
-  }
-}
-
-// Como usar:
-ModularEvent.fire(ScoreEvent(points: 1000));
-ModularEvent.fire(SoundEvent(soundName: 'coin.wav'));
-```
-
-## 🎯 Regras Importantes
-
-### 1. 🏠 Limpeza Automática
-Quando uma casa é demolida (`dispose()`), ela **automaticamente**:
-- 🧹 Para de escutar todos os eventos
-- 🗑️ Limpa toda a memória
-- 📻 Se estava no rádio exclusive, passa para o próximo
-
-### 2. 🌐 Context Mágico
-O `context` é como um **GPS mágico** que te mostra onde você está:
-```dart
-on<NavigationEvent>((event, context) {
-  if (context != null) {
-    // 🗺️ Você sabe onde está! Pode navegar
-    context.go('/new-page');
-  } else {
-    // 🤷‍♂️ Você não sabe onde está... 
-    print('Ops! Não sei onde estou');
-  }
-});
-```
-
-### 3. 🔄 AutoDispose
-```dart
-// 🔒 Esta escuta vai embora quando a casa for demolida
-on<MyEvent>((event, context) {
-  // fazer algo...
-}, autoDispose: true); // padrão
-
-// 🔓 Esta escuta fica para sempre (cuidado!)
-on<MyEvent>((event, context) {
-  // fazer algo...
-}, autoDispose: false); // perigoso!
-```
-
-## 🎨 Criando Seus Próprios Eventos
+Imagine you're creating a video game with the EventModule:
 
 ```dart
-// 🎂 Evento de aniversário
-class BirthdayEvent {
-  final String personName;
-  final int age;
+// 🏆 Events in your game
+class PlayerLevelUpEvent {
+  final String playerName;
+  final int newLevel;
+  final int experience;
   
-  BirthdayEvent({required this.personName, required this.age});
+  PlayerLevelUpEvent({
+    required this.playerName,
+    required this.newLevel,
+    required this.experience,
+  });
 }
 
-// 🌟 Módulo que escuta aniversários
-class BirthdayModule extends EventModule {
+class EnemyDefeatedEvent {
+  final String enemyType;
+  final int points;
+  
+  EnemyDefeatedEvent({
+    required this.enemyType,
+    required this.points,
+  });
+}
+
+// 🏠 Game modules listening to events
+class ScoreModule extends EventModule {
   @override
   void listen() {
-    on<BirthdayEvent>((event, context) {
-      print('🎉 Parabéns ${event.personName}! ${event.age} anos!');
+    on<PlayerLevelUpEvent>((PlayerLevelUpEvent event, BuildContext? context) {
+      print('🎉 ${event.playerName} reached level ${event.newLevel}!');
+      _updateScore(event.experience);
+    });
+
+    on<EnemyDefeatedEvent>((EnemyDefeatedEvent event, BuildContext? context) {
+      print('💀 Defeated ${event.enemyType} for ${event.points} points!');
+      _addPoints(event.points);
+    });
+  }
+}
+
+class SoundModule extends EventModule {
+  @override
+  void listen() {
+    on<PlayerLevelUpEvent>((PlayerLevelUpEvent event, BuildContext? context) {
+      _playLevelUpSound(); // 🔊 "Level up!"
+    });
+
+    on<EnemyDefeatedEvent>((EnemyDefeatedEvent event, BuildContext? context) {
+      _playDefeatSound(); // 🔊 "Enemy defeated!"
+    });
+  }
+}
+```
+
+### 🛍️ Shopping App Example
+
+```dart
+// 🛒 Shopping events
+class AddToCartEvent {
+  final String productName;
+  final double price;
+  final int quantity;
+  
+  AddToCartEvent({
+    required this.productName,
+    required this.price,
+    required this.quantity,
+  });
+}
+
+class PurchaseCompletedEvent {
+  final String orderId;
+  final List<String> items;
+  final double total;
+  
+  PurchaseCompletedEvent({
+    required this.orderId,
+    required this.items,
+    required this.total,
+  });
+}
+
+// 🏠 Shopping modules
+class CartModule extends EventModule {
+  @override
+  void listen() {
+    on<AddToCartEvent>((AddToCartEvent event, BuildContext? context) {
+      print('🛒 Added ${event.productName} to cart!');
+      _updateCartCounter();
+    });
+  }
+}
+
+class EmailModule extends EventModule {
+  @override
+  void listen() {
+    on<PurchaseCompletedEvent>((PurchaseCompletedEvent event, BuildContext? context) {
+      print('📧 Sending purchase confirmation email...');
+      _sendConfirmationEmail(event.orderId);
+    });
+  }
+}
+
+// 🔥 When user adds something to cart
+ModularEvent.fire(AddToCartEvent(
+  productName: 'Cool Sneakers',
+  price: 99.99,
+  quantity: 1,
+));
+```
+
+## 🎪 The Magic of Events
+
+### 🎯 Events are like Magic Spells
+
+Each event is like a **magic spell** that you can cast:
+
+```dart
+// ✨ Cast the "User Login" spell
+ModularEvent.fire(LoginEvent(username: 'Alice'));
+
+// ✨ Cast the "Message Received" spell  
+ModularEvent.fire(MessageEvent(from: 'Bob', text: 'Hello!'));
+
+// ✨ Cast the "Achievement Unlocked" spell
+ModularEvent.fire(AchievementEvent(name: 'First Victory'));
+```
+
+### 🏠 Houses React to Magic
+
+Each house (module) can choose which spells to react to:
+
+```dart
+class MagicHouse extends EventModule {
+  @override
+  void listen() {
+    // React to login spell
+    on<LoginEvent>((LoginEvent event, BuildContext? context) {
+      print('🪄 The magic house glows when ${event.username} enters!');
+    });
+
+    // React to achievement spell
+    on<AchievementEvent>((AchievementEvent event, BuildContext? context) {
+      print('🏆 Fireworks appear for achievement: ${event.name}!');
+    });
+  }
+}
+```
+
+## 🎭 Special Powers of EventModule
+
+### 1. 🔐 Exclusive Power (exclusive: true)
+
+Sometimes you want only ONE house to hear your message:
+
+```dart
+class SpecialModule extends EventModule {
+  @override
+  void listen() {
+    // Only THIS house will hear secret messages
+    on<SecretEvent>((SecretEvent event, BuildContext? context) {
+      print('🤫 I heard the secret: ${event.secret}');
+    }, exclusive: true);
+  }
+}
+```
+
+### 2. 🔄 Auto-Cleanup Power (autoDispose: true)
+
+The magic house can clean itself automatically:
+
+```dart
+class SelfCleaningModule extends EventModule {
+  @override
+  void listen() {
+    // This listener cleans itself when the house is destroyed
+    on<MessageEvent>((MessageEvent event, BuildContext? context) {
+      print('📧 Message: ${event.text}');
+    }, autoDispose: true);
+  }
+}
+```
+
+### 3. 🎯 Different Phone Lines (Custom EventBus)
+
+You can have different phone lines for different types of calls:
+
+```dart
+class PrivateModule extends EventModule {
+  final EventBus _privatePhone = EventBus();
+
+  @override
+  EventBus get eventBus => _privatePhone; // Use private phone
+
+  @override
+  void listen() {
+    on<PrivateMessageEvent>((PrivateMessageEvent event, BuildContext? context) {
+      print('📞 Private message: ${event.message}');
+    });
+  }
+}
+```
+
+## 🎪 Building Your Event City
+
+### 🏗️ Step 1: Create Your Houses (Modules)
+
+```dart
+// 🏠 House for handling user actions
+class UserHouse extends EventModule {
+  @override
+  void listen() {
+    on<UserJoinedEvent>((UserJoinedEvent event, BuildContext? context) {
+      print('👋 ${event.name} joined the party!');
+    });
+  }
+}
+
+// 🏠 House for handling game actions
+class GameHouse extends EventModule {
+  @override
+  void listen() {
+    on<GameStartedEvent>((GameStartedEvent event, BuildContext? context) {
+      print('🎮 Game ${event.gameName} started!');
+    });
+  }
+}
+
+// 🏠 House for handling notifications
+class NotificationHouse extends EventModule {
+  @override
+  void listen() {
+    on<UserJoinedEvent>((UserJoinedEvent event, BuildContext? context) {
+      _showNotification('${event.name} is now online!');
+    });
+
+    on<GameStartedEvent>((GameStartedEvent event, BuildContext? context) {
+      _showNotification('Game ${event.gameName} is starting!');
+    });
+  }
+}
+```
+
+### 🏗️ Step 2: Connect Your Houses to the City
+
+```dart
+// 🏛️ Your main city (App Module)
+class MyCityModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (context, state) => HomePage()),
+  ];
+
+  @override
+  List<Module> get imports => [
+    UserHouse(),           // Import user house
+    GameHouse(),           // Import game house  
+    NotificationHouse(),   // Import notification house
+  ];
+}
+```
+
+### 🏗️ Step 3: Make Events Happen!
+
+```dart
+// 🎉 Someone joins the party
+ModularEvent.fire(UserJoinedEvent(name: 'Alice'));
+
+// 🎮 A game starts
+ModularEvent.fire(GameStartedEvent(gameName: 'Super Adventure'));
+```
+
+### 🎯 What Happens?
+
+1. **UserHouse** hears "Alice joined" → prints welcome message
+2. **NotificationHouse** hears "Alice joined" → shows notification
+3. **GameHouse** hears "Super Adventure started" → prints game message  
+4. **NotificationHouse** hears "Super Adventure started" → shows game notification
+
+**It's like magic! ✨ All houses automatically do their jobs!**
+
+## 🎪 Fun EventModule Games
+
+### 🎮 Game 1: The Echo House
+
+```dart
+class EchoHouse extends EventModule {
+  @override
+  void listen() {
+    on<SayHelloEvent>((SayHelloEvent event, BuildContext? context) {
+      print('Echo: ${event.message}');
+      // Echo back after 1 second
+      Future.delayed(Duration(seconds: 1), () {
+        ModularEvent.fire(EchoBackEvent(message: 'Echo: ${event.message}'));
+      });
+    });
+  }
+}
+```
+
+### 🎮 Game 2: The Counting House
+
+```dart
+class CountingHouse extends EventModule {
+  int _count = 0;
+
+  @override
+  void listen() {
+    on<CountEvent>((CountEvent event, BuildContext? context) {
+      _count++;
+      print('🔢 Count is now: $_count');
       
-      if (context != null) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('🎂 Aniversário!'),
-            content: Text('${event.personName} fez ${event.age} anos!'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('🎁 Legal!'),
-              ),
-            ],
-          ),
-        );
+      if (_count >= 10) {
+        ModularEvent.fire(CountReachedTenEvent());
       }
     });
   }
 }
-
-// Como usar:
-ModularEvent.fire(BirthdayEvent(personName: 'Maria', age: 10));
 ```
 
-## 🚀 Dicas de Ouro
+### 🎮 Game 3: The Color House
 
-### ✨ Boas Práticas
 ```dart
-// ✅ BOM: Sempre verificar context
-on<NavigationEvent>((event, context) {
-  if (context != null) {
-    context.go(event.route);
-  }
-});
-
-// ✅ BOM: Nomes claros para eventos
-class UserLoginSuccessEvent { ... }
-class ShoppingCartUpdatedEvent { ... }
-class GameOverEvent { ... }
-
-// ❌ RUIM: Não verificar context
-on<NavigationEvent>((event, context) {
-  context!.go(event.route); // Pode dar erro!
-});
-```
-
-### 🎪 Exemplo Completo: App de Loja
-```dart
-// 📱 App completo com eventos
-class ShopApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GoRouterModularApp(
-      title: '🛍️ Minha Loja',
-      modules: [
-        LoginModule(),      // Cuida do login
-        ShoppingModule(),   // Cuida das compras  
-        NotificationModule(), // Cuida das notificações
-      ],
-    );
-  }
-}
-
-// 🏪 Módulo da loja
-class ShoppingModule extends EventModule {
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/shop', child: (context, state) => ShopPage()),
-    ChildRoute('/cart', child: (context, state) => CartPage()),
-  ];
-
+class ColorHouse extends EventModule {
   @override
   void listen() {
-    // Quando adiciona ao carrinho
-    on<AddToCartEvent>((event, context) {
-      print('🛒 ${event.productName} adicionado!');
-      
-      // Mostrar notificação
-      ModularEvent.fire(NotificationEvent(
-        message: '${event.productName} no seu carrinho!'
-      ));
+    on<ChangeColorEvent>((ChangeColorEvent event, BuildContext? context) {
+      print('🎨 Changing color to ${event.color}');
+      _changeBackgroundColor(event.color);
     });
-
-    // Quando remove do carrinho
-    on<RemoveFromCartEvent>((event, context) {
-      print('🗑️ ${event.productName} removido!');
-    });
-
-    // Quando finaliza compra (exclusive - só um por vez)
-    on<CheckoutEvent>((event, context) {
-      print('💳 Processando compra...');
-      // Ir para página de sucesso
-      context?.go('/success');
-    }, exclusive: true);
   }
 }
+
+// Fire color events
+ModularEvent.fire(ChangeColorEvent(color: 'red'));
+ModularEvent.fire(ChangeColorEvent(color: 'blue'));
+ModularEvent.fire(ChangeColorEvent(color: 'green'));
 ```
 
-## 🎊 Conclusão
+## 🎊 Why EventModule is Awesome
 
-O EventModule é como uma **cidade mágica** onde:
-- 🏠 **Casas** (módulos) podem escutar eventos
-- 📢 **Gritos** (events) espalham informações
-- 📞 **Central telefônica** (EventBus) conecta tudo
-- 📻 **Rádio exclusive** garante ordem nas filas
-- 🧹 **Limpeza automática** evita bagunça
+### 🌟 It's Like Having Super Powers!
 
-**Agora você pode criar seus próprios eventos e fazer sua app conversar como uma cidade feliz!** 🏙️✨
+- 🎯 **One message, many listeners** - Shout once, everyone who cares will hear
+- 🏠 **Independent houses** - Each module does its own thing
+- 🔧 **Easy to add new features** - Just add a new house that listens
+- 🎪 **Fun to use** - Makes coding feel like playing with magic!
+
+### 🎮 Real Benefits for Your App
+
+- 📱 **Better organization** - Everything has its place
+- 🚀 **Faster development** - Add features without breaking existing code
+- 🐛 **Fewer bugs** - Houses don't know about each other directly
+- 🎨 **More fun** - Coding becomes like building a magical city!
+
+## 🎯 Your EventModule Adventure Starts Now!
+
+1. 🏗️ **Build your first house** (EventModule)
+2. 👂 **Make it listen** to events you care about
+3. 📢 **Fire some events** and watch the magic happen
+4. 🎪 **Add more houses** for more features
+5. 🌟 **Enjoy your magical event city!**
 
 ---
 
-*"Com grandes poderes vêm grandes responsabilidades... sempre faça dispose dos seus módulos!"* 🕷️
+**Remember: EventModule is like having a magical phone system where houses in your city can talk to each other without knowing each other's addresses! 🎭✨**
+
+*Now go build your own magical event city!* 🏙️🎪
