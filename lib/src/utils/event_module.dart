@@ -72,6 +72,10 @@ class ModularEvent {
   /// throughout the application.
   static ModularEvent get instance => _instance ??= ModularEvent._();
 
+  int _envetBusId(EventBus eventBus) {
+    return eventBus.hashCode;
+  }
+
   /// Removes a specific listener for an event type.
   ///
   /// Cancels the active subscription for event type [T] and removes it
@@ -86,8 +90,9 @@ class ModularEvent {
   /// ```
   void dispose<T>({EventBus? eventBus}) {
     eventBus ??= _eventBus;
-    _eventSubscriptions[eventBus.hashCode]?[T]?.cancel();
-    _eventSubscriptions[eventBus.hashCode]?.remove(T);
+    final eventBusId = _envetBusId(eventBus);
+    _eventSubscriptions[eventBusId]?[T]?.cancel();
+    _eventSubscriptions[eventBusId]?.remove(T);
   }
 
   /// Registers a listener for events of type [T].
@@ -145,15 +150,16 @@ class ModularEvent {
     exclusive = broadcast ?? exclusive;
 
     eventBus ??= _eventBus;
-    _eventSubscriptions[eventBus.hashCode]?[T]?.cancel();
+    final eventBusId = _envetBusId(eventBus);
+    _eventSubscriptions[eventBusId]?[T]?.cancel();
     if (exclusive) {
-      _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().asBroadcastStream().listen((event) {
+      _eventSubscriptions[eventBusId]![T] = eventBus.on<T>().asBroadcastStream().listen((event) {
         if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
       });
     }
     if (exclusive == false) {
-      _eventSubscriptions[eventBus.hashCode]![T] = eventBus.on<T>().listen((event) {
+      _eventSubscriptions[eventBusId]![T] = eventBus.on<T>().listen((event) {
         if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
       });
@@ -357,8 +363,6 @@ abstract class EventModule extends Module {
 
   @override
   void dispose() {
-    final _eventBusId = _internalEventBus.hashCode + runtimeType.hashCode;
-
     _disposeSubscriptions[_eventBusId]?.forEach((key, value) {
       if (value) {
         _eventSubscriptions[_eventBusId]?[key]?.cancel();
