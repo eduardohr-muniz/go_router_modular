@@ -1,7 +1,11 @@
 {
     "index": "🏠 Home",
-    "docs": "📚 Documentation",
-    "guides": "🎯 Guides",
+    "docs": "🚀 Get Started",
+    "routes": "🛣️ Routes / Modules",
+    "dependency-injection": "💉 Dependency Injection",
+    "event-module": "🎭 Event Module",
+    "microfrontends": "🏢 Micro Front Ends",
+    "guides": "📖 Guides",
     "examples": "💡 Examples",
     "---": {
         "type": "separator"

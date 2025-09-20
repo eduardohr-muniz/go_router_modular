@@ -1,26 +1,5 @@
 {
     "installation": "📦 Installation",
-    "quick-start": "🏁 Quick Start",
-    "getting-started": "📖 Getting Started",
-    "---": {
-        "type": "separator"
-    },
-    "routes": "🛣️ Routes System",
-    "navigation": "🧭 Navigation",
-    "dependency-injection": "💉 Dependency Injection",
-    "loader-system": "⏳ Loader System",
-    "---2": {
-        "type": "separator"
-    },
-    "event-module": "🎭 EventModule",
-    "event-module-kids": "👶 EventModule for Kids",
-    "---3": {
-        "type": "separator"
-    },
-    "microfrontends": "🏗️ Microfrontends",
-    "microfrontends-kids": "👶 Microfrontends for Kids",
-    "---4": {
-        "type": "separator"
-    },
-    "keys": "🔑 Keys System"
+    "quick-start": "⚡ Quick Start",
+    "getting-started": "🚀 Getting Started"
 }
