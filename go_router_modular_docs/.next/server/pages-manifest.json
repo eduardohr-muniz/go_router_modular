@@ -1,9 +1,0 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/getting-started": "pages/getting-started.js",
-  "/": "pages/index.js",
-  "/installation": "pages/installation.js",
-  "/event-system": "pages/event-system.js"
-}

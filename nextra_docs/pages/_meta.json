@@ -1,0 +1,20 @@
+{
+    "index": "🏠 Início",
+    "docs": "📚 Documentação",
+    "guides": "🎯 Guias",
+    "examples": "💡 Exemplos",
+    "---": {
+        "type": "separator"
+    },
+    "changelog": "📝 Changelog",
+    "github": {
+        "title": "GitHub ↗",
+        "href": "https://github.com/Flutterando/go_router_modular",
+        "newWindow": true
+    },
+    "pub": {
+        "title": "pub.dev ↗",
+        "href": "https://pub.dev/packages/go_router_modular",
+        "newWindow": true
+    }
+}

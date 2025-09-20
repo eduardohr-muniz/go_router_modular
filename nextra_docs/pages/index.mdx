@@ -1,0 +1,154 @@
+---
+title: GoRouter Modular
+description: Sistema modular de navegação para Flutter usando GoRouter
+---
+
+import { Cards, Card } from 'nextra/components'
+
+# GoRouter Modular 🚀
+
+**GoRouter Modular** é um sistema poderoso de navegação modular para Flutter que estende o **GoRouter** oficial, fornecendo uma arquitetura limpa e escalável para aplicações grandes.
+
+<div className="mt-6 mb-6">
+  <img 
+    src="/banner.png" 
+    alt="GoRouter Modular Banner" 
+    className="rounded-lg shadow-lg"
+  />
+</div>
+
+## ✨ Principais Características
+
+<Cards>
+  <Card title="🧭 Navegação Type-Safe" href="/docs/navigation">
+    Navegação com verificação de tipos em tempo de compilação
+  </Card>
+  <Card title="🏗️ Arquitetura Modular" href="/docs/dependency-injection">
+    Organização em módulos com injeção de dependências
+  </Card>
+  <Card title="🎭 EventModule" href="/docs/event-module">
+    Sistema de comunicação entre módulos via eventos
+  </Card>
+</Cards>
+
+## 🎯 Para quem é este pacote?
+
+- 📱 **Aplicações Flutter grandes** com múltiplas features
+- 👥 **Equipes de desenvolvimento** que precisam trabalhar em paralelo
+- 🏗️ **Arquitetura modular** com separação clara de responsabilidades
+- 🔄 **Microfrontends** com comunicação entre módulos
+- ⚡ **Performance** com lazy loading e carregamento sob demanda
+
+## 🚀 Início Rápido
+
+### Instalação
+
+```bash
+flutter pub add go_router_modular
+```
+
+### Configuração Básica
+
+```dart
+// main.dart
+import 'package:flutter/material.dart';
+import 'package:go_router_modular/go_router_modular.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await GoRouterModular.configure(
+    appModule: AppModule(),
+    initialRoute: '/',
+  );
+  
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: 'GoRouter Modular App',
+      routerConfig: GoRouterModular.routerConfig,
+    );
+  }
+}
+```
+
+### Criando um Módulo
+
+```dart
+// app_module.dart
+import 'package:go_router_modular/go_router_modular.dart';
+
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (context, state) => HomePage()),
+    ModuleRoute('/user', module: UserModule()),
+  ];
+
+  @override
+  void binds(Injector i) {
+    i.addSingleton<ApiService>(ApiService.new);
+  }
+}
+```
+
+## 📚 Explore a Documentação
+
+<Cards>
+  <Card title="🏁 Quick Start" href="/docs/quick-start">
+    Comece rapidamente com exemplos práticos
+  </Card>
+  <Card title="📖 Guia Completo" href="/docs/getting-started">
+    Aprenda todos os conceitos fundamentais
+  </Card>
+  <Card title="🛣️ Sistema de Rotas" href="/docs/routes">
+    Navegação avançada e organização de rotas
+  </Card>
+  <Card title="💉 Injeção de Dependências" href="/docs/dependency-injection">
+    Gerenciamento de dependências e escopo
+  </Card>
+  <Card title="🎭 EventModule" href="/docs/event-module">
+    Comunicação entre módulos via eventos
+  </Card>
+  <Card title="🏗️ Microfrontends" href="/docs/microfrontends">
+    Arquitetura para aplicações grandes
+  </Card>
+</Cards>
+
+## 🌟 Exemplos Práticos
+
+<Cards>
+  <Card title="🛍️ E-commerce App" href="/examples/ecommerce">
+    Aplicação completa de e-commerce modular
+  </Card>
+  <Card title="🏦 Banking App" href="/examples/banking">
+    Sistema bancário com múltiplos módulos
+  </Card>
+  <Card title="📱 Social Media App" href="/examples/social">
+    Rede social com EventModule
+  </Card>
+</Cards>
+
+## 🤝 Comunidade
+
+- 💬 [Discord da Flutterando](https://discord.gg/flutterando)
+- 🐛 [Issues no GitHub](https://github.com/Flutterando/go_router_modular/issues)
+- 📦 [pub.dev](https://pub.dev/packages/go_router_modular)
+- 📺 [Canal no YouTube](https://youtube.com/flutterando)
+
+## 🚀 Próximos Passos
+
+1. 📖 **[Leia o Quick Start](/docs/quick-start)** para começar imediatamente
+2. 🏗️ **[Entenda a arquitetura](/docs/getting-started)** por trás do sistema
+3. 🎯 **[Explore os exemplos](/examples)** para ver casos reais de uso
+4. 💡 **[Contribua no GitHub](https://github.com/Flutterando/go_router_modular)** para melhorar o pacote
+
+---
+
+<div className="text-center mt-8 mb-4">
+  <strong>Desenvolvido com ❤️ pela comunidade</strong> <a href="https://flutterando.com.br" target="_blank" className="text-blue-600 hover:text-blue-800">Flutterando</a>
+</div>
