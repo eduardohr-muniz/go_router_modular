@@ -8,7 +8,11 @@ const SiteLogo: React.FC = () => {
     const base = router.basePath || ''
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src={`${base}/assets/go-router-modular-logo.png`} alt="GoRouter Modular" height={24} />
+            <img
+                src={`${base}/assets/go-router-modular-logo.png`}
+                alt="GoRouter Modular"
+                style={{ width: 20, height: 20, objectFit: 'contain' }}
+            />
             <span style={{ fontWeight: 'bold', fontSize: '18px' }}>GoRouter Modular</span>
         </div>
     )
