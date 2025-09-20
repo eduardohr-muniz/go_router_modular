@@ -3,12 +3,19 @@ import { DocsThemeConfig } from 'nextra-theme-docs'
 import { useRouter } from 'next/router'
 import { useConfig } from 'nextra-theme-docs'
 
-const config: DocsThemeConfig = {
-    logo: (
+const SiteLogo: React.FC = () => {
+    const router = useRouter()
+    const base = router.basePath || ''
+    return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '18px' }}>🛣️ GoRouter Modular</span>
+            <img src={`${base}/assets/go-router-modular-logo.png`} alt="GoRouter Modular" height={24} />
+            <span style={{ fontWeight: 'bold', fontSize: '18px' }}>GoRouter Modular</span>
         </div>
-    ),
+    )
+}
+
+const config: DocsThemeConfig = {
+    logo: <SiteLogo />,
     project: {
         link: 'https://github.com/Flutterando/go_router_modular',
     },
@@ -73,25 +80,26 @@ const config: DocsThemeConfig = {
         </div>
     ),
     head: () => {
-        const { asPath, defaultLocale, locale } = useRouter()
+        const router = useRouter()
+        const { asPath, defaultLocale, locale } = router
         const { frontMatter } = useConfig()
         const url = 'https://go-router-modular-docs.vercel.app' +
             (defaultLocale === locale ? asPath : `/${locale}${asPath}`)
+        const base = router.basePath || ''
+        const ogImage = `${base}/assets/go-router-modular-banner.png`
+        const favicon = `${base}/assets/favicon.ico`
 
         return (
             <>
                 <meta property="og:url" content={url} />
                 <meta property="og:title" content={frontMatter.title || 'GoRouter Modular'} />
                 <meta property="og:description" content={frontMatter.description || 'Official GoRouter Modular documentation - Modular navigation system for Flutter.'} />
-                <meta property="og:image" content="/banner.png" />
+                <meta property="og:image" content={ogImage} />
                 <meta name="twitter:card" content="summary_large_image" />
-                <meta name="twitter:image" content="/banner.png" />
+                <meta name="twitter:image" content={ogImage} />
                 <meta name="twitter:site:domain" content="go-router-modular-docs.vercel.app" />
                 <meta name="twitter:url" content={url} />
-                <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-                <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-                <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-                <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+                <link rel="icon" href={favicon} type="image/x-icon" />
             </>
         )
     },
