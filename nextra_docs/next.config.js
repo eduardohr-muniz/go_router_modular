@@ -9,9 +9,9 @@ let assetPrefix = ''
 let basePath = ''
 
 if (isGithubActions) {
-  const repo = process.env.GITHUB_REPOSITORY?.replace(/.*?\//, '') || 'go_router_modular'
-  assetPrefix = `/${repo}/`
-  basePath = `/${repo}`
+    const repo = process.env.GITHUB_REPOSITORY?.replace(/.*?\//, '') || 'go_router_modular'
+    assetPrefix = `/${repo}/`
+    basePath = `/${repo}`
 }
 
 module.exports = withNextra({
