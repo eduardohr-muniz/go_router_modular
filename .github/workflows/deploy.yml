@@ -37,10 +37,7 @@ jobs:
         run: |
           cd nextra_docs
           npm run build
-
-      - name: Add .nojekyll file
-        run: |
-          touch nextra_docs/out/.nojekyll
+          touch out/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

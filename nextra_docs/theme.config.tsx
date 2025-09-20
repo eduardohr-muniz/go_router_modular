@@ -6,8 +6,7 @@ import { useConfig } from 'nextra-theme-docs'
 const config: DocsThemeConfig = {
     logo: (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/logo.png" alt="GoRouter Modular" width="32" height="32" />
-            <span style={{ fontWeight: 'bold', fontSize: '18px' }}>GoRouter Modular</span>
+            <span style={{ fontWeight: 'bold', fontSize: '18px' }}>🛣️ GoRouter Modular</span>
         </div>
     ),
     project: {
