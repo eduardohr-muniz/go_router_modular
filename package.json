@@ -3,9 +3,9 @@
     "version": "1.0.0",
     "description": "GoRouter Modular - Flutter modular architecture solution",
     "scripts": {
-        "docs:dev": "cd go_router_modular_docs && npm start",
-        "docs:build": "cd go_router_modular_docs && npm run build",
-        "docs:serve": "cd go_router_modular_docs && npm run serve"
+        "docs:dev": "cd nextra_docs && npm run dev",
+        "docs:build": "cd nextra_docs && npm run build",
+        "docs:serve": "cd nextra_docs && npm run start"
     },
     "repository": {
         "type": "git",

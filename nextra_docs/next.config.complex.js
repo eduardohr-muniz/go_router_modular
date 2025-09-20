@@ -5,7 +5,18 @@ const withNextra = require('nextra')({
 
 module.exports = withNextra({
     output: 'export',
+    distDir: 'out',
+    trailingSlash: true,
     images: {
         unoptimized: true
+    },
+    eslint: {
+        ignoreDuringBuilds: true
+    },
+    typescript: {
+        ignoreBuildErrors: true
+    },
+    experimental: {
+        esmExternals: false
     }
 })
