@@ -1,0 +1,28 @@
+# 💬 Chat App
+
+Chat app using EventModule for presence, typing and messages.
+
+## 🟢 Presence
+```dart
+class PresenceModule extends EventModule {
+  @override
+  void listen() {
+    on<UserOnlineEvent>((UserOnlineEvent event, BuildContext? context) {
+      print('🟢 ${event.userId} is online');
+    });
+  }
+}
+```
+
+## ⌨️ Typing
+```dart
+class TypingModule extends EventModule {
+  @override
+  void listen() {
+    on<UserTypingEvent>((UserTypingEvent event, BuildContext? context) {
+      print('⌨️ ${event.userId} is typing...');
+    });
+  }
+}
+```
+
