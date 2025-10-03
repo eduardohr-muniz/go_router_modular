@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class CleanBind {
   static bool fromInstance(dynamic instance) {
     try {
@@ -22,7 +24,7 @@ class CleanBind {
       // 3. Se tem método dispose() (detecta por reflection)
       try {
         final disposeMethod = instance.runtimeType.toString();
-        if (disposeMethod.contains('dispose') || _hasMethod(instance, 'dispose')) {
+        if (disposeMethod.contains('dispose') || hasMethod(instance, 'dispose')) {
           (instance as dynamic).dispose();
           return true;
         }
@@ -30,7 +32,7 @@ class CleanBind {
 
       // 4. Se tem método close() (detecta por reflection)
       try {
-        if (_hasMethod(instance, 'close')) {
+        if (hasMethod(instance, 'close')) {
           (instance as dynamic).close();
           return true;
         }
@@ -61,11 +63,24 @@ class CleanBind {
   }
 
   /// Verifica se uma instância tem um método específico
-  static bool _hasMethod(dynamic instance, String methodName) {
+  @visibleForTesting
+  static bool hasMethod(dynamic instance, String methodName) {
     try {
-      // Tenta chamar o método usando dynamic
-      (instance as dynamic).runtimeType.toString();
-      return true;
+      // Tenta chamar o método diretamente usando dynamic
+      final dynamic dynamicInstance = instance;
+      switch (methodName) {
+        case 'dispose':
+          dynamicInstance.dispose();
+          return true;
+        case 'close':
+          dynamicInstance.close();
+          return true;
+        case 'cancel':
+          dynamicInstance.cancel();
+          return true;
+        default:
+          return false;
+      }
     } catch (e) {
       return false;
     }

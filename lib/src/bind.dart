@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:go_router_modular/src/utils/clean_bind.dart';
 import 'package:go_router_modular/src/utils/exception.dart';
 import 'package:go_router_modular/src/utils/injector.dart';
 
@@ -44,23 +45,39 @@ class Bind<T> {
       return;
     }
 
-    final removed = _bindsMap.remove(T);
-    if (removed != null) {
-      if (removed.key != null) {
-        _bindsMapByKey.remove(removed.key);
+    final bind = _bindsMap[T];
+    if (bind != null) {
+      CleanBind.fromInstance(bind.instance);
+
+      // Remove do _bindsMap
+      _bindsMap.remove(T);
+
+      // Remove do _bindsMapByKey se tiver key
+      if (bind.key != null) {
+        _bindsMapByKey.remove(bind.key);
       }
     }
   }
 
   static void disposeByKey(String key) {
-    final bind = _bindsMapByKey.remove(key);
+    final bind = _bindsMapByKey[key];
     if (bind != null) {
-      _bindsMap.remove(bind.instance.runtimeType);
+      CleanBind.fromInstance(bind.instance);
+    }
+
+    final removed = _bindsMapByKey.remove(key);
+    if (removed != null) {
+      _bindsMap.remove(removed.instance.runtimeType);
     }
   }
 
   static void disposeByType(Type type) {
-    // Remove por tipo
+    // Remove por tipo - chama CleanBind para a instância principal
+    final bind = _bindsMap[type];
+    if (bind != null) {
+      CleanBind.fromInstance(bind.instance);
+    }
+
     _bindsMap.remove(type);
 
     // Remove todas as keys associadas a este tipo
@@ -74,6 +91,8 @@ class Bind<T> {
 
       if (isCompatible) {
         keysToRemove.add(entry.key);
+        // Chama CleanBind para cada instância que será removida
+        CleanBind.fromInstance(instance);
       }
     }
 
@@ -89,6 +108,8 @@ class Bind<T> {
 
       if (instance.runtimeType == type) {
         typesToRemove.add(entry.key);
+        // Chama CleanBind para cada instância que será removida
+        CleanBind.fromInstance(instance);
       }
     }
 
@@ -262,6 +283,15 @@ class Bind<T> {
   /// This method removes all registered binds from both the type map and key map.
   /// Useful for testing or when you need to reset the entire bind system.
   static void clearAll() {
+    // Chama CleanBind para todas as instâncias antes de limpar
+    for (var bind in _bindsMap.values) {
+      CleanBind.fromInstance(bind.instance);
+    }
+
+    for (var bind in _bindsMapByKey.values) {
+      CleanBind.fromInstance(bind.instance);
+    }
+
     _bindsMap.clear();
     _bindsMapByKey.clear();
     _searchAttempts.clear();
