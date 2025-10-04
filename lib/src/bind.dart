@@ -29,7 +29,9 @@ class Bind<T> {
 
     if (bind.isSingleton) {
       final singleton = _bindsMap[type];
-      if (singleton != null && singleton.key == bind.key) return;
+      if (singleton != null && singleton.key == bind.key) {
+        return;
+      }
     }
 
     _bindsMap[type] = bind;
