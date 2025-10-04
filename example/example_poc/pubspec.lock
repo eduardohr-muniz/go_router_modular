@@ -99,7 +99,7 @@ packages:
   go_router_modular:
     dependency: "direct main"
     description:
-      path: ".."
+      path: "../.."
       relative: true
     source: path
     version: "4.2.1"

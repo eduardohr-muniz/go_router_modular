@@ -29,7 +29,7 @@
         },
         {
             "name": "example poc",
-            "cwd": "example_poc",
+            "cwd": "example/example_poc",
             "request": "launch",
             "type": "dart"
         },
