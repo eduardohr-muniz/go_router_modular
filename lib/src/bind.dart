@@ -128,10 +128,10 @@ class Bind<T> {
   static T _find<T>({String? key}) {
     final type = T;
 
-    // Proteção contra múltiplas buscas simultâneas do mesmo tipo
-    if (_currentlySearching.contains(type)) {
-      throw GoRouterModularException('❌ Oops! I couldn\'t find a compatible bind for "${type.toString()}". Please add the bind before trying to use it.');
-    }
+    //! Proteção contra múltiplas buscas simultâneas do mesmo tipo
+    // if (_currentlySearching.contains(type)) {
+    //   throw GoRouterModularException('❌ Oops! I couldn\'t find a compatible bind for "${type.toString()}". Please add the bind before trying to use it.');
+    // }
 
     // Controle de tentativas para evitar loops infinitos
     _searchAttempts[type] = (_searchAttempts[type] ?? 0) + 1;
