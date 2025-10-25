@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/core/bind.dart';
-import 'package:go_router_modular/src/di/delay_dispose.dart';
 import 'package:go_router_modular/src/core/module.dart';
 import 'package:go_router_modular/src/routing/page_transition_enum.dart';
 
@@ -145,7 +144,6 @@ class GoRouterModular {
       delayDisposeMilliseconds > 500,
       '❌ delayDisposeMilliseconds must be at least 500ms - Check `go_router_modular main.dart`.',
     );
-    setModularDelayDisposeMiliseconds(delayDisposeMilliseconds);
 
     _router = GoRouter(
       routes: appModule.configureRoutes(topLevel: true),
