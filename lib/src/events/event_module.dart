@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
+import 'package:go_router_modular/src/di/injector.dart';
 
 /// Global storage for all event subscriptions organized by EventBus and event type.
 ///
@@ -483,7 +484,7 @@ abstract class EventModule extends Module {
   }
 
   @override
-  void initState(Injector i) {
+  void initState(AutoInjector i) {
     listen();
     super.initState(i);
   }

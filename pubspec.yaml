@@ -10,6 +10,7 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
+  auto_injector: ^2.1.1
   event_bus: ^2.0.1
   flutter:
     sdk: flutter

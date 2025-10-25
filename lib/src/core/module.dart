@@ -1,22 +1,24 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:auto_injector/auto_injector.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
 import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
+import 'package:go_router_modular/src/di/module_service.dart';
 
 abstract class Module {
   FutureOr<List<Module>> imports() => [];
-  FutureOr<List<Bind<Object>>> binds() => [];
+  FutureOr<void> binds(AutoInjector i);
   List<ModularRoute> get routes => const [];
 
-  void initState(Injector i) {}
+  void initState(AutoInjector i) {}
   void dispose() {}
 
   List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
     List<RouteBase> result = [];
-    InjectionManager.instance.registerAppModule(this);
+    moduleService.registerModule(this);
 
     result.addAll(_createChildRoutes(topLevel: topLevel));
     result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
@@ -201,12 +203,12 @@ abstract class Module {
   }
 
   Future<void> _registerModule(Module module) async {
-    await InjectionManager.instance.registerBindsModule(module);
+    await moduleService.registerModule(module);
   }
 
   void _disposeModule(Module module) {
     if (didChangeGoingReference.contains(module)) return;
-    InjectionManager.instance.unregisterModule(module);
+    moduleService.unregisterModule(module);
   }
 
   String _parsePath(String path) {
