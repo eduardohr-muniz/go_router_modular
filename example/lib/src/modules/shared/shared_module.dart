@@ -11,9 +11,7 @@ class SharedModule extends Module {
   }
 
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.factory((i) => SharedService()),
-    ];
+  void binds(Injector i) {
+    i.add(() => SharedService());
   }
 }

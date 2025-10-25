@@ -1,13 +1,14 @@
-import 'dart:async';
-
 import 'package:go_router_modular/go_router_modular.dart';
 
 class ModuleSingleton extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton((i) => BindSingleton()),
-    ];
+  void binds(Injector i) {
+    // Registrar a implementação concreta
+    i.addLazySingleton<BindSingleton>(() => BindSingleton());
+
+    // Registrar a interface apontando para a mesma instância
+    // Seguindo o padrão do auto_injector: usar get() para obter a instância já registrada
+    i.addLazySingleton<IBindSingleton>(() => i.get<BindSingleton>());
   }
 }
 

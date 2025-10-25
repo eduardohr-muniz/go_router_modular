@@ -8,7 +8,13 @@ import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
 
 abstract class Module {
   FutureOr<List<Module>> imports() => [];
-  FutureOr<List<Bind<Object>>> binds() => [];
+
+  /// Seguindo o padrão do flutter_modular: recebe o injector e registra os binds diretamente
+  void binds(Injector i) {}
+
+  /// DEPRECATED: Use binds(Injector i) em vez disso
+  @Deprecated('Use binds(Injector i) para seguir o padrão do flutter_modular')
+  FutureOr<List<Bind<Object>>> legacyBinds() => [];
   List<ModularRoute> get routes => const [];
 
   void initState(Injector i) {}

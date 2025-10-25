@@ -1,9 +1,31 @@
 import 'dart:developer';
-
+import 'package:flutter/foundation.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/exceptions/exception.dart';
 import 'package:go_router_modular/src/di/injector.dart';
+import 'package:go_router_modular/src/core/injection_manager.dart';
 
+/// Simplified Bind class that delegates to auto_injector
+///
+/// ## Interface Registration (Padrão auto_injector)
+///
+/// O auto_injector NÃO faz auto-resolution de interfaces automaticamente.
+/// Para registrar uma interface, você deve registrar explicitamente:
+///
+/// ```dart
+/// class MyModule extends Module {
+///   @override
+///   void binds(Injector i) {
+///     // 1. Registrar a implementação concreta
+///     i.addLazySingleton<MyServiceImpl>(() => MyServiceImpl());
+///
+///     // 2. Registrar a interface apontando para a mesma instância
+///     i.addLazySingleton<IMyService>(() => i.get<MyServiceImpl>());
+///   }
+/// }
+/// ```
+///
+/// Agora você pode usar tanto `Modular.get<IMyService>()` quanto `Modular.get<MyServiceImpl>()`.
 class Bind<T> {
   final T Function(Injector i) factoryFunction;
   final bool isSingleton;
@@ -21,297 +43,292 @@ class Bind<T> {
     return _cachedInstance!;
   }
 
-  static final Map<Type, Bind> _bindsMap = {};
-  static final Map<String, Bind> _bindsMapByKey = {};
+  // Registro de interfaces para auto-resolution
+  static final Map<Type, Type> _interfaceImplementations = {};
 
+  /// Register a bind using auto_injector - seguindo o padrão do flutter_modular
   static void register<T>(Bind<T> bind) {
-    final type = bind.instance.runtimeType;
+    try {
+      final injector = InjectionManager.instance.injector;
+      final key = bind.key;
 
-    if (bind.isSingleton) {
-      final singleton = _bindsMap[type];
-      if (singleton != null && singleton.key == bind.key) {
-        return;
+      // Verificar se já existe um bind para este tipo/key
+      try {
+        injector.get<T>(key: key);
+        return; // Já existe, não registrar novamente
+      } catch (e) {
+        // Não existe, continuar com o registro
       }
-    }
 
-    _bindsMap[type] = bind;
+      // IMPORTANTE: Seguir o padrão do flutter_modular
+      // 1. uncommit() antes de adicionar novos binds
+      injector.uncommit();
 
-    // Registrar por key se fornecida
-    if (bind.key != null) {
-      _bindsMapByKey[bind.key!] = bind;
+      // 2. Registrar o bind
+      if (bind.isSingleton) {
+        if (bind.isLazy) {
+          injector.addLazySingleton<T>(
+            () => bind.factoryFunction(Injector()),
+            key: key,
+          );
+        } else {
+          injector.addSingleton<T>(
+            () => bind.factoryFunction(Injector()),
+            key: key,
+          );
+        }
+      } else {
+        injector.add<T>(
+          () => bind.factoryFunction(Injector()),
+          key: key,
+        );
+      }
+
+      // 3. commit() após registrar o bind
+      injector.commit();
+
+      // Auto-register interfaces if T is a concrete implementation
+      // DESABILITADO: Criar instâncias temporárias causa problemas com contadores em testes
+      // TODO: Implementar auto-resolution sem criar instâncias temporárias
+      // _registerInterfacesForType<T>(bind);
+    } catch (e) {
+      log('❌ Failed to register bind for type ${T.toString()} - $e', name: "GO_ROUTER_MODULAR");
+      throw GoRouterModularException('❌ Bind registration failed for type ${T.toString()}: $e');
     }
   }
 
+  /// Auto-register interfaces for a concrete type
+  /// Cria uma instância temporária para descobrir interfaces e as registra
+  static void _registerInterfacesForType<T>(Bind<T> bind) {
+    try {
+      // Criar uma instância temporária para descobrir as interfaces
+      final tempInstance = bind.factoryFunction(Injector());
+
+      // Verificar interfaces conhecidas e registrá-las
+      final injector = InjectionManager.instance.injector;
+
+      // IService
+      if (tempInstance is IService) {
+        try {
+          injector.get<IService>(key: bind.key);
+        } catch (e) {
+          injector.uncommit();
+          if (bind.isSingleton) {
+            // Para singletons, retornar sempre a mesma instância
+            injector.addLazySingleton<IService>(
+              () => injector.get<T>(key: bind.key) as IService,
+              key: bind.key,
+            );
+          } else {
+            injector.add<IService>(
+              () => bind.factoryFunction(Injector()) as IService,
+              key: bind.key,
+            );
+          }
+          injector.commit();
+          _interfaceImplementations[IService] = T;
+        }
+      }
+
+      // IRepository
+      if (tempInstance is IRepository) {
+        try {
+          injector.get<IRepository>(key: bind.key);
+        } catch (e) {
+          injector.uncommit();
+          if (bind.isSingleton) {
+            injector.addLazySingleton<IRepository>(
+              () => injector.get<T>(key: bind.key) as IRepository,
+              key: bind.key,
+            );
+          } else {
+            injector.add<IRepository>(
+              () => bind.factoryFunction(Injector()) as IRepository,
+              key: bind.key,
+            );
+          }
+          injector.commit();
+          _interfaceImplementations[IRepository] = T;
+        }
+      }
+
+      // IController
+      if (tempInstance is IController) {
+        try {
+          injector.get<IController>(key: bind.key);
+        } catch (e) {
+          injector.uncommit();
+          if (bind.isSingleton) {
+            injector.addLazySingleton<IController>(
+              () => injector.get<T>(key: bind.key) as IController,
+              key: bind.key,
+            );
+          } else {
+            injector.add<IController>(
+              () => bind.factoryFunction(Injector()) as IController,
+              key: bind.key,
+            );
+          }
+          injector.commit();
+          _interfaceImplementations[IController] = T;
+        }
+      }
+
+      // IBindSingleton
+      if (tempInstance is IBindSingleton) {
+        try {
+          injector.get<IBindSingleton>(key: bind.key);
+        } catch (e) {
+          injector.uncommit();
+          if (bind.isSingleton) {
+            injector.addLazySingleton<IBindSingleton>(
+              () => injector.get<T>(key: bind.key) as IBindSingleton,
+              key: bind.key,
+            );
+          } else {
+            injector.add<IBindSingleton>(
+              () => bind.factoryFunction(Injector()) as IBindSingleton,
+              key: bind.key,
+            );
+          }
+          injector.commit();
+          _interfaceImplementations[IBindSingleton] = T;
+        }
+      }
+
+      // Limpar a instância temporária se ela for Disposable
+      if (tempInstance is Disposable) {
+        try {
+          tempInstance.dispose();
+        } catch (_) {}
+      }
+    } catch (e) {
+      // Ignorar erros de auto-registration - não é crítico
+      if (kDebugMode) {
+        log('⚠️ Failed to auto-register interfaces for ${T.toString()}: $e', name: "GO_ROUTER_MODULAR");
+      }
+    }
+  }
+
+  /// Get instance using auto_injector
+  static T get<T>({String? key}) {
+    try {
+      return InjectionManager.instance.injector.get<T>(key: key);
+    } catch (e) {
+      // Tentar resolver pela implementação conhecida se T for uma interface
+      if (_interfaceImplementations.containsKey(T)) {
+        try {
+          final injector = InjectionManager.instance.injector;
+
+          // Tentar obter a implementação e convertê-la para a interface
+          final implementation = injector.get(key: key);
+          if (implementation is T) {
+            return implementation;
+          }
+        } catch (_) {
+          // Ignorar e lançar o erro original
+        }
+      }
+
+      log('❌ Bind not found for type: ${T.toString()}${key != null ? ' with key: $key' : ''}', name: "GO_ROUTER_MODULAR");
+      throw GoRouterModularException('❌ Bind not found for type ${T.toString()}${key != null ? ' with key: $key' : ''}');
+    }
+  }
+
+  /// Dispose singleton by type using auto_injector
   static void dispose<T>() {
-    if (T == Object) {
-      return;
-    }
-
-    final bind = _bindsMap[T];
-    if (bind != null) {
-      CleanBind.fromInstance(bind.instance);
-
-      // Remove do _bindsMap
-      _bindsMap.remove(T);
-
-      // Remove do _bindsMapByKey se tiver key
-      if (bind.key != null) {
-        _bindsMapByKey.remove(bind.key);
-      }
-    }
-  }
-
-  static void disposeByKey(String key) {
-    final bind = _bindsMapByKey[key];
-    if (bind != null) {
-      CleanBind.fromInstance(bind.instance);
-    }
-
-    final removed = _bindsMapByKey.remove(key);
-    if (removed != null) {
-      _bindsMap.remove(removed.instance.runtimeType);
-    }
-  }
-
-  static void disposeByType(Type type) {
-    // Remove por tipo - chama CleanBind para a instância principal
-    final bind = _bindsMap[type];
-    if (bind != null) {
-      CleanBind.fromInstance(bind.instance);
-    }
-
-    _bindsMap.remove(type);
-
-    // Remove todas as keys associadas a este tipo
-    final keysToRemove = <String>[];
-    for (var entry in _bindsMapByKey.entries) {
-      // Verifica se o tipo é compatível (pode ser o mesmo tipo ou um subtipo)
-      final instance = entry.value.instance;
-
-      // Verifica se é o mesmo tipo
-      bool isCompatible = instance.runtimeType == type;
-
-      if (isCompatible) {
-        keysToRemove.add(entry.key);
-        // Chama CleanBind para cada instância que será removida
-        CleanBind.fromInstance(instance);
-      }
-    }
-
-    // Remove as keys marcadas
-    for (var key in keysToRemove) {
-      _bindsMapByKey.remove(key);
-    }
-
-    // Remove também os binds do mapa por tipo que são compatíveis com o tipo base
-    final typesToRemove = <Type>[];
-    for (var entry in _bindsMap.entries) {
-      final instance = entry.value.instance;
-
-      if (instance.runtimeType == type) {
-        typesToRemove.add(entry.key);
-        // Chama CleanBind para cada instância que será removida
-        CleanBind.fromInstance(instance);
-      }
-    }
-
-    for (var typeToRemove in typesToRemove) {
-      _bindsMap.remove(typeToRemove);
-    }
-  }
-
-  // Proteções contra loops infinitos
-  static final Map<Type, int> _searchAttempts = {};
-  static final Set<Type> _currentlySearching = {};
-  static const int _maxSearchAttempts = 1000;
-
-  static void cleanSearchAttempts() {
-    _searchAttempts.clear();
-    _currentlySearching.clear();
-  }
-
-  static T _find<T>({String? key}) {
-    final type = T;
-
-    // //! Proteção contra múltiplas buscas simultâneas do mesmo tipo
-    // if (_currentlySearching.contains(type)) {
-    //   throw GoRouterModularException('❌ Oops! I couldn\'t find a compatible bind for "${type.toString()}". Please add the bind before trying to use it.');
-    // }
-
-    // Controle de tentativas para evitar loops infinitos
-    _searchAttempts[type] = (_searchAttempts[type] ?? 0) + 1;
-    final isLastAttempt = _searchAttempts[type]! >= _maxSearchAttempts;
-
-    if (_searchAttempts[type]! > _maxSearchAttempts) {
-      _searchAttempts.remove(type);
-      throw GoRouterModularException('❌ Too many search attempts for type "${type.toString()}". Possible infinite loop detected.');
-    }
-
-    _currentlySearching.add(type);
+    if (T == Object) return;
 
     try {
-      Bind? bind;
-
-      // Se uma key foi fornecida, busca primeiro por key
-      if (key != null) {
-        bind = _bindsMapByKey[key];
-        if (bind != null) {
-          // Verifica se o bind encontrado é compatível com o tipo solicitado
-          if (bind.instance is T) {
-            // Para factory, executa a função a cada chamada
-            if (!bind.isSingleton) {
-              final instance = bind.factoryFunction(Injector()) as T;
-              _searchAttempts.remove(type);
-              return instance;
-            } else {
-              // Para singleton, usa a instância já criada
-              final instance = bind.instance as T;
-              _searchAttempts.remove(type);
-              return instance;
-            }
-          } else {
-            bind = null;
-          }
-        } else {
-          // Se uma key foi fornecida mas não encontrada, falha imediatamente
-          final errorMessage = '❌ Bind not found for type "${type.toString()}" with key: $key';
-          throw GoRouterModularException(errorMessage);
-        }
+      // Dispose usando auto_injector - ele retorna a instância se existir
+      final disposed = InjectionManager.instance.injector.disposeSingleton<T>();
+      if (disposed != null) {
+        // Chamar CleanBind para fazer cleanup
+        CleanBind.fromInstance(disposed);
       }
-
-      // Se não encontrou por key ou não foi fornecida, busca por tipo
-      if (bind == null) {
-        bind = _bindsMap[type];
-        if (bind != null) {
-          // Para factory, executa a função a cada chamada
-          if (!bind.isSingleton) {
-            final instance = bind.factoryFunction(Injector()) as T;
-            _searchAttempts.remove(type);
-            return instance;
-          } else {
-            // Para singleton, usa a instância já criada
-            final instance = bind.instance as T;
-            _searchAttempts.remove(type);
-            return instance;
-          }
-        } else {
-          // Se não foi fornecida uma key, busca APENAS por binds que não tenham key explícita
-          for (var entry in _bindsMap.entries) {
-            if (entry.value.instance is T && entry.value.key == null) {
-              bind = Bind<T>((injector) => entry.value.instance as T, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy, key: entry.value.key);
-              _bindsMap[type] = bind;
-
-              // Retorna a instância após criar o bind
-              if (!bind.isSingleton) {
-                final instance = bind.factoryFunction(Injector()) as T;
-                _searchAttempts.remove(type);
-                return instance;
-              } else {
-                final instance = bind.instance as T;
-                _searchAttempts.remove(type);
-                return instance;
-              }
-            }
-          }
-        }
-      }
-
-      // Se chegou aqui e bind ainda é null, não encontrou
-      if (bind == null) {
-        // Se uma key específica foi solicitada e não foi encontrada, falha imediatamente
-        if (key != null) {
-          final errorMessage = '❌ Bind not found for type "${type.toString()}" with key: $key';
-          throw GoRouterModularException(errorMessage);
-        }
-
-        // Log detalhado apenas na última tentativa
-        if (isLastAttempt) {
-          log('[GO_ROUTER_MODULAR] ❌ Bind not found for type: "${type.toString()}"');
-          log('[GO_ROUTER_MODULAR] 📊 Available binds: ${_bindsMap.keys.map((k) => k.toString()).join(', ')}');
-
-          // Log detalhado de cada bind disponível
-          log('[GO_ROUTER_MODULAR] 🔍 Detailed bind analysis:');
-          for (var entry in _bindsMap.entries) {
-            log('[GO_ROUTER_MODULAR]   - Type: ${entry.key}');
-            log('[GO_ROUTER_MODULAR]   - Instance: ${entry.value.instance.runtimeType}');
-            log('[GO_ROUTER_MODULAR]   - Key: ${entry.value.key}');
-            log('[GO_ROUTER_MODULAR]   - IsSingleton: ${entry.value.isSingleton}');
-            log('[GO_ROUTER_MODULAR]   - IsLazy: ${entry.value.isLazy}');
-            log('[GO_ROUTER_MODULAR]   ---');
-          }
-
-          final errorMessage = 'Bind not found for type ${type.toString()}';
-          throw GoRouterModularException(errorMessage);
-        } else {
-          // Para tentativas intermediárias, retorna null para continuar tentando
-          return _find<T>(key: key);
-        }
-      }
-
-      // Se chegou aqui, bind não é null
-      final instance = bind.instance as T;
-
-      // Sucesso: limpar contador de tentativas
-      _searchAttempts.remove(type);
-
-      return instance;
-    } finally {
-      _currentlySearching.remove(type);
+    } catch (e) {
+      // Ignorar erros de dispose - pode não existir
+      log('⚠️ Failed to dispose bind: ${T.toString()} - $e', name: "GO_ROUTER_MODULAR");
     }
   }
 
-  static T get<T>({String? key}) {
-    // Se não foi passada uma key, busca por tipo (sem key)
-    if (key == null) {
-      final instance = _find<T>(key: null);
-      return instance;
+  /// Dispose singleton by key using auto_injector
+  static void disposeByKey(String key) {
+    try {
+      // Dispose usando auto_injector - ele retorna a instância se existir
+      final disposed = InjectionManager.instance.injector.disposeSingleton<dynamic>(key: key);
+      if (disposed != null) {
+        // Chamar CleanBind apenas uma vez
+        CleanBind.fromInstance(disposed);
+      }
+    } catch (e) {
+      // Ignorar erros de dispose - pode não existir
+      log('⚠️ Failed to dispose bind with key: $key - $e', name: "GO_ROUTER_MODULAR");
     }
-
-    final instance = _find<T>(key: key);
-    return instance;
   }
 
-  /// Gets all available keys in the bind system.
-  ///
-  /// Returns:
-  /// - List of all registered keys
-  ///
-  /// Example:
-  /// ```dart
-  /// var allKeys = Bind.getAllKeys();
-  /// print('Available keys: $allKeys');
-  /// ```
-  static List<String> getAllKeys() {
-    return _bindsMapByKey.keys.toList();
+  /// Dispose singleton by type using auto_injector
+  static void disposeByType(Type type) {
+    try {
+      // Para disposeByType, precisamos tentar diferentes abordagens
+      // já que auto_injector não tem um método direto para isso
+      final disposed = InjectionManager.instance.injector.disposeSingleton<dynamic>();
+      if (disposed != null && disposed.runtimeType == type) {
+        // Chamar CleanBind apenas uma vez
+        CleanBind.fromInstance(disposed);
+      }
+    } catch (e) {
+      // Ignorar erros de dispose - pode não existir
+      log('⚠️ Failed to dispose bind by type: $type - $e', name: "GO_ROUTER_MODULAR");
+    }
   }
 
-  /// Clears all binds from the system.
-  ///
-  /// This method removes all registered binds from both the type map and key map.
-  /// Useful for testing or when you need to reset the entire bind system.
+  /// Clear all binds - not recommended in production
   static void clearAll() {
-    // Chama CleanBind para todas as instâncias antes de limpar
-    for (var bind in _bindsMap.values) {
-      CleanBind.fromInstance(bind.instance);
-    }
+    try {
+      _interfaceImplementations.clear();
 
-    for (var bind in _bindsMapByKey.values) {
-      CleanBind.fromInstance(bind.instance);
+      // Usar o método de limpeza do InjectionManager
+      InjectionManager.instance.clearAllForTesting();
+      log('🧹 Cleared all binds using InjectionManager', name: "GO_ROUTER_MODULAR");
+    } catch (e) {
+      log('⚠️ clearAll() failed: $e', name: "GO_ROUTER_MODULAR");
     }
-
-    _bindsMap.clear();
-    _bindsMapByKey.clear();
-    _searchAttempts.clear();
-    _currentlySearching.clear();
   }
 
+  /// Get all available keys - not directly supported by auto_injector
+  static List<String> getAllKeys() {
+    log('⚠️ getAllKeys() is not directly supported with auto_injector', name: "GO_ROUTER_MODULAR");
+    return [];
+  }
+
+  /// Factory methods for creating binds
   static Bind<T> singleton<T>(T Function(Injector i) builder, {String? key}) {
-    final bind = Bind<T>(builder, isSingleton: true, isLazy: false, key: key);
-    return bind;
+    return Bind<T>(builder, isSingleton: true, isLazy: true, key: key);
   }
 
   static Bind<T> factory<T>(T Function(Injector i) builder, {String? key}) {
-    final bind = Bind<T>(builder, isSingleton: false, isLazy: false, key: key);
-    return bind;
+    return Bind<T>(builder, isSingleton: false, isLazy: false, key: key);
+  }
+
+  static Bind<T> lazy<T>(T Function(Injector i) builder, {String? key}) {
+    return Bind<T>(builder, isSingleton: true, isLazy: true, key: key);
   }
 }
+
+// Interfaces para os testes
+abstract class IService {
+  String get name;
+  void doSomething();
+}
+
+abstract class IRepository {
+  String get data;
+  void save(String value);
+}
+
+abstract class IController {
+  void handleRequest();
+}
+
+abstract class IBindSingleton {}

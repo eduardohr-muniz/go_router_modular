@@ -5,16 +5,21 @@ import 'package:auto_injector/auto_injector.dart' as ai;
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
 import 'package:go_router_modular/src/internal/internal_logs.dart';
+import 'package:go_router_modular/src/di/clean_bind.dart';
 
 /// ValueObject para representar um bind único (Type + Key)
 
 class InjectionManager {
   static InjectionManager? _instance;
-  InjectionManager._();
+  InjectionManager._() {
+    // IMPORTANTE: Seguir o padrão do flutter_modular
+    // O injector principal deve ser committed imediatamente após criação
+    _injector.commit();
+  }
   static InjectionManager get instance => _instance ??= InjectionManager._();
 
   /// Main AutoInjector instance - similar to flutter_modular's approach
-  final ai.AutoInjector _injector = ai.AutoInjector();
+  ai.AutoInjector _injector = ai.AutoInjector();
 
   /// Module-specific injectors tracked by module type
   final Map<Type, ai.AutoInjector> _moduleInjectors = {};
@@ -75,69 +80,29 @@ class InjectionManager {
   }
 
   /// Coleta recursivamente todos os binds de imports aninhados
-  Future<void> _registerModuleBinds(Module module, ai.AutoInjector injector, Set<Module>? visited) async {
-    visited ??= <Module>{};
+  /// Cria um injector para o módulo seguindo o padrão do flutter_modular
+  /// Referência: modular_core/lib/src/tracker.dart linha 275-284
+  ai.AutoInjector _createInjector(Module module, String tag) {
+    final newInjector = ai.AutoInjector(tag: tag);
 
-    if (visited.contains(module)) {
-      return;
-    }
-    visited.add(module);
+    // Adicionar injectors dos módulos importados primeiro
+    final imports = module.imports();
+    final importsList = imports is Future ? <Module>[] : imports;
 
-    // Registrar imports recursivamente
-    final imports = await module.imports();
-    for (final importedModule in imports) {
-      await _registerModuleBinds(importedModule, injector, visited);
-    }
-
-    // Registrar binds do módulo atual
-    final binds = await module.binds();
-    for (final bind in binds) {
-      try {
-        // Usar auto_injector para registrar
-        _registerBindToInjector(injector, bind);
-      } catch (e) {
-        if (debugLog) {
-          iLog('❌ Failed to register bind: ${bind.instance.runtimeType ?? 'Unknown'} - $e', name: "GO_ROUTER_MODULAR");
-        }
-        throw GoRouterModularException('❌ Bind not found for type ${bind.instance.runtimeType.toString() ?? 'Unknown'}: $e');
-      }
+    for (final importedModule in importsList) {
+      final importTag = '${importedModule.runtimeType}_Imported';
+      final exportedInjector = _createInjector(importedModule, importTag);
+      newInjector.addInjector(exportedInjector);
     }
 
-    // Inicializar estado do módulo com adaptador
-    module.initState(Injector());
-  }
+    // Chamar module.binds() passando o injector diretamente
+    // O módulo registra seus binds usando i.add(), i.addSingleton(), etc
+    module.binds(Injector.fromAutoInjector(newInjector));
 
-  /// Registra um bind no AutoInjector com suporte a factory patterns
-  void _registerBindToInjector(ai.AutoInjector injector, Bind<Object> bind) {
-    final type = bind.instance.runtimeType ?? Object;
-    final key = bind.key;
+    // Inicializar estado do módulo
+    module.initState(Injector.fromAutoInjector(newInjector));
 
-    if (bind.isSingleton) {
-      // Singleton: cria uma vez e reutiliza
-      injector.addSingleton<dynamic>(
-        () {
-          try {
-            // Criar instância usando factory do bind
-            return bind.factoryFunction(Injector());
-          } catch (e) {
-            throw GoRouterModularException('Failed to create instance of $type: $e');
-          }
-        },
-        key: key,
-      );
-    } else {
-      // Factory: cria nova instância a cada chamada
-      injector.add<dynamic>(
-        () {
-          try {
-            return bind.factoryFunction(Injector());
-          } catch (e) {
-            throw GoRouterModularException('Failed to create instance of $type: $e');
-          }
-        },
-        key: key,
-      );
-    }
+    return newInjector;
   }
 
   Future<void> registerBindsModule(Module module) async {
@@ -149,40 +114,23 @@ class InjectionManager {
       return;
     }
 
-    // Criar injector específico para este módulo
+    // Criar injector para o módulo seguindo o padrão do flutter_modular
     final moduleTag = '${module.runtimeType}_${DateTime.now().millisecondsSinceEpoch}';
-    final moduleInjector = ai.AutoInjector(tag: moduleTag);
+    final moduleInjector = _createInjector(module, moduleTag);
 
     _moduleInjectors[module.runtimeType] = moduleInjector;
     _activeModuleTags[module.runtimeType] = moduleTag;
 
-    // Registrar binds e imports recursivamente
-    await _registerModuleBinds(module, moduleInjector, null);
-
-    // Adicionar o injector do módulo ao injector principal
+    // Seguir exatamente o padrão do flutter_modular (linha 210-212):
+    // 1. uncommit() antes de adicionar novos injectors
+    // 2. addInjector()
+    // 3. commit() após adicionar todos os injectors
+    _injector.uncommit();
     _injector.addInjector(moduleInjector);
+    _injector.commit();
 
     if (debugLog) {
-      final binds = await module.binds();
-      final imports = await module.imports();
-      final allBinds = <Bind<Object>>[];
-
-      // Coletar todos os binds recursivamente
-      for (final importedModule in imports) {
-        final importedBinds = await importedModule.binds();
-        allBinds.addAll(importedBinds);
-      }
-      allBinds.addAll(binds);
-
-      log(
-          '💉 INJECTED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${allBinds.isEmpty ? '😴 EMPTY' : ''}${allBinds.map(
-                (e) {
-                  final type = e.instance.runtimeType.toString() ?? 'Unknown';
-                  final key = e.key;
-                  return '♻️ $type(${key != null ? (key == type ? '' : 'key: $key') : ''})';
-                },
-              ).toList().join('\n')} \n}',
-          name: "GO_ROUTER_MODULAR");
+      log('💉 INJECTED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
     }
   }
 
@@ -227,9 +175,29 @@ class InjectionManager {
 
   /// Obtém instância do injector principal
   ai.AutoInjector get injector => _injector;
-}
 
-/// Classe Disposable para permitir cleanup automático
-abstract class Disposable {
-  void dispose();
+  /// Clear all binds for testing purposes
+  void clearAllForTesting() {
+    try {
+      // Limpar mapas de módulos primeiro
+      _moduleInjectors.clear();
+      _activeModuleTags.clear();
+
+      // Resetar o app module
+      _appModule = null;
+
+      // Criar um novo injector principal para limpeza completa
+      _injector = ai.AutoInjector();
+      // IMPORTANTE: Commitar o novo injector imediatamente
+      _injector.commit();
+
+      if (debugLog) {
+        log('🧹 Cleared all injectors for testing', name: "GO_ROUTER_MODULAR");
+      }
+    } catch (e) {
+      if (debugLog) {
+        log('⚠️ Failed to clear injectors: $e', name: "GO_ROUTER_MODULAR");
+      }
+    }
+  }
 }

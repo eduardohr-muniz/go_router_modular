@@ -1,7 +1,5 @@
 // ignore_for_file: avoid_print
 
-import 'dart:async';
-
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'pages/shell_page.dart';
@@ -10,10 +8,8 @@ import 'pages/settings_page.dart';
 
 class ShellModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton((i) => ShellService()),
-    ];
+  void binds(Injector i) {
+    i.addLazySingleton(() => ShellService());
   }
 
   @override
@@ -42,10 +38,8 @@ class ShellModule extends Module {
 
 class ProfileModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton<ProfileService>((i) => ProfileService()),
-    ];
+  void binds(Injector i) {
+    i.addLazySingleton<ProfileService>(() => ProfileService());
   }
 
   @override
@@ -71,10 +65,8 @@ class ProfileModule extends Module {
 
 class SettingsModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton<SettingsService>((i) => SettingsService()),
-    ];
+  void binds(Injector i) {
+    i.addLazySingleton<SettingsService>(() => SettingsService());
   }
 
   @override

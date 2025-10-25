@@ -1,6 +1,6 @@
 import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/go_router_modular.dart' hide IBindSingleton;
 import '../binds_by_key_module.dart';
 
 class BindByKeyPage extends StatefulWidget {

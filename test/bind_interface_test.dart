@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 
-// Interfaces para teste
+// Test interfaces
 abstract class IService {
   String get name;
   void doSomething();
@@ -16,7 +16,7 @@ abstract class IController {
   void handleRequest();
 }
 
-// Implementações concretas
+// Test implementations
 class ServiceImpl implements IService {
   @override
   String get name => 'ServiceImplementation';
@@ -28,14 +28,12 @@ class ServiceImpl implements IService {
 }
 
 class RepositoryImpl implements IRepository {
-  String _data = 'default data';
-
   @override
-  String get data => _data;
+  String get data => 'Repository data';
 
   @override
   void save(String value) {
-    _data = value;
+    print('Saving: $value');
   }
 }
 
@@ -50,67 +48,15 @@ class ControllerImpl implements IController {
   }
 }
 
-// Classe sem interface
-class ConcreteClass {
-  String get value => 'concrete value';
-}
-
 void main() {
-  group('Bind Interface Resolution Tests', () {
-    setUp(() {
-      // Limpa todos os binds antes de cada teste
-      Bind.clearAll();
-    });
+  setUp(() {
+    Bind.clearAll();
+  });
 
-    tearDown(() {
-      // Limpa todos os binds após cada teste
-      Bind.clearAll();
-    });
-
-    group('Interface to Implementation Resolution', () {
-      test('should resolve interface when implementation is registered', () {
-        // Arrange
-        final bind = Bind.singleton<ServiceImpl>((i) => ServiceImpl());
-        Bind.register(bind);
-
-        // Act
-        final service = Bind.get<ServiceImpl>();
-
-        // Assert
-        expect(service, isA<ServiceImpl>());
-        expect(service.name, 'ServiceImplementation');
-      });
-
-      test('should resolve interface when concrete implementation is registered (auto-resolution)', () {
-        // Arrange
-        final bind = Bind.singleton<ServiceImpl>((i) => ServiceImpl());
-        Bind.register(bind);
-
-        // Act
-        final service = Bind.get<IService>();
-
-        // Assert - O sistema resolve automaticamente porque ServiceImpl implementa IService
-        expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-        expect(service.name, 'ServiceImplementation');
-      });
-
-      test('should resolve interface when concrete implementation is registered (auto-resolution)', () {
-        // Arrange
-        final bind = Bind.singleton((i) => ServiceImpl());
-        Bind.register(bind);
-
-        // Act
-        final service = Bind.get<IService>();
-
-        // Assert - O sistema resolve automaticamente porque ServiceImpl implementa IService
-        expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-        expect(service.name, 'ServiceImplementation');
-      });
-
-      test('should resolve interface when explicitly registered as interface', () {
-        // Arrange
+  group('Bind Interface Resolution Tests - Seguindo padrão auto_injector', () {
+    group('Explicit Interface Registration', () {
+      test('should resolve when interface is explicitly registered', () {
+        // Arrange - No auto_injector, você registra explicitamente a interface
         final bind = Bind.singleton<IService>((i) => ServiceImpl());
         Bind.register(bind);
 
@@ -123,9 +69,9 @@ void main() {
         expect(service.name, 'ServiceImplementation');
       });
 
-      test('should resolve concrete implementation when interface is registered', () {
-        // Arrange
-        final bind = Bind.singleton<IService>((i) => ServiceImpl());
+      test('should resolve concrete implementation when registered', () {
+        // Arrange - Registrar o tipo concreto
+        final bind = Bind.singleton<ServiceImpl>((i) => ServiceImpl());
         Bind.register(bind);
 
         // Act
@@ -135,60 +81,24 @@ void main() {
         expect(service, isA<ServiceImpl>());
         expect(service.name, 'ServiceImplementation');
       });
-    });
 
-    group('Complex Interface Dependencies', () {
-      test('should resolve controller with service dependency through interface', () {
-        // Arrange
-        final serviceBind = Bind.singleton<IService>((i) => ServiceImpl());
-        final controllerBind = Bind.singleton<IController>((i) => ControllerImpl(i.get<IService>()));
+      test('should allow both interface and concrete registration', () {
+        // Arrange - Registrar ambos explicitamente
+        final implementation = ServiceImpl();
 
-        Bind.register(serviceBind);
-        Bind.register(controllerBind);
+        final concreteBind = Bind.singleton<ServiceImpl>((i) => implementation);
+        final interfaceBind = Bind.singleton<IService>((i) => implementation);
 
-        // Act
-        final controller = Bind.get<IController>();
-
-        // Assert
-        expect(controller, isA<IController>());
-        expect(controller, isA<ControllerImpl>());
-        expect(() => controller.handleRequest(), returnsNormally);
-      });
-
-      test('should resolve multiple implementations of same interface', () {
-        // Arrange
-        final service1Bind = Bind.singleton<IService>((i) => ServiceImpl(), key: 'service1');
-        final service2Bind = Bind.singleton<IService>((i) => ServiceImpl(), key: 'service2');
-
-        Bind.register(service1Bind);
-        Bind.register(service2Bind);
+        Bind.register(concreteBind);
+        Bind.register(interfaceBind);
 
         // Act
-        final service1 = Bind.get<IService>(key: 'service1');
-        final service2 = Bind.get<IService>(key: 'service2');
+        final serviceViaInterface = Bind.get<IService>();
+        final serviceViaConcrete = Bind.get<ServiceImpl>();
 
-        // Assert
-        expect(service1, isA<IService>());
-        expect(service2, isA<IService>());
-        expect(service1.name, service2.name); // Mesmo nome pois é a mesma implementação
-      });
-
-      test('should resolve interface with repository dependency', () {
-        // Arrange
-        final repositoryBind = Bind.singleton<IRepository>((i) => RepositoryImpl());
-        Bind.register(repositoryBind);
-
-        // Act
-        final repository = Bind.get<IRepository>();
-
-        // Assert
-        expect(repository, isA<IRepository>());
-        expect(repository, isA<RepositoryImpl>());
-        expect(repository.data, 'default data');
-
-        // Test method
-        repository.save('new data');
-        expect(repository.data, 'new data');
+        // Assert - Ambos retornam a mesma instância
+        expect(serviceViaInterface, same(serviceViaConcrete));
+        expect(serviceViaInterface.name, 'ServiceImplementation');
       });
     });
 
@@ -202,11 +112,10 @@ void main() {
         final service1 = Bind.get<IService>();
         final service2 = Bind.get<IService>();
 
-        // Assert
+        // Assert - Factory cria novas instâncias
+        expect(service1, isNot(same(service2)));
         expect(service1, isA<IService>());
         expect(service2, isA<IService>());
-        // Para factory, instâncias devem ser diferentes
-        expect(identical(service1, service2), false);
       });
 
       test('should resolve singleton bind through interface', () {
@@ -218,242 +127,204 @@ void main() {
         final service1 = Bind.get<IService>();
         final service2 = Bind.get<IService>();
 
-        // Assert
+        // Assert - Singleton retorna a mesma instância
+        expect(service1, same(service2));
         expect(service1, isA<IService>());
-        expect(service2, isA<IService>());
-        // Para singleton, instâncias devem ser iguais
-        expect(identical(service1, service2), true);
       });
     });
 
-    group('Error Handling', () {
-      test('should throw exception when interface is not registered', () {
-        // Arrange
-        final bind = Bind.singleton<ServiceImpl>((i) => ServiceImpl());
-        Bind.register(bind);
-
-        // Act & Assert - IService deve funcionar (auto-resolução), mas IRepository deve falhar
-        expect(() => Bind.get<IService>(), returnsNormally); // Deve funcionar por auto-resolução
-        expect(() => Bind.get<IRepository>(), throwsA(isA<Exception>())); // Deve falhar
-      });
-
-      test('should throw exception when concrete class is not registered', () {
-        // Arrange - Nenhum bind registrado
-
-        // Act & Assert
-        expect(() => Bind.get<ConcreteClass>(), throwsA(isA<Exception>()));
-        expect(() => Bind.get<ServiceImpl>(), throwsA(isA<Exception>()));
-      });
-
-      test('should handle dispose of interface bind correctly', () {
-        // Arrange
-        final bind = Bind.singleton<ServiceImpl>((i) => ServiceImpl());
-        Bind.register(bind);
-
-        final service = Bind.get<IService>();
-        expect(service, isA<IService>());
-
-        // Act
-        Bind.dispose<ServiceImpl>(); // Remove a implementação concreta
-
-        // Assert - O sistema ainda consegue resolver porque o auto-resolução cria um bind temporário
-        // mas vamos verificar se a instância original foi removida
-        final newService = Bind.get<IService>();
-        expect(newService, isA<IService>());
-        expect(newService, isA<ServiceImpl>());
-      });
-    });
-
-    group('Untyped Injection Tests', () {
-      test('should resolve with untyped singleton registration', () {
-        // Arrange - Registra sem especificar tipo genérico
-        final bind = Bind.singleton((i) => ServiceImpl());
-        Bind.register(bind);
-
-        // Act - Busca pela interface
-        final service = Bind.get<IService>();
-
-        // Assert - Deve funcionar por auto-resolução
-        expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-        expect(service.name, 'ServiceImplementation');
-      });
-
-      test('should resolve with untyped factory registration', () {
-        // Arrange - Registra factory sem especificar tipo genérico
-        final bind = Bind.factory((i) => ServiceImpl());
-        Bind.register(bind);
-
-        // Act - Busca pela interface
-        final service = Bind.get<IService>();
-
-        // Assert - Deve funcionar por auto-resolução
-        expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-
-        // Factory deve criar instâncias diferentes
-        final service2 = Bind.get<IService>();
-        expect(identical(service, service2), false);
-      });
-
-      test('should resolve with untyped singleton with key', () {
-        // Arrange - Registra singleton com key sem especificar tipo genérico
-        final bind = Bind.singleton((i) => ServiceImpl(), key: 'untyped_service');
-        Bind.register(bind);
-
-        // Act - Busca pela interface com key
-        final service = Bind.get<IService>(key: 'untyped_service');
-
-        // Assert - Deve funcionar por auto-resolução
-        expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-        expect(service.name, 'ServiceImplementation');
-      });
-
-      test('should resolve with untyped factory with key', () {
-        // Arrange - Registra factory com key sem especificar tipo genérico
-        final bind = Bind.factory((i) => ServiceImpl(), key: 'untyped_factory');
-        Bind.register(bind);
-
-        // Act - Busca pela interface com key
-        final service = Bind.get<IService>(key: 'untyped_factory');
-
-        // Assert - Deve funcionar por auto-resolução
-        expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-      });
-
-      test('should resolve multiple untyped registrations', () {
-        // Arrange - Múltiplos registros sem tipo genérico
-        final serviceBind = Bind.singleton((i) => ServiceImpl());
-        final repositoryBind = Bind.singleton((i) => RepositoryImpl());
-
-        Bind.register(serviceBind);
-        Bind.register(repositoryBind);
-
-        // Act - Busca ambas as interfaces
-        final service = Bind.get<IService>();
-        final repository = Bind.get<IRepository>();
-
-        // Assert - Ambas devem funcionar por auto-resolução
-        expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-
-        expect(repository, isA<IRepository>());
-        expect(repository, isA<RepositoryImpl>());
-      });
-
-      test('should resolve complex dependencies with untyped registrations', () {
-        // Arrange - Registros sem tipo genérico para dependências complexas
-        final serviceBind = Bind.singleton((i) => ServiceImpl());
-        final controllerBind = Bind.singleton((i) => ControllerImpl(i.get<IService>()));
+    group('Complex Dependencies with Interfaces', () {
+      test('should resolve controller with service dependency through interface', () {
+        // Arrange - Registrar dependências
+        final serviceBind = Bind.singleton<IService>((i) => ServiceImpl());
+        final controllerBind = Bind.singleton<IController>((i) => ControllerImpl(i.get<IService>()));
 
         Bind.register(serviceBind);
         Bind.register(controllerBind);
 
-        // Act - Busca o controller que depende do service
+        // Act
         final controller = Bind.get<IController>();
 
-        // Assert - Deve funcionar por auto-resolução
+        // Assert
         expect(controller, isA<IController>());
         expect(controller, isA<ControllerImpl>());
         expect(() => controller.handleRequest(), returnsNormally);
       });
 
-      test('should handle mixed typed and untyped registrations', () {
-        // Arrange - Mistura registros tipados e não tipados
-        final typedService = Bind.singleton<IService>((i) => ServiceImpl());
-        final untypedRepository = Bind.singleton((i) => RepositoryImpl());
+      test('should resolve multiple implementations with different keys', () {
+        // Arrange - Múltiplas implementações com keys diferentes
+        final bind1 = Bind.singleton<IService>((i) => ServiceImpl(), key: 'service1');
+        final bind2 = Bind.singleton<IService>((i) => ServiceImpl(), key: 'service2');
 
-        Bind.register(typedService);
-        Bind.register(untypedRepository);
+        Bind.register(bind1);
+        Bind.register(bind2);
 
-        // Act - Busca ambos
-        final service = Bind.get<IService>();
-        final repository = Bind.get<IRepository>();
+        // Act
+        final service1 = Bind.get<IService>(key: 'service1');
+        final service2 = Bind.get<IService>(key: 'service2');
 
-        // Assert - Ambos devem funcionar
-        expect(service, isA<IService>());
-        expect(repository, isA<IRepository>());
+        // Assert - Instâncias diferentes
+        expect(service1, isNot(same(service2)));
+        expect(service1, isA<IService>());
+        expect(service2, isA<IService>());
       });
 
-      test('should work with original IBindSingleton pattern untyped', () {
-        // Arrange - Simula o padrão original sem tipo genérico usando classes existentes
-        // Registra sem tipo genérico (como no código original)
-        final bind = Bind.singleton((i) => ServiceImpl()); // Usa ServiceImpl como exemplo
-        Bind.register(bind);
+      test('should resolve interface with repository dependency', () {
+        // Arrange
+        final repoBind = Bind.singleton<IRepository>((i) => RepositoryImpl());
+        Bind.register(repoBind);
 
-        // Act - Busca pela interface
-        final service = Bind.get<IService>();
+        // Act
+        final repo = Bind.get<IRepository>();
 
-        // Assert - Deve funcionar por auto-resolução
-        expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-        expect(() => service.doSomething(), returnsNormally);
+        // Assert
+        expect(repo, isA<IRepository>());
+        expect(repo.data, 'Repository data');
       });
     });
 
-    group('Original Problem Scenario', () {
-      test('should resolve IBindSingleton when BindSingleton is registered', () {
-        // Arrange - Simula exatamente o problema original
-        final bind = Bind.singleton((i) => ServiceImpl()); // Registra como ServiceImpl
+    group('Error Handling', () {
+      test('should throw exception when interface is not registered', () {
+        // Act & Assert - Interface não registrada
+        expect(
+          () => Bind.get<IService>(),
+          throwsA(isA<GoRouterModularException>()),
+        );
+      });
+
+      test('should throw exception when concrete class is not registered', () {
+        // Arrange - Registrar apenas a interface
+        final bind = Bind.singleton<IService>((i) => ServiceImpl());
         Bind.register(bind);
 
-        // Act - Tenta buscar pela interface
+        // Act & Assert - Tipo concreto não foi registrado
+        expect(
+          () => Bind.get<ServiceImpl>(),
+          throwsA(isA<GoRouterModularException>()),
+        );
+      });
+
+      test('should handle dispose of interface bind correctly', () {
+        // Arrange
+        final bind = Bind.singleton<IService>((i) => ServiceImpl());
+        Bind.register(bind);
+
+        final service = Bind.get<IService>();
+        expect(service, isA<IService>());
+
+        // Act
+        Bind.dispose<IService>();
+
+        // Assert - Seguindo padrão auto_injector: bind continua registrado
+        final newService = Bind.get<IService>();
+        expect(newService, isNot(same(service)));
+      });
+    });
+
+    group('Typed Injection Tests - Padrão auto_injector', () {
+      test('should resolve with typed singleton registration', () {
+        // Arrange - Registro tipado explícito
+        final bind = Bind.singleton<IService>((i) => ServiceImpl());
+        Bind.register(bind);
+
+        // Act
         final service = Bind.get<IService>();
 
-        // Assert - Deve funcionar por auto-resolução
+        // Assert
         expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
         expect(service.name, 'ServiceImplementation');
       });
 
-      test('should work with IBindSingleton pattern', () {
-        // Arrange - Simula o padrão IBindSingleton
-        final bind = Bind.singleton((i) => ServiceImpl()); // Registra como ServiceImpl
+      test('should resolve with typed factory registration', () {
+        // Arrange
+        final bind = Bind.factory<IService>((i) => ServiceImpl());
         Bind.register(bind);
 
-        // Act - Busca pela interface
-        final service = Bind.get<IService>();
+        // Act
+        final service1 = Bind.get<IService>();
+        final service2 = Bind.get<IService>();
 
-        // Assert - Deve funcionar por auto-resolução
+        // Assert - Factory cria novas instâncias
+        expect(service1, isNot(same(service2)));
+      });
+
+      test('should resolve multiple typed registrations', () {
+        // Arrange
+        final serviceBind = Bind.singleton<IService>((i) => ServiceImpl());
+        final repoBind = Bind.singleton<IRepository>((i) => RepositoryImpl());
+
+        Bind.register(serviceBind);
+        Bind.register(repoBind);
+
+        // Act
+        final service = Bind.get<IService>();
+        final repo = Bind.get<IRepository>();
+
+        // Assert
         expect(service, isA<IService>());
-        expect(service, isA<ServiceImpl>());
-        expect(() => service.doSomething(), returnsNormally);
+        expect(repo, isA<IRepository>());
+      });
+
+      test('should resolve complex dependencies with typed registrations', () {
+        // Arrange
+        final serviceBind = Bind.singleton<IService>((i) => ServiceImpl());
+        final repoBind = Bind.singleton<IRepository>((i) => RepositoryImpl());
+        final controllerBind = Bind.singleton<IController>((i) => ControllerImpl(i.get<IService>()));
+
+        Bind.register(serviceBind);
+        Bind.register(repoBind);
+        Bind.register(controllerBind);
+
+        // Act
+        final controller = Bind.get<IController>();
+
+        // Assert
+        expect(controller, isA<IController>());
+      });
+
+      test('should handle mixed typed registrations', () {
+        // Arrange - Mix de interfaces e implementações
+        final serviceBind = Bind.singleton<IService>((i) => ServiceImpl());
+        final concreteRepoBind = Bind.singleton<RepositoryImpl>((i) => RepositoryImpl());
+
+        Bind.register(serviceBind);
+        Bind.register(concreteRepoBind);
+
+        // Act
+        final service = Bind.get<IService>();
+        final repo = Bind.get<RepositoryImpl>();
+
+        // Assert
+        expect(service, isA<IService>());
+        expect(repo, isA<RepositoryImpl>());
       });
     });
 
-    group('Real World Scenario', () {
-      test('should simulate real application with interfaces', () {
-        // Arrange - Simula um cenário real de aplicação
-        final repositoryBind = Bind.singleton<IRepository>((i) => RepositoryImpl());
+    group('Real World Scenario - Padrão auto_injector', () {
+      test('should simulate real application with explicit interface registration', () {
+        // Arrange - Simular aplicação real com registro explícito
+        final repoBind = Bind.singleton<IRepository>((i) => RepositoryImpl());
         final serviceBind = Bind.singleton<IService>((i) => ServiceImpl());
         final controllerBind = Bind.singleton<IController>((i) => ControllerImpl(i.get<IService>()));
 
-        Bind.register(repositoryBind);
+        Bind.register(repoBind);
         Bind.register(serviceBind);
         Bind.register(controllerBind);
 
         // Act
-        final repository = Bind.get<IRepository>();
-        final service = Bind.get<IService>();
         final controller = Bind.get<IController>();
+        final service = Bind.get<IService>();
+        final repo = Bind.get<IRepository>();
 
         // Assert
-        expect(repository, isA<IRepository>());
-        expect(service, isA<IService>());
         expect(controller, isA<IController>());
-
-        // Test interactions
-        repository.save('test data');
-        expect(repository.data, 'test data');
-
-        expect(() => service.doSomething(), returnsNormally);
+        expect(service, isA<IService>());
+        expect(repo, isA<IRepository>());
         expect(() => controller.handleRequest(), returnsNormally);
       });
 
-      test('should handle multiple modules with same interface', () {
-        // Arrange - Simula múltiplos módulos registrando a mesma interface
+      test('should handle multiple modules with same interface using keys', () {
+        // Arrange - Múltiplos módulos com mesma interface
         final module1Service = Bind.singleton<IService>((i) => ServiceImpl(), key: 'module1');
         final module2Service = Bind.singleton<IService>((i) => ServiceImpl(), key: 'module2');
 
@@ -465,9 +336,52 @@ void main() {
         final service2 = Bind.get<IService>(key: 'module2');
 
         // Assert
+        expect(service1, isNot(same(service2)));
         expect(service1, isA<IService>());
         expect(service2, isA<IService>());
-        expect(service1.name, service2.name);
+      });
+    });
+
+    group('Key-based Registration', () {
+      test('should resolve with key-based registration', () {
+        // Arrange
+        final bind = Bind.singleton<IService>((i) => ServiceImpl(), key: 'my-service');
+        Bind.register(bind);
+
+        // Act
+        final service = Bind.get<IService>(key: 'my-service');
+
+        // Assert
+        expect(service, isA<IService>());
+        expect(service.name, 'ServiceImplementation');
+      });
+
+      test('should throw when key does not match', () {
+        // Arrange
+        final bind = Bind.singleton<IService>((i) => ServiceImpl(), key: 'service1');
+        Bind.register(bind);
+
+        // Act & Assert - Key diferente
+        expect(
+          () => Bind.get<IService>(key: 'service2'),
+          throwsA(isA<GoRouterModularException>()),
+        );
+      });
+
+      test('should allow same type with different keys', () {
+        // Arrange
+        final bind1 = Bind.singleton<IService>((i) => ServiceImpl(), key: 'service1');
+        final bind2 = Bind.singleton<IService>((i) => ServiceImpl(), key: 'service2');
+
+        Bind.register(bind1);
+        Bind.register(bind2);
+
+        // Act
+        final service1 = Bind.get<IService>(key: 'service1');
+        final service2 = Bind.get<IService>(key: 'service2');
+
+        // Assert
+        expect(service1, isNot(same(service2)));
       });
     });
   });

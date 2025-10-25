@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:example/src/modules/shared/module_singleton.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/go_router_modular.dart' hide IBindSingleton;
 import 'pages/bind_by_key_page.dart';
 
 class BindsByKeyModule extends Module {
@@ -13,13 +13,15 @@ class BindsByKeyModule extends Module {
   }
 
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton((i) => BindSingleton()),
-      Bind.singleton((i) => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local'),
-      Bind.factory((i) => DioFake(baseUrl: 'http://api.remote.com'), key: 'dio_remote'),
-      Bind.factory((i) => ApiFake(dio: i.get(key: 'dio_remote'))),
-    ];
+  void binds(Injector i) {
+    // Registrar BindSingleton com interface
+
+    i.addLazySingleton<IBindSingleton>(() => BindSingleton());
+
+    // Registrar Dio com keys
+    i.addLazySingleton(() => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local');
+    i.add(() => DioFake(baseUrl: 'http://api.remote.com'), key: 'dio_remote');
+    i.add(() => ApiFake(dio: i.get(key: 'dio_remote')));
   }
 
   @override
@@ -35,10 +37,8 @@ class BindsByKeyModule extends Module {
 
 class BindsByKeyImportTest extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.factory((i) => DioFake(baseUrl: 'https://google.com'), key: 'dio_google'),
-    ];
+  void binds(Injector i) {
+    i.add(() => DioFake(baseUrl: 'https://google.com'), key: 'dio_google');
   }
 }
 

@@ -1,7 +1,5 @@
 // ignore_for_file: avoid_print
 
-import 'dart:async';
-
 import 'package:example/src/modules/home/home_module.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:flutter/material.dart';
@@ -9,15 +7,13 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class AutoResolveModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton((i) => HomeService()),
-      Bind.singleton((i) => A(i.get())),
-      Bind.factory((i) => B(i.get())),
-      Bind.factory((i) => Z(i.get())),
-      Bind.singleton((i) => C(i.get())),
-      Bind.singleton((i) => D(i.get())),
-    ];
+  void binds(Injector i) {
+    i.addLazySingleton(() => HomeService());
+    i.addLazySingleton(() => A(i.get()));
+    i.add(() => B(i.get()));
+    i.add(() => Z(i.get()));
+    i.addLazySingleton(() => C(i.get()));
+    i.addLazySingleton(() => D(i.get()));
   }
 
   @override
