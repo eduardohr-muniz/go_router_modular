@@ -1,5 +1,5 @@
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/page_transition_enum.dart';
+import 'package:go_router_modular/src/routing/page_transition_enum.dart';
 
 class RouteModularModel {
   String moduleR;

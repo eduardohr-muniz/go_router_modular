@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/bind_indentifier.dart';
-import 'package:go_router_modular/src/utils/setup.dart';
-import 'package:go_router_modular/src/utils/internal_logs.dart';
+import 'package:go_router_modular/src/di/bind_indentifier.dart';
+import 'package:go_router_modular/src/internal/setup.dart';
+import 'package:go_router_modular/src/internal/internal_logs.dart';
 
 /// ValueObject para representar um bind único (Type + Key)
 

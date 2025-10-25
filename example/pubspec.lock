@@ -102,7 +102,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "4.2.1"
+    version: "4.2.3"
   leak_tracker:
     dependency: transitive
     description:

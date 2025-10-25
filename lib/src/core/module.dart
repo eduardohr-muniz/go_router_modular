@@ -3,8 +3,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/asserts/module_assert.dart';
-import 'package:go_router_modular/src/utils/parent_widget_observer.dart';
+import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
+import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
 
 abstract class Module {
   FutureOr<List<Module>> imports() => [];

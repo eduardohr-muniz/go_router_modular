@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/setup.dart';
+import 'package:go_router_modular/src/internal/setup.dart';
 
 /// Global storage for all event subscriptions organized by EventBus and event type.
 ///

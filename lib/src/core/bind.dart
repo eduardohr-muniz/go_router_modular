@@ -1,8 +1,8 @@
 import 'dart:developer';
 
-import 'package:go_router_modular/src/utils/clean_bind.dart';
-import 'package:go_router_modular/src/utils/exception.dart';
-import 'package:go_router_modular/src/utils/injector.dart';
+import 'package:go_router_modular/src/di/clean_bind.dart';
+import 'package:go_router_modular/src/exceptions/exception.dart';
+import 'package:go_router_modular/src/di/injector.dart';
 
 class Bind<T> {
   final T Function(Injector i) factoryFunction;
@@ -124,6 +124,11 @@ class Bind<T> {
   static final Map<Type, int> _searchAttempts = {};
   static final Set<Type> _currentlySearching = {};
   static const int _maxSearchAttempts = 1000;
+
+  static void cleanSearchAttempts() {
+    _searchAttempts.clear();
+    _currentlySearching.clear();
+  }
 
   static T _find<T>({String? key}) {
     final type = T;

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/utils/clean_bind.dart';
+import 'package:go_router_modular/src/di/clean_bind.dart';
 
 // Classes de teste para diferentes cenários
 class TestDisposable {

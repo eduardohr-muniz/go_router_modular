@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/utils/event_module.dart';
-import 'package:go_router_modular/src/utils/setup.dart';
+import 'package:go_router_modular/src/events/event_module.dart';
+import 'package:go_router_modular/src/internal/setup.dart';
 
 // Eventos de teste
 class TestEvent {
