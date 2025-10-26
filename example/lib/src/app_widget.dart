@@ -8,6 +8,10 @@ class AppWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Configurar transições padrão globais
+    GoTransition.defaultCurve = Curves.easeInOut;
+    GoTransition.defaultDuration = const Duration(milliseconds: 400);
+
     return MaterialApp.router(
       routerConfig: Modular.routerConfig,
       builder: (context, child) => ModularLoader.builder(context, child),
@@ -17,9 +21,20 @@ class AppWidget extends StatelessWidget {
           PointerDeviceKind.mouse,
         },
       ),
-      title: 'Modular GoRoute Example',
+      title: 'Modular GoRoute Example - Transitions Test',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        // Configuração global de transições para fallback
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: GoTransitions.fadeUpwards,
+            TargetPlatform.iOS: GoTransitions.cupertino,
+            TargetPlatform.macOS: GoTransitions.cupertino,
+            TargetPlatform.linux: GoTransitions.fade,
+            TargetPlatform.windows: GoTransitions.fade,
+            TargetPlatform.fuchsia: GoTransitions.fade,
+          },
+        ),
       ),
     );
   }

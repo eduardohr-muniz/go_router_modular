@@ -18,7 +18,13 @@ class AutoResolveModule extends Module {
 
   @override
   List<ModularRoute> get routes => [
-        ChildRoute('/', child: (context, args) => const AutoResolveModuleWidget()),
+        // 🔧 Auto Resolve Page - Transição específica fade com rotação
+        ChildRoute(
+          '/',
+          child: (context, args) => const AutoResolveModuleWidget(),
+          transition: GoTransitions.fade.withRotation,
+          duration: Duration(milliseconds: 650),
+        ),
       ];
 
   @override

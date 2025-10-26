@@ -5,7 +5,13 @@ import 'pages/example_event_page.dart';
 class ExampleEventModule extends EventModule {
   @override
   List<ModularRoute> get routes => [
-        ChildRoute('/', child: (context, state) => const ExampleEventPage()),
+        // 🎉 Event Page - Transição específica slide da direita com scale
+        ChildRoute(
+          '/',
+          child: (context, state) => const ExampleEventPage(),
+          transition: GoTransitions.slide.toRight.withScale,
+          duration: Duration(milliseconds: 550),
+        ),
       ];
   @override
   void listen() {

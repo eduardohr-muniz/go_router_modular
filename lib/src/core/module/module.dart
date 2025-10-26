@@ -24,13 +24,32 @@ abstract class Module {
   void initState(Injector i) {}
   void dispose() {}
 
-  List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
+  List<RouteBase> configureRoutes({
+    String modulePath = '',
+    bool topLevel = false,
+    Duration? parentDuration,
+    GoTransition? parentTransition,
+  }) {
     List<RouteBase> result = [];
     InjectionManager.instance.registerAppModule(this);
 
-    result.addAll(_createChildRoutes(topLevel: topLevel));
-    result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
-    result.addAll(_createShellRoutes(topLevel, modulePath));
+    result.addAll(_createChildRoutes(
+      topLevel: topLevel,
+      parentDuration: parentDuration,
+      parentTransition: parentTransition,
+    ));
+    result.addAll(_createModuleRoutes(
+      modulePath: modulePath,
+      topLevel: topLevel,
+      parentDuration: parentDuration,
+      parentTransition: parentTransition,
+    ));
+    result.addAll(_createShellRoutes(
+      topLevel,
+      modulePath,
+      parentDuration: parentDuration,
+      parentTransition: parentTransition,
+    ));
 
     return result;
   }

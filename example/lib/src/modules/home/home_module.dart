@@ -21,13 +21,18 @@ class HomeModule extends Module {
   @override
   List<ModularRoute> get routes {
     return [
+      // 🏠 Home Page - Herda fadeUpwards do AppModule
       ChildRoute(
         '/',
         child: (context, state) => const HomePage(),
       ),
+
+      // 🎨 Demo Page - Transição específica slide da esquerda com rotação
       ChildRoute(
         '/demo',
         child: (context, state) => const DemoPage(),
+        transition: GoTransitions.slide.toLeft.withRotation,
+        duration: Duration(milliseconds: 600),
       ),
     ];
   }

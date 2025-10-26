@@ -28,9 +28,12 @@ class BindsByKeyModule extends Module {
   @override
   List<ModularRoute> get routes {
     return [
+      // 🔑 Bind by Key Page - Transição específica rotate com fade
       ChildRoute(
         '/',
         child: (context, state) => const BindByKeyPage(),
+        transition: GoTransitions.rotate.withFade,
+        duration: Duration(milliseconds: 700),
       ),
     ];
   }

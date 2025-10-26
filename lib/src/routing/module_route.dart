@@ -4,10 +4,14 @@ class ModuleRoute extends ModularRoute {
   final String path;
   final Module module;
   final String? name;
+  final Duration? duration;
+  final GoTransition? transition;
 
   ModuleRoute(
     this.path, {
     required this.module,
     this.name,
+    this.duration,
+    this.transition,
   });
 }

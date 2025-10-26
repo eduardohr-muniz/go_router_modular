@@ -17,8 +17,21 @@ class ShellModule extends Module {
         ShellModularRoute(
           builder: (context, state, child) => ShellPage(child: child),
           routes: [
-            ModuleRoute('/profile', module: ProfileModule()),
-            ModuleRoute('/settings', module: SettingsModule()),
+            // 👤 Profile Module - Transição específica scale com fade
+            ModuleRoute(
+              '/profile',
+              module: ProfileModule(),
+              transition: GoTransitions.scale.withFade,
+              duration: Duration(milliseconds: 400),
+            ),
+
+            // ⚙️ Settings Module - Transição específica slide de baixo
+            ModuleRoute(
+              '/settings',
+              module: SettingsModule(),
+              transition: GoTransitions.slide.toBottom.withFade,
+              duration: Duration(milliseconds: 500),
+            ),
           ],
         ),
       ];
