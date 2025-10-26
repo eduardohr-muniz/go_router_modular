@@ -24,7 +24,8 @@ class ModuleInjector extends Injector {
         log('✅ [ModuleInjector.add] Tipando como $T', name: "GO_ROUTER_MODULAR");
 
         // INFERÊNCIA AUTOMÁTICA: Se T é uma interface e builder retorna uma implementação concreta,
-        // registrar TAMBÉM a implementação concreta automaticamente
+        // registrar TAMBÉM a implementação concreta automaticamente APENAS SEM KEY
+        // (para não causar conflito com keys da interface)
         try {
           final tempInstance = builder();
           final concreteType = tempInstance.runtimeType;
@@ -32,11 +33,16 @@ class ModuleInjector extends Injector {
           log('🔍 [ModuleInjector.add] Inferindo tipo concreto: $concreteType', name: "GO_ROUTER_MODULAR");
 
           // Se T é uma interface abstrata e concreteType é diferente de T,
-          // registrar TAMBÉM concreteType para permitir i.get<Concrete>()
-          if (T != Object && T != concreteType) {
-            log('✅ [ModuleInjector.add] Auto-registrando implementação concreta: $concreteType', name: "GO_ROUTER_MODULAR");
-            // Usar auto_injector para registrar o tipo concreto dinamicamente
-            _moduleInjector.add(builder, key: key); // Registra automaticamente o tipo concreto
+          // registrar TAMBÉM concreteType APENAS SEM KEY para permitir i.get<Concrete>()
+          if (T != Object && T != concreteType && key == null) {
+            log('✅ [ModuleInjector.add] Auto-registrando implementação concreta: $concreteType (apenas sem key)', name: "GO_ROUTER_MODULAR");
+            try {
+              // Tentar registrar a implementação concreta sem key
+              _moduleInjector.add(builder);
+            } catch (e) {
+              // Se já existe, ignorar
+              log('⚠️ [ModuleInjector.add] Implementação concreta já existe: $e', name: "GO_ROUTER_MODULAR");
+            }
           }
         } catch (e) {
           log('⚠️ [ModuleInjector.add] Erro na inferência automática: $e', name: "GO_ROUTER_MODULAR");
