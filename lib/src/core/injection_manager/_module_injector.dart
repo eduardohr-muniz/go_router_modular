@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:auto_injector/auto_injector.dart' as ai;
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/core/injection_manager/_bind_registration.dart';
@@ -14,17 +15,46 @@ class ModuleInjector extends Injector {
 
   @override
   void add<T extends Object>(dynamic builder, {String? key}) {
-    _moduleInjector.add<T>(builder is Function ? builder : () => builder, key: key);
+    if (builder is Function) {
+      // Se T é Object, chamar sem tipo e deixar o auto_injector inferir
+      if (T == Object) {
+        // Registrar sem tipo e deixar o auto_injector inferir a implementação
+        _moduleInjector.add(builder, key: key);
+      } else {
+        // Passar o tipo explicitamente
+        _moduleInjector.add<T>(builder, key: key);
+      }
+    } else {
+      _moduleInjector.add<T>(() => builder, key: key);
+    }
   }
 
   @override
   void addSingleton<T extends Object>(dynamic builder, {String? key}) {
-    _moduleInjector.addSingleton<T>(builder is Function ? builder : () => builder, key: key);
+    if (builder is Function) {
+      // Se T é Object, chamar sem tipo e deixar o auto_injector inferir
+      if (T == Object) {
+        _moduleInjector.addSingleton(builder, key: key);
+      } else {
+        _moduleInjector.addSingleton<T>(builder, key: key);
+      }
+    } else {
+      _moduleInjector.addSingleton<T>(() => builder, key: key);
+    }
   }
 
   @override
   void addLazySingleton<T extends Object>(dynamic builder, {String? key}) {
-    _moduleInjector.addLazySingleton<T>(builder is Function ? builder : () => builder, key: key);
+    if (builder is Function) {
+      // Se T é Object, chamar sem tipo e deixar o auto_injector inferir
+      if (T == Object) {
+        _moduleInjector.addLazySingleton(builder, key: key);
+      } else {
+        _moduleInjector.addLazySingleton<T>(builder, key: key);
+      }
+    } else {
+      _moduleInjector.addLazySingleton<T>(() => builder, key: key);
+    }
   }
 
   @override
@@ -36,5 +66,41 @@ class ModuleInjector extends Injector {
       // Isso permite acessar binds do AppModule
       return InjectionManager.instance.getWithModuleContext<T>(key: key);
     }
+  }
+
+  /// Registra uma implementação automaticamente sob a interface correspondente
+  void addAs<TInterface extends Object, TImplementation extends TInterface>(
+    TInterface Function() builder, {
+    String? key,
+  }) {
+    // Registrar a implementação concreta
+    _moduleInjector.add<TImplementation>(builder, key: key);
+
+    // Registrar a interface apontando para a implementação
+    _moduleInjector.add<TInterface>(() => _moduleInjector.get<TImplementation>(key: key) as TInterface, key: key);
+  }
+
+  /// Registra um singleton automaticamente sob a interface correspondente
+  void addSingletonAs<TInterface extends Object, TImplementation extends TInterface>(
+    TInterface Function() builder, {
+    String? key,
+  }) {
+    // Registrar a implementação concreta
+    _moduleInjector.addSingleton<TImplementation>(builder, key: key);
+
+    // Registrar a interface apontando para a implementação
+    _moduleInjector.addSingleton<TInterface>(() => _moduleInjector.get<TImplementation>(key: key) as TInterface, key: key);
+  }
+
+  /// Registra um lazy singleton automaticamente sob a interface correspondente
+  void addLazySingletonAs<TInterface extends Object, TImplementation extends TInterface>(
+    TInterface Function() builder, {
+    String? key,
+  }) {
+    // Registrar a implementação concreta
+    _moduleInjector.addLazySingleton<TImplementation>(builder, key: key);
+
+    // Registrar a interface apontando para a implementação
+    _moduleInjector.addLazySingleton<TInterface>(() => _moduleInjector.get<TImplementation>(key: key) as TInterface, key: key);
   }
 }
