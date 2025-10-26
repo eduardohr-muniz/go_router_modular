@@ -8,6 +8,7 @@ import 'package:go_router_modular/src/di/clean_bind.dart';
 import '_module_registry.dart';
 import '_bind_resolver.dart';
 import '_module_injector.dart';
+import '_bind_log_formatter.dart';
 
 /// InjectionManager usando GetIt com isolamento via prefixos de módulo
 ///
@@ -127,7 +128,8 @@ class InjectionManager {
     module.initState(injector);
 
     if (debugLog) {
-      log('💉 INJECTED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
+      final binds = _registry.getBinds(module.runtimeType);
+      log('💉 INJECTED: ${module.runtimeType} ${binds.isNotEmpty ? '\n 📦 Binds: \n${BindLogFormatter.formatBinds(binds, module.runtimeType, _registry, false)}' : ''} ', name: "GO_ROUTER_MODULAR");
     }
   }
 
@@ -147,6 +149,11 @@ class InjectionManager {
     try {
       // Para binds com instanceName, podemos tentar resetLazySingleton
       final binds = _registry.getBinds(module.runtimeType);
+
+      if (debugLog && binds.isNotEmpty) {
+        log('🗑️ DISPOSING: ${module.runtimeType} ${binds.isNotEmpty ? '\n 📦 Binds: \n${BindLogFormatter.formatBinds(binds, module.runtimeType, _registry, true)}' : ''} ', name: "GO_ROUTER_MODULAR");
+      }
+
       for (final bind in binds) {
         try {
           if (bind.instanceName != null) {
