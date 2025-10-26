@@ -22,6 +22,9 @@ class _ParentWidgetObserverState extends State<ParentWidgetObserver> {
 
   @override
   void didChangeDependencies() {
+    // Definir o contexto do módulo atual para resolução de binds
+    InjectionManager.instance.setModuleContext(widget.module.runtimeType);
+
     widget.didChangeDependencies(widget.module);
     super.didChangeDependencies();
   }

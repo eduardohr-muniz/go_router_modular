@@ -27,9 +27,35 @@ class InjectionManager {
   /// Store which modules are currently active
   final Map<Type, String> _activeModuleTags = {};
 
+  /// Cache de injectors importados (seguindo flutter_modular linha 59)
+  final Map<String, ai.AutoInjector> _importedInjectors = {};
+
+  /// Rastrear quais módulos cada módulo importa (para validação de acesso)
+  final Map<Type, Set<Type>> _moduleImports = {};
+
+  /// Módulo ativo no contexto atual (para resolução de binds)
+  Type? _currentModuleContext;
+
   Module? _appModule;
 
   bool get debugLog => SetupModular.instance.debugLogGoRouterModular;
+
+  /// Define o contexto do módulo atual (chamado ao navegar para uma rota)
+  void setModuleContext(Type moduleType) {
+    _currentModuleContext = moduleType;
+  }
+
+  /// Obtém o injector correto baseado no contexto do módulo atual
+  /// Retorna o injector do módulo atual (que inclui seus imports) ou o injector principal (AppModule)
+  ai.AutoInjector getContextualInjector() {
+    // Se temos um contexto de módulo específico, usar o injector desse módulo
+    if (_currentModuleContext != null && _moduleInjectors.containsKey(_currentModuleContext)) {
+      return _moduleInjectors[_currentModuleContext]!;
+    }
+
+    // Fallback para o injector principal (AppModule)
+    return _injector;
+  }
 
   // Sistema de fila sequencial para operações de módulos
   final Queue<Future<void> Function()> _operationQueue = Queue<Future<void> Function()>();
@@ -79,25 +105,53 @@ class InjectionManager {
     await registerBindsModule(module);
   }
 
-  /// Coleta recursivamente todos os binds de imports aninhados
+  /// Cria um injector exportado para módulos importados (com cache)
+  /// Referência: flutter_modular linha 261-273
+  ai.AutoInjector _createExportedInjector(Module importedModule) {
+    final importTag = importedModule.runtimeType.toString();
+
+    if (_importedInjectors.containsKey(importTag)) {
+      return _importedInjectors[importTag]!;
+    }
+
+    final exportedInject = _createInjector(importedModule, '${importTag}_Imported');
+    _importedInjectors[importTag] = exportedInject;
+
+    return exportedInject;
+  }
+
   /// Cria um injector para o módulo seguindo o padrão do flutter_modular
   /// Referência: modular_core/lib/src/tracker.dart linha 275-284
-  ai.AutoInjector _createInjector(Module module, String tag) {
+  ai.AutoInjector _createInjector(Module module, String tag, {bool trackImports = false}) {
     final newInjector = ai.AutoInjector(tag: tag);
+
+    // Rastrear imports deste módulo (para validação de acesso)
+    if (trackImports) {
+      _moduleImports[module.runtimeType] = <Type>{};
+    }
 
     // Adicionar injectors dos módulos importados primeiro
     final imports = module.imports();
     final importsList = imports is Future ? <Module>[] : imports;
 
     for (final importedModule in importsList) {
-      final importTag = '${importedModule.runtimeType}_Imported';
-      final exportedInjector = _createInjector(importedModule, importTag);
+      // Usar injector exportado com cache
+      final exportedInjector = _createExportedInjector(importedModule);
       newInjector.addInjector(exportedInjector);
+
+      // Rastrear que este módulo importa o módulo importado
+      if (trackImports) {
+        _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
+      }
     }
 
     // Chamar module.binds() passando o injector diretamente
     // O módulo registra seus binds usando i.add(), i.addSingleton(), etc
     module.binds(Injector.fromAutoInjector(newInjector));
+
+    // IMPORTANTE: Commitar o injector após registrar todos os binds
+    // Isso permite que os binds sejam resolvidos corretamente
+    newInjector.commit();
 
     // Inicializar estado do módulo
     module.initState(Injector.fromAutoInjector(newInjector));
@@ -116,18 +170,18 @@ class InjectionManager {
 
     // Criar injector para o módulo seguindo o padrão do flutter_modular
     final moduleTag = '${module.runtimeType}_${DateTime.now().millisecondsSinceEpoch}';
-    final moduleInjector = _createInjector(module, moduleTag);
+    final moduleInjector = _createInjector(module, moduleTag, trackImports: true);
 
     _moduleInjectors[module.runtimeType] = moduleInjector;
     _activeModuleTags[module.runtimeType] = moduleTag;
 
-    // Seguir exatamente o padrão do flutter_modular (linha 210-212):
-    // 1. uncommit() antes de adicionar novos injectors
-    // 2. addInjector()
-    // 3. commit() após adicionar todos os injectors
-    _injector.uncommit();
-    _injector.addInjector(moduleInjector);
-    _injector.commit();
+    // IMPORTANTE: Apenas adicionar ao injector principal se for AppModule
+    // Outros módulos ficam isolados em seus próprios injectors
+    if (module == _appModule) {
+      _injector.uncommit();
+      _injector.addInjector(moduleInjector);
+      _injector.commit();
+    }
 
     if (debugLog) {
       log('💉 INJECTED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
@@ -182,8 +236,11 @@ class InjectionManager {
       // Limpar mapas de módulos primeiro
       _moduleInjectors.clear();
       _activeModuleTags.clear();
+      _importedInjectors.clear();
+      _moduleImports.clear();
 
-      // Resetar o app module
+      // Resetar contexto e app module
+      _currentModuleContext = null;
       _appModule = null;
 
       // Criar um novo injector principal para limpeza completa

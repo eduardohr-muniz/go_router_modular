@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/core/bind.dart';
 import 'package:go_router_modular/src/internal/asserts/go_router_modular_configure_assert.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
@@ -53,7 +54,16 @@ class GoRouterModular {
   ///   ```dart
   ///   final myService = GoRouterModular.get<MyService>();
   ///   ```
-  static T get<T>({String? key}) => Bind.get<T>(key: key);
+  static T get<T>({String? key}) {
+    // Usar o injector contextual para respeitar o isolamento de módulos
+    try {
+      final contextualInjector = InjectionManager.instance.getContextualInjector();
+      return contextualInjector.get<T>(key: key);
+    } catch (e) {
+      // Fallback para o sistema antigo se necessário
+      return Bind.get<T>(key: key);
+    }
+  }
 
   /// Returns the current route path based on the [BuildContext].
   ///

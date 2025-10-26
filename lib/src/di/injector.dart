@@ -12,13 +12,14 @@ class Injector {
 
   T get<T>({String? key}) {
     try {
-      // Se temos um auto_injector específico, usar ele
+      // Se temos um auto_injector específico (contexto de módulo), usar ele
       if (_autoInjector != null) {
         return _autoInjector.get<T>(key: key);
       }
 
-      // Caso contrário, usar o injector global
-      final instance = InjectionManager.instance.injector.get<T>(key: key);
+      // Caso contrário, usar o injector contextual (módulo atual ou AppModule)
+      final contextualInjector = InjectionManager.instance.getContextualInjector();
+      final instance = contextualInjector.get<T>(key: key);
       return instance;
     } catch (e) {
       return Bind.get<T>(key: key); // Fallback to old system if needed
@@ -27,14 +28,20 @@ class Injector {
 
   /// Métodos para registrar binds diretamente (padrão flutter_modular)
   void add<T>(T Function() builder, {String? key}) {
-    _autoInjector?.add<T>(builder, key: key);
+    if (_autoInjector != null) {
+      _autoInjector.add<T>(builder, key: key);
+    }
   }
 
   void addSingleton<T>(T Function() builder, {String? key}) {
-    _autoInjector?.addSingleton<T>(builder, key: key);
+    if (_autoInjector != null) {
+      _autoInjector.addSingleton<T>(builder, key: key);
+    }
   }
 
   void addLazySingleton<T>(T Function() builder, {String? key}) {
-    _autoInjector?.addLazySingleton<T>(builder, key: key);
+    if (_autoInjector != null) {
+      _autoInjector.addLazySingleton<T>(builder, key: key);
+    }
   }
 }
