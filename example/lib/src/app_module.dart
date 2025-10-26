@@ -13,19 +13,15 @@ class AppModule extends Module {
 
   @override
   List<ModularRoute> get routes => [
+        // Home - Fade
         ModuleRoute('/', module: HomeModule()),
+        // Event - Slide Right to Left
         ModuleRoute('/event', module: ExampleEventModule()),
-        ModuleRoute(
-          '/auto-resolve',
-          module: AutoResolveModule(),
-        ),
-        ModuleRoute(
-          '/shell',
-          module: ShellModule(),
-        ),
-        ModuleRoute(
-          '/binds-by-key',
-          module: BindsByKeyModule(),
-        )
+        // Auto Resolve - Rotate
+        ModuleRoute('/auto-resolve', module: AutoResolveModule()),
+        // Shell - Scale
+        ModuleRoute('/shell', module: ShellModule()),
+        // Binds by Key - Slide Bottom to Top
+        ModuleRoute('/binds-by-key', module: BindsByKeyModule())
       ];
 }

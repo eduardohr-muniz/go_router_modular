@@ -5,7 +5,6 @@ import 'package:auto_injector/auto_injector.dart';
 import 'package:go_router_modular/go_router_modular.dart' as go_router_modular;
 import 'package:go_router_modular/src/internal/setup.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
-import '_bind_resolver.dart';
 import '_module_registry.dart';
 
 /// InjectionManager usando AutoInjector com isolamento via prefixos de módulo
@@ -34,9 +33,6 @@ class InjectionManager {
 
   /// Registry para rastrear módulos
   final ModuleRegistry _registry = ModuleRegistry();
-
-  /// Resolver para binds
-  late final BindResolver _resolver = BindResolver(_autoInjector, _registry);
 
   /// Cadeia de dependências para rastrear resoluções aninhadas
   final List<String> _dependencyChain = [];
@@ -71,7 +67,8 @@ class InjectionManager {
 
   /// Obtém uma instância tentando diferentes contextos (módulo atual, imports, AppModule)
   T getWithModuleContext<T extends Object>({String? key}) {
-    return _resolver.resolve<T>(key: key);
+    final contextualInjector = getContextualInjector();
+    return contextualInjector.get<T>(key: key);
   }
 
   /// Obtém o AutoInjector correto baseado no contexto do módulo atual

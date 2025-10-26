@@ -18,7 +18,12 @@ class AutoResolveModule extends Module {
 
   @override
   List<ModularRoute> get routes => [
-        ChildRoute('/', child: (context, args) => const AutoResolveModuleWidget()),
+        ChildRoute(
+          '/',
+          child: (context, args) => const AutoResolveModuleWidget(),
+          transition: GoTransitions.fade,
+          duration: const Duration(milliseconds: 600),
+        ),
       ];
 
   @override

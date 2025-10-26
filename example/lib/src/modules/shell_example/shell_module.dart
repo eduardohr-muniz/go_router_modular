@@ -47,6 +47,8 @@ class ProfileModule extends Module {
         ChildRoute(
           '/',
           child: (context, state) => const ProfilePage(),
+          transition: GoTransitions.scale,
+          duration: const Duration(milliseconds: 500),
         ),
       ];
 
@@ -74,6 +76,8 @@ class SettingsModule extends Module {
         ChildRoute(
           '/',
           child: (context, state) => const SettingsPage(),
+          transition: GoTransitions.slide.toTop,
+          duration: const Duration(milliseconds: 400),
         ),
       ];
 

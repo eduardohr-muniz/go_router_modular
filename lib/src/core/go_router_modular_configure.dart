@@ -7,7 +7,6 @@ import 'package:go_router_modular/src/core/bind.dart';
 import 'package:go_router_modular/src/internal/asserts/go_router_modular_configure_assert.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
 import 'package:go_router_modular/src/core/module.dart';
-import 'package:go_router_modular/src/routing/page_transition_enum.dart';
 
 /// Alias to simplify the use of GoRouterModular.
 typedef Modular = GoRouterModular;
@@ -32,20 +31,18 @@ class GoRouterModular {
     return GoRouter.of(context);
   }
 
-  /// Default page transition configuration.
-  ///
-  /// Returns the type of transition configured in [configure].
-  /// Throws an exception if [configure] has not been called yet.
-  static PageTransition get getDefaultPageTransition {
-    assert(_pageTansition != null, 'Add GoRouterModular.configure in main.dart');
-    return _pageTansition!;
-  }
-
   /// Private router instance.
   static GoRouter? _router;
 
-  /// Default page transition type.
-  static PageTransition? _pageTansition;
+  /// Default GoTransition
+  static GoTransition? _defaultTransition;
+
+  /// Default duration for transitions
+  static Duration _defaultDuration = const Duration(milliseconds: 300);
+
+  static GoTransition? get getDefaultTransition => _defaultTransition;
+
+  static Duration get getDefaultDuration => _defaultDuration;
 
   /// Retrieves a registered dependency from the injection container.
   ///
@@ -107,7 +104,8 @@ class GoRouterModular {
   ///   - `navigatorKey`: Global navigator key.
   ///   - `restorationScopeId`: Identifier for restoration scope.
   ///   - `requestFocus`: Defines whether focus will be requested automatically.
-  ///   - `pageTransition`: Configures the default page transition.
+  ///   - `defaultTransition`: Configures the default transition (GoTransition).
+  ///   - `defaultDuration`: Configures the default duration for transitions.
   ///   - `delayDisposeMilliseconds`: Time to wait before disposing a module in milliseconds.
   ///
   /// - **Returns**: A future instance of [GoRouter].
@@ -138,13 +136,15 @@ class GoRouterModular {
     GlobalKey<NavigatorState>? navigatorKey,
     String? restorationScopeId,
     bool requestFocus = true,
-    PageTransition pageTransition = PageTransition.fade,
+    GoTransition? defaultTransition,
+    Duration defaultDuration = const Duration(milliseconds: 300),
     int delayDisposeMilliseconds = 1000,
     bool debugLogEventBus = false,
     bool autoDisposeEventsBus = true,
   }) async {
     if (_router != null) return _router!;
-    _pageTansition = pageTransition;
+    _defaultTransition = defaultTransition;
+    _defaultDuration = defaultDuration;
 
     GoRouter.optionURLReflectsImperativeAPIs = true;
 

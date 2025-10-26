@@ -30,6 +30,8 @@ class BindsByKeyModule extends Module {
       ChildRoute(
         '/',
         child: (context, state) => const BindByKeyPage(),
+        transition: GoTransitions.slide.toBottom,
+        duration: const Duration(milliseconds: 500),
       ),
     ];
   }

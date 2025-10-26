@@ -91,13 +91,24 @@ abstract class Module {
     return GoRoute(
       path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
       name: childRoute?.name ?? module.name,
-      builder: (context, state) => ParentWidgetObserver(
-        // initState: (module) async {},
-        onDispose: (module) => _disposeModule(module),
-        didChangeDependencies: (module) => _onDidChange(module),
-        module: module.module,
-        child: childRoute!.child(context, state),
-      ),
+      builder: childRoute?.pageBuilder != null
+          ? null
+          : (context, state) => ParentWidgetObserver(
+                onDispose: (module) => _disposeModule(module),
+                didChangeDependencies: (module) => _onDidChange(module),
+                module: module.module,
+                child: childRoute!.child(context, state),
+              ),
+      pageBuilder: childRoute?.pageBuilder != null
+          ? (context, state) => childRoute!.pageBuilder!(context, state)
+          : childRoute?.transition != null
+              ? (context, state) => _buildCustomTransitionPageForModule(
+                    context,
+                    state: state,
+                    route: childRoute!,
+                    module: module.module,
+                  )
+              : null,
       routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: childRoute?.parentNavigatorKey,
       redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: childRoute?.redirect, topLevel: topLevel),
@@ -200,12 +211,69 @@ abstract class Module {
   }
 
   Page<void> _buildCustomTransitionPage(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
-    return CustomTransitionPage(
+    // Usar GoTransition do go_transitions
+    final transition = route.transition ?? Modular.getDefaultTransition;
+    final duration = route.duration ?? Modular.getDefaultDuration;
+
+    // Configure default duration se fornecida
+    if (duration != const Duration(milliseconds: 300)) {
+      GoTransition.defaultDuration = duration;
+    }
+
+    if (transition != null) {
+      final pageBuilder = transition.build(
+        builder: (context, state) => ParentWidgetObserver(
+          onDispose: (module) => _disposeModule(module),
+          didChangeDependencies: (module) => _onDidChange(module),
+          module: this,
+          child: route.child(context, state),
+        ),
+      );
+      return pageBuilder(context, state);
+    }
+
+    // Fallback para página sem transição
+    return MaterialPage(
       key: state.pageKey,
-      child: route.child(context, state),
-      transitionsBuilder: Transition.builder(
-        configRouteManager: () {},
-        pageTransition: route.pageTransition ?? Modular.getDefaultPageTransition,
+      child: ParentWidgetObserver(
+        onDispose: (module) => _disposeModule(module),
+        didChangeDependencies: (module) => _onDidChange(module),
+        module: this,
+        child: route.child(context, state),
+      ),
+    );
+  }
+
+  Page<void> _buildCustomTransitionPageForModule(BuildContext context, {required GoRouterState state, required ChildRoute route, required Module module}) {
+    // Usar GoTransition do go_transitions
+    final transition = route.transition ?? Modular.getDefaultTransition;
+    final duration = route.duration ?? Modular.getDefaultDuration;
+
+    // Configure default duration se fornecida
+    if (duration != const Duration(milliseconds: 300)) {
+      GoTransition.defaultDuration = duration;
+    }
+
+    if (transition != null) {
+      final pageBuilder = transition.build(
+        builder: (context, state) => ParentWidgetObserver(
+          onDispose: (m) => _disposeModule(m),
+          didChangeDependencies: (m) => _onDidChange(m),
+          module: module,
+          child: route.child(context, state),
+        ),
+      );
+      return pageBuilder(context, state);
+    }
+
+    // Fallback para página sem transição
+    return MaterialPage(
+      key: state.pageKey,
+      child: ParentWidgetObserver(
+        onDispose: (m) => _disposeModule(m),
+        didChangeDependencies: (m) => _onDidChange(m),
+        module: module,
+        child: route.child(context, state),
       ),
     );
   }

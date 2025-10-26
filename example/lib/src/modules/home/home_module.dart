@@ -24,10 +24,14 @@ class HomeModule extends Module {
       ChildRoute(
         '/',
         child: (context, state) => const HomePage(),
+        transition: GoTransitions.fade,
+        duration: const Duration(milliseconds: 400),
       ),
       ChildRoute(
         '/demo',
         child: (context, state) => const DemoPage(),
+        transition: GoTransitions.scale,
+        duration: const Duration(milliseconds: 500),
       ),
     ];
   }

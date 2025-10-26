@@ -10,7 +10,8 @@ class ChildRoute extends ModularRoute {
   final GlobalKey<NavigatorState>? parentNavigatorKey;
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
   final FutureOr<bool> Function(BuildContext context, GoRouterState state)? onExit;
-  final PageTransition? pageTransition;
+  final GoTransition? transition;
+  final Duration? duration;
 
   ChildRoute(
     this.path, {
@@ -20,6 +21,17 @@ class ChildRoute extends ModularRoute {
     this.parentNavigatorKey,
     this.redirect,
     this.onExit,
-    this.pageTransition,
+    this.transition,
+    this.duration,
   });
+
+  /// Resolves the transition for this route, inheriting from parent scope if not defined
+  GoTransition? resolveTransition(GoTransition? parentTransition) {
+    return transition ?? parentTransition;
+  }
+
+  /// Resolves the duration for this route, inheriting from parent scope if not defined
+  Duration? resolveDuration(Duration? parentDuration) {
+    return duration ?? parentDuration;
+  }
 }
