@@ -204,8 +204,21 @@ void main() {
         );
       });
 
-      // REMOVIDO: Limitação do GetIt - unregister remove completamente o bind
-      // test('should handle dispose of interface bind correctly')
+      test('should handle dispose of interface bind correctly', () {
+        // Arrange
+        final bind = Bind.singleton<IService>((i) => ServiceImpl());
+        Bind.register(bind);
+
+        final service = Bind.get<IService>();
+        expect(service, isA<IService>());
+
+        // Act
+        Bind.dispose<IService>();
+
+        // Assert - Seguindo padrão auto_injector: bind continua registrado
+        final newService = Bind.get<IService>();
+        expect(newService, isNot(same(service)));
+      });
     });
 
     group('Typed Injection Tests - Padrão auto_injector', () {

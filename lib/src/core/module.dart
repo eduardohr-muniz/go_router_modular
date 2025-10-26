@@ -6,8 +6,11 @@ import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
 import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
 
+typedef FutureModules = FutureOr<List<Module>>;
+typedef FutureBinds = FutureOr<void>;
+
 abstract class Module {
-  FutureOr<List<Module>> imports() => [];
+  FutureModules imports() => const [];
 
   /// Seguindo o padrão do flutter_modular: recebe o injector e registra os binds diretamente
   void binds(Injector i) {}

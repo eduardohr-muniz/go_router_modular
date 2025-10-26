@@ -107,14 +107,14 @@ class InjectionManager {
 
   /// Cria um injector exportado para módulos importados (com cache)
   /// Referência: flutter_modular linha 261-273
-  ai.AutoInjector _createExportedInjector(Module importedModule) {
+  Future<ai.AutoInjector> _createExportedInjector(Module importedModule) async {
     final importTag = importedModule.runtimeType.toString();
 
     if (_importedInjectors.containsKey(importTag)) {
       return _importedInjectors[importTag]!;
     }
 
-    final exportedInject = _createInjector(importedModule, '${importTag}_Imported');
+    final exportedInject = await _createInjector(importedModule, '${importTag}_Imported');
     _importedInjectors[importTag] = exportedInject;
 
     return exportedInject;
@@ -122,7 +122,7 @@ class InjectionManager {
 
   /// Cria um injector para o módulo seguindo o padrão do flutter_modular
   /// Referência: modular_core/lib/src/tracker.dart linha 275-284
-  ai.AutoInjector _createInjector(Module module, String tag, {bool trackImports = false}) {
+  Future<ai.AutoInjector> _createInjector(Module module, String tag, {bool trackImports = false}) async {
     final newInjector = ai.AutoInjector(tag: tag);
 
     // Rastrear imports deste módulo (para validação de acesso)
@@ -131,12 +131,12 @@ class InjectionManager {
     }
 
     // Adicionar injectors dos módulos importados primeiro
-    final imports = module.imports();
-    final importsList = imports is Future ? <Module>[] : imports;
+    final imports = await module.imports();
+    final importsList = imports is List ? imports : <Module>[];
 
     for (final importedModule in importsList) {
       // Usar injector exportado com cache
-      final exportedInjector = _createExportedInjector(importedModule);
+      final exportedInjector = await _createExportedInjector(importedModule);
       newInjector.addInjector(exportedInjector);
 
       // Rastrear que este módulo importa o módulo importado
@@ -170,7 +170,7 @@ class InjectionManager {
 
     // Criar injector para o módulo seguindo o padrão do flutter_modular
     final moduleTag = '${module.runtimeType}_${DateTime.now().millisecondsSinceEpoch}';
-    final moduleInjector = _createInjector(module, moduleTag, trackImports: true);
+    final moduleInjector = await _createInjector(module, moduleTag, trackImports: true);
 
     _moduleInjectors[module.runtimeType] = moduleInjector;
     _activeModuleTags[module.runtimeType] = moduleTag;

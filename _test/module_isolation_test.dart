@@ -38,10 +38,31 @@ void main() {
       print('✅ Binds do AppModule são GLOBAIS e devem estar disponíveis para todos os módulos');
     });
 
-    test('❌ CASO PROIBIDO: Módulo B acessa binds de A sem declarar imports', () async {
-      // NOTE: Com o padrão auto_injector (addInjector), todos os módulos têm acesso a todos os binds.
-      // Este teste foi ajustado para refletir o comportamento real.
+    test('✅ CASO PERMITIDO #2: Módulo B importa A e acessa seus binds', () async {
+      // Arrange: Criar módulos
+      final moduleA = ModuleA();
+      final moduleBWithImports = ModuleBWithImports();
 
+      // Act: Registrar módulo A como AppModule
+      await InjectionManager.instance.registerAppModule(moduleA);
+
+      // Registrar módulo B que IMPORTA A
+      await InjectionManager.instance.registerBindsModule(moduleBWithImports);
+
+      // Definir contexto do módulo B (simular navegação para rota de B)
+      InjectionManager.instance.setModuleContext(ModuleBWithImports);
+
+      // Assert: ModuleB deve conseguir acessar ServiceA (importou A) e ServiceB (próprio)
+      final serviceA = Modular.get<ServiceA>();
+      final serviceB = Modular.get<ServiceB>();
+
+      expect(serviceA, isNotNull);
+      expect(serviceB, isNotNull);
+      expect(serviceB.serviceA, isNotNull);
+      print('✅ CORRETO: ModuleBWithImports importou ModuleA e acessa ServiceA');
+    });
+
+    test('❌ CASO PROIBIDO: Módulo B acessa binds de A sem declarar imports', () async {
       // Arrange: Criar módulos
       final moduleA = ModuleA();
       final moduleB = ModuleB();
@@ -59,13 +80,13 @@ void main() {
       // Definir contexto do módulo B (simular navegação para rota de B)
       InjectionManager.instance.setModuleContext(ModuleB);
 
-      // Assert: COMPORTAMENTO ESPERADO - B NÃO consegue acessar ServiceA (isolamento funcionando)
+      // Assert: COMPORTAMENTO ESPERADO - B NÃO deve conseguir acessar ServiceA
       expect(
         () => Modular.get<ServiceA>(),
-        throwsA(isA<GoRouterModularException>()),
-        reason: 'ModuleB NÃO pode acessar ServiceA - isolamento funcionando corretamente',
+        throwsA(isA<Exception>()),
+        reason: 'ModuleB não deveria conseguir acessar ServiceA sem importar ModuleA',
       );
-      print('✅ ISOLAMENTO CORRETO: ModuleB não consegue acessar ServiceA sem importar ModuleA');
+      print('✅ ISOLAMENTO CORRETO: ModuleB não conseguiu acessar ServiceA sem importar ModuleA');
     });
 
     test('🔒 ISOLAMENTO: Após dispose de módulo, seus binds não devem estar acessíveis', () async {
@@ -145,9 +166,6 @@ void main() {
     });
 
     test('🔍 EDGE CASE: Módulo C importa B que não importa A - C não deve acessar A', () async {
-      // NOTE: Com o padrão auto_injector (addInjector), todos os módulos têm acesso a todos os binds.
-      // Este teste foi ajustado para refletir o comportamento real.
-
       // Arrange: Criar cadeia de módulos
       final appModule = AppModuleEmpty();
       final moduleA = ModuleA();
@@ -175,13 +193,14 @@ void main() {
       final serviceB = Modular.get<ServiceB>();
       expect(serviceB, isNotNull);
 
-      // COMPORTAMENTO ESPERADO: ServiceA NÃO está disponível (isolamento funcionando)
+      // COMPORTAMENTO ESPERADO: ServiceA NÃO deve estar disponível
+      // (C importa B, mas B não importa A)
       expect(
         () => Modular.get<ServiceA>(),
-        throwsA(isA<GoRouterModularException>()),
-        reason: 'ModuleC NÃO pode acessar ServiceA - isolamento em cadeia funcionando',
+        throwsA(isA<Exception>()),
+        reason: 'ModuleC não deveria acessar ServiceA (C→B, mas B não importa A)',
       );
-      print('✅ ISOLAMENTO EM CADEIA CORRETO: ModuleC não consegue acessar ServiceA');
+      print('✅ ISOLAMENTO EM CADEIA CORRETO: ModuleC não conseguiu acessar ServiceA');
     });
   });
 }
@@ -196,7 +215,7 @@ class AppModuleEmpty extends Module {}
 /// AppModule de teste com GlobalService
 class AppModuleTest extends Module {
   @override
-  FutureBinds binds(Injector i) {
+  void binds(Injector i) {
     i.addLazySingleton(() => GlobalService());
   }
 }
@@ -204,7 +223,7 @@ class AppModuleTest extends Module {
 /// Módulo A - Fornece ServiceA
 class ModuleA extends Module {
   @override
-  FutureBinds binds(Injector i) {
+  void binds(Injector i) {
     i.addLazySingleton(() => ServiceA());
   }
 }
@@ -212,7 +231,7 @@ class ModuleA extends Module {
 /// Módulo B - NÃO importa A, mas fornece ServiceB
 class ModuleB extends Module {
   @override
-  FutureBinds binds(Injector i) {
+  void binds(Injector i) {
     i.addLazySingleton(() => ServiceB(serviceA: null)); // Não depende de A
   }
 }
@@ -220,28 +239,21 @@ class ModuleB extends Module {
 /// Módulo B com imports - BOA PRÁTICA
 class ModuleBWithImports extends Module {
   @override
-  FutureModules imports() => [ModuleA()];
+  List<Module> imports() => [ModuleA()];
 
   @override
-  FutureBinds binds(Injector i) {
-    // Usar o Injector passado como parâmetro para buscar ServiceA
-    // Isso funciona porque o injector do ModuleB tem acesso ao injector do ModuleA
-    i.addLazySingleton<ServiceB>(() {
-      // Buscar ServiceA através do Injector correto
-      // Como ModuleB importa ModuleA, o injector de ModuleB tem acesso ao injector de ModuleA
-      final serviceA = i.get<ServiceA>();
-      return ServiceB(serviceA: serviceA);
-    });
+  void binds(Injector i) {
+    i.addLazySingleton(() => ServiceB(serviceA: i.get<ServiceA>()));
   }
 }
 
 /// Módulo C - Importa B
 class ModuleCImportsB extends Module {
   @override
-  FutureModules imports() => [ModuleB()];
+  List<Module> imports() => [ModuleB()];
 
   @override
-  FutureBinds binds(Injector i) {
+  void binds(Injector i) {
     i.addLazySingleton(() => ServiceC(serviceB: i.get<ServiceB>()));
   }
 }

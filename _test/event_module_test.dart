@@ -105,9 +105,9 @@ class EmptyTestModule extends EventModule {
 // Mock do Injector para testes
 class MockInjector extends Injector {
   @override
-  T get<T extends Object?>({String? key}) => throw UnimplementedError();
+  T get<T>({String? key}) => throw UnimplementedError();
 
-  T call<T extends Object?>({String? key}) => throw UnimplementedError();
+  T call<T>({String? key}) => throw UnimplementedError();
 }
 
 void main() {
