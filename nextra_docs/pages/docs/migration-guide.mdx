@@ -1,142 +1,110 @@
-# 🔄 Migration Guide
+# Migration Guide
 
-Simple guide to migrate to the new **Bind.get()** API with keys support.
+Migrate from the old `binds()` list to the new `binds(Injector i)` function.
 
-## 🎯 What Changed?
+## What Changed?
 
-The new **Bind.get()** API allows retrieving specific dependencies using keys, solving the problem of multiple instances of the same type.
+The bind registration system changed from returning a list to using a function with an injector.
 
-## 📋 Before vs After
+## Before vs After
 
-### ❌ Before (Old API)
+### ❌ Old Way
 
 ```dart
-// Registration
+class MyModule extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() => [
+    Bind.singleton<ApiService>((i) => ApiService()),
+    Bind.singleton<DatabaseService>((i) => DatabaseService()),
+  ];
+}
+```
+
+### ✅ New Way
+
+```dart
 class MyModule extends Module {
   @override
   void binds(Injector i) {
-    i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api1.com'), key: 'api1');
-    i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api2.com')); // No key
+    i.addSingleton<ApiService>(() => ApiService());
+    i.addSingleton<DatabaseService>(() => DatabaseService());
   }
 }
-
-// Retrieval - PROBLEM: always returned the last registered
-final client = Modular.get<ApiClient>(); // ❌ Always api2, never api1
 ```
 
-### ✅ After (New API)
+## Migration Steps
+
+### 1. Change Method Signature
 
 ```dart
-// Registration
+// Old
+@override
+FutureOr<List<Bind<Object>>> binds() => [
+  Bind.singleton<MyService>((i) => MyService()),
+];
+
+// New
+@override
+void binds(Injector i) {
+  i.addSingleton<MyService>(() => MyService());
+}
+```
+
+### 2. Update Registration Syntax
+
+```dart
+// Old
+Bind.singleton<ApiService>((i) => ApiService(), key: 'main')
+
+// New
+i.addSingleton<ApiService>(() => ApiService(), key: 'main')
+```
+
+### 3. Use Keys When Needed
+
+```dart
+@override
+void binds(Injector i) {
+  i.addSingleton<ApiService>(() => ApiService(), key: 'main');
+  i.addSingleton<ApiService>(() => ApiService(), key: 'backup');
+}
+```
+
+## Benefits
+
+- ✅ **Cleaner syntax** - No more Bind wrapper
+- ✅ **Better performance** - Direct registration
+- ✅ **Easier to read** - More intuitive API
+- ✅ **Same functionality** - All features preserved
+
+## Complete Example
+
+```dart
 class MyModule extends Module {
   @override
   void binds(Injector i) {
-    i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api1.com'), key: 'api1');
-    i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api2.com'), key: 'api2');
+    i.addSingleton<ApiService>(() => ApiService(), key: 'main');
+    i.addSingleton<DatabaseService>(() => DatabaseService());
+    i.add<CacheService>(() => CacheService());
   }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => MyPage()),
+  ];
 }
 
-// Retrieval - SOLUTION: specific access to each instance
-final api1 = Bind.get<ApiClient>(key: 'api1'); // ✅ Client api1
-final api2 = Bind.get<ApiClient>(key: 'api2'); // ✅ Client api2
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final apiService = context.read<ApiService>(key: 'main');
+    final dbService = context.read<DatabaseService>();
+    
+    return Scaffold(
+      body: Text('Services loaded successfully!'),
+    );
+  }
+}
 ```
 
-## 🚀 Migration in 3 Steps
-
-### 1. Add specific keys in registration
-
-```dart
-// ❌ Before
-i.addSingleton<ApiClient>(() => ApiClient(), key: 'api1');
-i.addSingleton<ApiClient>(() => ApiClient()); // No key
-
-// ✅ After
-i.addSingleton<ApiClient>(() => ApiClient(), key: 'api1');
-i.addSingleton<ApiClient>(() => ApiClient(), key: 'api2');
-```
-
-### 2. Replace Modular.get() with Bind.get()
-
-```dart
-// ❌ Before
-final client = Modular.get<ApiClient>();
-
-// ✅ After
-final client = Bind.get<ApiClient>(key: 'api1');
-```
-
-### 3. Use consistent keys
-
-```dart
-// ✅ Registration and retrieval with the same key
-i.addSingleton<ApiClient>(() => ApiClient(), key: 'main');
-final client = Bind.get<ApiClient>(key: 'main');
-```
-
-## 🔑 Use Cases
-
-### Multiple APIs
-```dart
-i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api1.com'), key: 'api1');
-i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api2.com'), key: 'api2');
-
-final api1 = Bind.get<ApiClient>(key: 'api1');
-final api2 = Bind.get<ApiClient>(key: 'api2');
-```
-
-### Environments (Dev/Prod)
-```dart
-i.addSingleton<ApiService>(() => ApiService(baseUrl: 'http://localhost'), key: 'dev');
-i.addSingleton<ApiService>(() => ApiService(baseUrl: 'https://prod.com'), key: 'prod');
-
-final devApi = Bind.get<ApiService>(key: 'dev');
-final prodApi = Bind.get<ApiService>(key: 'prod');
-```
-
-### Testing
-```dart
-i.addSingleton<UserService>(() => UserService(), key: 'real');
-i.addSingleton<UserService>(() => MockUserService(), key: 'mock');
-
-final mockService = Bind.get<UserService>(key: 'mock');
-```
-
-## ⚠️ Important Points
-
-- **Keys are optional**: No key = default instance
-- **Keys must be consistent**: Same key in registration and retrieval
-- **Don't duplicate keys**: Each key must be unique
-
-## 🆘 Common Issues
-
-### "Bind not found"
-```dart
-// ❌ Key doesn't exist
-final service = Bind.get<ApiService>(key: 'nonexistent');
-
-// ✅ Check if the key was registered
-i.addSingleton<ApiService>(() => ApiService(), key: 'api');
-final service = Bind.get<ApiService>(key: 'api');
-```
-
-### "Key already registered"
-```dart
-// ❌ Duplicate key
-i.addSingleton<ApiService>(() => ApiService(), key: 'api');
-i.addSingleton<ApiService>(() => ApiService(), key: 'api');
-
-// ✅ Use different keys
-i.addSingleton<ApiService>(() => ApiService(), key: 'api1');
-i.addSingleton<ApiService>(() => ApiService(), key: 'api2');
-```
-
-## 🔧 Quick Checklist
-
-- [ ] Add specific keys in `binds()`
-- [ ] Replace `Modular.get<T>()` with `Bind.get<T>(key: 'key')`
-- [ ] Test if all dependencies are found
-- [ ] Check for duplicate keys
-
----
-
-**🎉 Done!** Your app now uses the new **Bind.get()** API with keys!
+That's it! Your migration is complete.

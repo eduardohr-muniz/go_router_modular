@@ -1,49 +1,57 @@
-# 📝 Changelog
+# Changelog
 
 History of changes and updates to GoRouter Modular.
 
-## [2.0.0] - 2024-01-XX
+## [5.0.0] - 2024-12-XX
 
-### ✨ New Features
-- EventModule for inter-module communication
-- Improved Keys system
-- Full microfrontend support
-- Enhanced loader system
+### Breaking Changes
+* **Transition System**: Replaced custom transition system with go_transitions package
+  - **BREAKING**: `PageTransition` enum is removed, use `GoTransition` from go_transitions
+  - **BREAKING**: `transition` property in routes now uses `GoTransition` instead of `PageTransition`
+  - **BREAKING**: `pageTransition` parameter in `GoRouterModular.configure()` is removed
+  - Migration example:
+    ```dart
+    // Before (4.2.x):
+    ChildRoute('/', child: (_, __) => HomePage(), transition: PageTransition.fade)
+    
+    // After (5.0.x):
+    ChildRoute('/', child: (_, __) => HomePage(), transition: GoTransitions.fade)
+    ```
 
-### 🔧 Improvements
-- Optimized performance for large applications
-- Completely rewritten documentation
-- Added practical examples
-- Expanded unit tests
+### Added
+* **Enhanced Dependency Injection**: New `Bind.get<T>()` API with key support
+  - Support for retrieving dependencies with unique keys
+  - Better type safety and error handling
+  - Improved service composition capabilities
+  - Alternative bind registration using `binds(Injector i)` function
+  - Example:
+    ```dart
+    // New API with keys
+    final apiService = Bind.get<ApiService>(key: 'api');
+    
+    // Alternative registration (optional)
+    @override
+    void binds(Injector i) {
+      i.addLazySingleton<MyService>(() => MyService());
+    }
+    ```
 
-### 🐛 Bug Fixes
-- Fixed memory leaks in EventModule
-- Stabilized navigation system
-- Better error handling
+* **Advanced Transition System**: Integrated go_transitions package
+  - Rich set of built-in transitions (fade, slide, scale, rotate, etc.)
+  - Transition inheritance system (child routes inherit from parent modules)
+  - Customizable duration and curve settings
 
-### ⚠️ Breaking Changes
-- Changed initial configuration API
-- Reorganized module structure
+### Fixed
+* Fixed dependency injection issues with transitions
+* Improved module lifecycle management
+* Better error handling and debugging
 
-## [1.5.0] - 2023-12-XX
+## [4.2.0] - 2024-11-XX
 
-### ✨ New Features
-- Shell modules for shared layouts
-- Asynchronous navigation
-- Improved query parameters support
+### Added
+* Initial transition system
+* Basic dependency injection
+* Module architecture
 
-### 🔧 Improvements
-- Optimized dependency injection
-- Better integration with official GoRouter
-
-## [1.0.0] - 2023-10-XX
-
-### 🎉 Initial Release
-- Modular navigation system
-- Dependency injection
-- GoRouter integration
-- Basic documentation
-
----
-
-For more detailed updates, check out the [GitHub releases](https://github.com/Flutterando/go_router_modular/releases).
+### Fixed
+* Various bug fixes and improvements

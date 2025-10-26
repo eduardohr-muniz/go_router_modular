@@ -1,350 +1,121 @@
 # Transition Examples
 
-This page provides practical examples of how to implement page transitions in Go Router Modular applications.
+Real-world examples to get you started quickly.
 
-## Basic Transition Examples
+## Basic Examples
 
-### Fade Transitions
+### Fade Transition
 
 ```dart
-class FadeExampleModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/fade',
-      module: FadeExampleModule(),
-      transition: GoTransitions.fade,
-      duration: Duration(milliseconds: 300),
-    ),
-  ];
-}
+ModuleRoute('/home', module: HomeModule(),
+  transition: GoTransitions.fade,
+  duration: Duration(milliseconds: 300))
 ```
 
-### Slide Transitions
+### Slide Transition
 
 ```dart
-class SlideExampleModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/slide',
-      module: SlideExampleModule(),
-      transition: GoTransitions.slide.toRight,
-      duration: Duration(milliseconds: 400),
-    ),
-  ];
-}
+ModuleRoute('/products', module: ProductsModule(),
+  transition: GoTransitions.slide.toRight,
+  duration: Duration(milliseconds: 400))
 ```
 
-### Scale Transitions
+### Scale Transition
 
 ```dart
-class ScaleExampleModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/scale',
-      module: ScaleExampleModule(),
-      transition: GoTransitions.scale.withFade,
-      duration: Duration(milliseconds: 500),
-    ),
-  ];
-}
+ModuleRoute('/profile', module: ProfileModule(),
+  transition: GoTransitions.scale.withFade,
+  duration: Duration(milliseconds: 500))
 ```
 
-## Combined Transitions
+## Combined Effects
 
-### Slide with Fade
+### Slide + Fade
 
 ```dart
-class CombinedExampleModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/combined',
-      module: CombinedExampleModule(),
-      transition: GoTransitions.slide.toRight.withFade,
-      duration: Duration(milliseconds: 600),
-    ),
-  ];
-}
+ChildRoute('/details', child: (_, __) => DetailsPage(),
+  transition: GoTransitions.slide.toRight.withFade)
 ```
 
-### Rotate with Scale
+### Scale + Rotation
 
 ```dart
-class RotateScaleModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/rotate-scale',
-      module: RotateScaleModule(),
-      transition: GoTransitions.rotate.withScale,
-      duration: Duration(milliseconds: 700),
-    ),
-  ];
-}
+ChildRoute('/settings', child: (_, __) => SettingsPage(),
+  transition: GoTransitions.scale.withRotation)
 ```
 
-## Inheritance Examples
+## Platform-Specific
 
-### Parent Module with Transition
-
-```dart
-class ParentModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/parent',
-      module: ParentModule(),
-      transition: GoTransitions.fadeUpwards,
-      duration: Duration(milliseconds: 300),
-    ),
-  ];
-}
-```
-
-### Child Routes Inheriting and Overriding
+### iOS Style
 
 ```dart
-class ChildModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    // Inherits fadeUpwards from parent
-    ChildRoute('/', child: (_, __) => HomePage()),
-    
-    // Overrides with slide transition
-    ChildRoute('/details', 
-      child: (_, __) => DetailsPage(),
-      transition: GoTransitions.slide.toLeft,
-      duration: Duration(milliseconds: 400),
-    ),
-    
-    // Overrides with scale transition
-    ChildRoute('/profile', 
-      child: (_, __) => ProfilePage(),
-      transition: GoTransitions.scale.withFade,
-      duration: Duration(milliseconds: 500),
-    ),
-  ];
-}
-```
-
-## Platform-Specific Examples
-
-### iOS/macOS Style
-
-```dart
-class CupertinoModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/cupertino',
-      module: CupertinoModule(),
-      transition: GoTransitions.cupertino,
-      duration: Duration(milliseconds: 350),
-    ),
-  ];
-}
+ModuleRoute('/ios', module: IOSModule(),
+  transition: GoTransitions.cupertino)
 ```
 
 ### Android Style
 
 ```dart
-class MaterialModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/material',
-      module: MaterialModule(),
-      transition: GoTransitions.fadeUpwards,
-      duration: Duration(milliseconds: 300),
-    ),
-  ];
-}
+ModuleRoute('/android', module: AndroidModule(),
+  transition: GoTransitions.fadeUpwards)
 ```
 
-## Shell Route Examples
+## Inheritance Examples
 
-### Shell with Multiple Transitions
+### Parent Module
 
 ```dart
-class ShellExampleModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ShellModularRoute(
-      builder: (context, state, child) => ShellPage(child: child),
-      routes: [
-        ModuleRoute(
-          '/tab1',
-          module: Tab1Module(),
-          transition: GoTransitions.fade,
-          duration: Duration(milliseconds: 200),
-        ),
-        ModuleRoute(
-          '/tab2',
-          module: Tab2Module(),
-          transition: GoTransitions.slide.toRight,
-          duration: Duration(milliseconds: 300),
-        ),
-        ModuleRoute(
-          '/tab3',
-          module: Tab3Module(),
-          transition: GoTransitions.scale.withFade,
-          duration: Duration(milliseconds: 400),
-        ),
-      ],
-    ),
-  ];
-}
+ModuleRoute('/shop', module: ShopModule(),
+  transition: GoTransitions.fadeUpwards)
 ```
 
-## Global Configuration Example
-
-### App-Wide Transition Settings
+### Child Routes
 
 ```dart
-class AppWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Configure global defaults
-    GoTransition.defaultCurve = Curves.easeInOut;
-    GoTransition.defaultDuration = Duration(milliseconds: 400);
+// Inherits fadeUpwards
+ChildRoute('/', child: (_, __) => ShopHomePage())
 
-    return MaterialApp.router(
-      routerConfig: Modular.routerConfig,
-      title: 'Transition Example App',
-      theme: ThemeData(
-        // Platform-specific fallbacks
-        pageTransitionsTheme: PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: GoTransitions.fadeUpwards,
-            TargetPlatform.iOS: GoTransitions.cupertino,
-            TargetPlatform.macOS: GoTransitions.cupertino,
-            TargetPlatform.linux: GoTransitions.fade,
-            TargetPlatform.windows: GoTransitions.fade,
-            TargetPlatform.fuchsia: GoTransitions.fade,
-          },
-        ),
-      ),
-    );
-  }
-}
+// Override with slide
+ChildRoute('/cart', child: (_, __) => CartPage(),
+  transition: GoTransitions.slide.toLeft)
+
+// Override with scale
+ChildRoute('/checkout', child: (_, __) => CheckoutPage(),
+  transition: GoTransitions.scale.withFade)
 ```
 
 ## Complete App Example
-
-### Multi-Module App with Different Transitions
 
 ```dart
 class AppModule extends Module {
   @override
   List<ModularRoute> get routes => [
-    // Home with fade transition
-    ModuleRoute(
-      '/',
-      module: HomeModule(),
-      transition: GoTransitions.fadeUpwards,
-      duration: Duration(milliseconds: 300),
-    ),
+    ModuleRoute('/', module: HomeModule(),
+      transition: GoTransitions.fadeUpwards),
     
-    // Products with slide transition
-    ModuleRoute(
-      '/products',
-      module: ProductsModule(),
-      transition: GoTransitions.slide.toRight.withFade,
-      duration: Duration(milliseconds: 400),
-    ),
+    ModuleRoute('/products', module: ProductsModule(),
+      transition: GoTransitions.slide.toRight.withFade),
     
-    // Profile with scale transition
-    ModuleRoute(
-      '/profile',
-      module: ProfileModule(),
-      transition: GoTransitions.scale.withFade,
-      duration: Duration(milliseconds: 500),
-    ),
-    
-    // Settings with rotate transition
-    ModuleRoute(
-      '/settings',
-      module: SettingsModule(),
-      transition: GoTransitions.rotate.withFade,
-      duration: Duration(milliseconds: 600),
-    ),
+    ModuleRoute('/profile', module: ProfileModule(),
+      transition: GoTransitions.scale.withFade),
   ];
 }
 ```
 
 ## Performance Tips
 
-### Lightweight Transitions
+### Lightweight for Frequent Routes
 
 ```dart
-// Use simple transitions for frequently accessed routes
-ChildRoute('/home', 
-  child: (_, __) => HomePage(),
+ChildRoute('/home', child: (_, __) => HomePage(),
   transition: GoTransitions.fade,
-  duration: Duration(milliseconds: 200),
-)
+  duration: Duration(milliseconds: 200))
 ```
 
-### Complex Transitions for Special Pages
+### Special Occasions
 
 ```dart
-// Use complex transitions for special occasions
-ChildRoute('/celebration', 
-  child: (_, __) => CelebrationPage(),
+ChildRoute('/celebration', child: (_, __) => CelebrationPage(),
   transition: GoTransitions.rotate.withScale.withFade,
-  duration: Duration(milliseconds: 800),
-)
-```
-
-## Testing Transitions
-
-### Debug Mode
-
-```dart
-class DebugModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ModuleRoute(
-      '/debug',
-      module: DebugModule(),
-      transition: GoTransitions.fade,
-      duration: Duration(milliseconds: 1000), // Slow for testing
-    ),
-  ];
-}
-```
-
-## Common Patterns
-
-### Modal-Style Transitions
-
-```dart
-ChildRoute('/modal', 
-  child: (_, __) => ModalPage(),
-  transition: GoTransitions.scale.withFade,
-  duration: Duration(milliseconds: 300),
-)
-```
-
-### Navigation-Style Transitions
-
-```dart
-ChildRoute('/navigate', 
-  child: (_, __) => NavigatePage(),
-  transition: GoTransitions.slide.toRight,
-  duration: Duration(milliseconds: 250),
-)
-```
-
-### Tab-Style Transitions
-
-```dart
-ChildRoute('/tab', 
-  child: (_, __) => TabPage(),
-  transition: GoTransitions.fade,
-  duration: Duration(milliseconds: 150),
-)
+  duration: Duration(milliseconds: 800))
 ```
