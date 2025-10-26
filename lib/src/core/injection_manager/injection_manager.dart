@@ -33,7 +33,31 @@ class InjectionManager {
   /// Resolver para binds
   late final BindResolver _resolver = BindResolver(_autoInjector, _registry);
 
+  /// Cadeia de dependências para rastrear resoluções aninhadas
+  final List<String> _dependencyChain = [];
+
+  /// Getter público para a cadeia de dependências (apenas leitura)
+  List<String> get dependencyChain => List.unmodifiable(_dependencyChain);
+
   bool get debugLog => SetupModular.instance.debugLogGoRouterModular;
+
+  /// Obtém a cadeia de dependências atual
+  String getCurrentDependencyChain() {
+    if (_dependencyChain.isEmpty) return '';
+    return _dependencyChain.join(' -> ');
+  }
+
+  /// Adiciona um tipo à cadeia de dependências
+  void pushDependencyChain(Type type) {
+    _dependencyChain.add(type.toString());
+  }
+
+  /// Remove o último tipo da cadeia de dependências
+  void popDependencyChain() {
+    if (_dependencyChain.isNotEmpty) {
+      _dependencyChain.removeLast();
+    }
+  }
 
   /// Define o contexto do módulo atual (chamado ao navegar para uma rota)
   void setModuleContext(Type moduleType) {
@@ -112,11 +136,18 @@ class InjectionManager {
     final moduleInjector = _createModuleInjector(module);
 
     // 2. Adicionar ao mapa de injectors ANTES de commitar
+    log('📝 [InjectionManager] Adicionando injector ao mapa para: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
     _moduleInjectors[module.runtimeType] = moduleInjector;
+    log('📝 [InjectionManager] Injector adicionado. Mapas atuais: ${_moduleInjectors.keys}', name: "GO_ROUTER_MODULAR");
 
     // 3. Uncommit → addInjector → commit (padrão flutter_modular)
+    log('🔓 [InjectionManager] Uncommit do injector principal', name: "GO_ROUTER_MODULAR");
     _autoInjector.uncommit();
+
+    log('➕ [InjectionManager] Adicionando injector do módulo', name: "GO_ROUTER_MODULAR");
     _autoInjector.addInjector(moduleInjector);
+
+    log('🔒 [InjectionManager] Commit do injector principal', name: "GO_ROUTER_MODULAR");
     _autoInjector.commit();
 
     // Inicializar estado do módulo
@@ -132,19 +163,24 @@ class InjectionManager {
   AutoInjector _createModuleInjector(Module module) {
     // Criar um novo AutoInjector para este módulo (sem commit ainda!)
     final moduleInjector = AutoInjector(tag: module.runtimeType.toString());
+    log('🔧 [InjectionManager._createModuleInjector] Criado injector para: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
 
     // Processar imports do módulo
     final imports = module.imports();
     final importsList = imports is Future ? <Module>[] : imports;
 
+    log('🔍 [InjectionManager._createModuleInjector] Processando ${importsList.length} imports', name: "GO_ROUTER_MODULAR");
+
     for (final importedModule in importsList) {
       _registry.addImport(module.runtimeType, importedModule.runtimeType);
+      log('📥 [InjectionManager._createModuleInjector] Import: $importedModule', name: "GO_ROUTER_MODULAR");
 
       // Criar ou reusar o injector do módulo importado
       final importedInjector = _getOrCreateModuleInjector(importedModule);
 
       // Adicionar o injector importado ao injector do módulo atual
       moduleInjector.addInjector(importedInjector);
+      log('✅ [InjectionManager._createModuleInjector] Injector importado adicionado', name: "GO_ROUTER_MODULAR");
     }
 
     // IMPORTANTE: NÃO auto-importar o AppModule
@@ -152,8 +188,10 @@ class InjectionManager {
     // Para usar o AppModule, o módulo precisa importá-lo explicitamente
 
     // Criar um wrapper Injector e chamar module.binds() (SEGUINDO PADRÃO FLUTTER_MODULAR linha 282)
+    log('🔧 [InjectionManager._createModuleInjector] Chamando module.binds()', name: "GO_ROUTER_MODULAR");
     final injectorWrapper = ModuleInjector(moduleInjector);
     module.binds(injectorWrapper);
+    log('✅ [InjectionManager._createModuleInjector] module.binds() concluído', name: "GO_ROUTER_MODULAR");
 
     return moduleInjector;
   }
@@ -190,10 +228,6 @@ class InjectionManager {
     }
 
     try {
-      if (debugLog) {
-        log('🗑️ DISPOSING: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
-      }
-
       // Chamar dispose do módulo
       module.dispose();
 
@@ -209,14 +243,8 @@ class InjectionManager {
 
       // Remover rastreamento
       _registry.unregisterModule(module.runtimeType);
-
-      if (debugLog) {
-        log('🗑️ DISPOSED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
-      }
     } catch (e) {
-      if (debugLog) {
-        log('⚠️ Failed to unregister module ${module.runtimeType}: $e', name: "GO_ROUTER_MODULAR");
-      }
+      // Ignorar erros de dispose
     }
   }
 
@@ -236,14 +264,9 @@ class InjectionManager {
 
       // Limpar registry
       _registry.clear();
-
-      if (debugLog) {
-        log('🧹 Cleared all injectors for testing', name: "GO_ROUTER_MODULAR");
-      }
+      _moduleInjectors.clear();
     } catch (e) {
-      if (debugLog) {
-        log('⚠️ Failed to clear injectors: $e', name: "GO_ROUTER_MODULAR");
-      }
+      // Ignorar erros de cleanup
     }
   }
 }

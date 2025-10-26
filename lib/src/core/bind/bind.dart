@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/exceptions/exception.dart';
 import 'package:go_router_modular/src/di/injector.dart';
@@ -78,7 +77,6 @@ class Bind<T extends Object> {
       // NÃO fazer commit aqui! O commit será feito no InjectionManager
       // após registrar todos os binds do módulo
     } catch (e) {
-      log('❌ Failed to register bind for type ${T.toString()} - $e', name: "GO_ROUTER_MODULAR");
       throw GoRouterModularException('❌ Bind registration failed for type ${T.toString()}: $e');
     }
   }
@@ -88,8 +86,6 @@ class Bind<T extends Object> {
     try {
       return InjectionManager.instance.getWithModuleContext<T>(key: key);
     } catch (e) {
-      log('❌ Bind not found for type: ${T.toString()}${key != null ? ' with key: $key' : ''}', name: "GO_ROUTER_MODULAR");
-
       // Re-throw o erro com a mensagem detalhada do BindResolver
       throw GoRouterModularException(e.toString());
     }
@@ -109,7 +105,6 @@ class Bind<T extends Object> {
       }
     } catch (e) {
       // Ignorar erros de dispose - pode não existir
-      log('⚠️ Failed to dispose bind: ${T.toString()} - $e', name: "GO_ROUTER_MODULAR");
     }
   }
 
@@ -124,7 +119,7 @@ class Bind<T extends Object> {
         CleanBind.fromInstance(instance);
       }
     } catch (e) {
-      log('⚠️ Failed to dispose bind with key: $key - $e', name: "GO_ROUTER_MODULAR");
+      // Ignorar erros de dispose - pode não existir
     }
   }
 
@@ -133,15 +128,13 @@ class Bind<T extends Object> {
     try {
       // Usar o método de limpeza do InjectionManager
       await InjectionManager.instance.clearAllForTesting();
-      log('🧹 Cleared all binds using InjectionManager', name: "GO_ROUTER_MODULAR");
     } catch (e) {
-      log('⚠️ clearAll() failed: $e', name: "GO_ROUTER_MODULAR");
+      // Ignorar erros de cleanup
     }
   }
 
   /// Get all available keys - not supported by AutoInjector
   static List<String> getAllKeys() {
-    log('⚠️ getAllKeys() não é suportado pelo AutoInjector', name: "GO_ROUTER_MODULAR");
     return [];
   }
 

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:auto_injector/auto_injector.dart' as ai;
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/core/injection_manager/injection_manager.dart';
@@ -11,16 +12,21 @@ class ModuleInjector extends Injector {
 
   @override
   void add<T extends Object>(dynamic builder, {String? key}) {
+    log('📝 [ModuleInjector.add] T=$T, key=$key, builder type: ${builder.runtimeType}', name: "GO_ROUTER_MODULAR");
     if (builder is Function) {
       // Se T é Object, chamar sem tipo e deixar o auto_injector inferir
       if (T == Object) {
+        log('⚠️ [ModuleInjector.add] T=Object! Sem tipagem, o auto_injector vai inferir o tipo da implementação concreta', name: "GO_ROUTER_MODULAR");
+        log('⚠️ [ModuleInjector.add] Para resolução automática de interfaces, use: i.add<Interface>(Implementation.new)', name: "GO_ROUTER_MODULAR");
         // Registrar sem tipo e deixar o auto_injector inferir a implementação
         _moduleInjector.add(builder, key: key);
       } else {
+        log('✅ [ModuleInjector.add] Tipando como $T', name: "GO_ROUTER_MODULAR");
         // Passar o tipo explicitamente
         _moduleInjector.add<T>(builder, key: key);
       }
     } else {
+      log('🔍 [ModuleInjector.add] Instância direta fornecida', name: "GO_ROUTER_MODULAR");
       _moduleInjector.add<T>(() => builder, key: key);
     }
   }
@@ -55,11 +61,20 @@ class ModuleInjector extends Injector {
 
   @override
   T get<T extends Object>({String? key}) {
+    // Rastrear a cadeia de dependências
+    final dependencyChain = InjectionManager.instance.getCurrentDependencyChain();
+    log('🔍 [ModuleInjector.get] Buscando T=$T, key=$key (chain: $dependencyChain)', name: "GO_ROUTER_MODULAR");
+
     try {
-      return _moduleInjector.get<T>(key: key);
+      final result = _moduleInjector.get<T>(key: key);
+      log('✅ [ModuleInjector.get] Encontrado no injector do módulo', name: "GO_ROUTER_MODULAR");
+      return result;
     } catch (e) {
+      log('⚠️ [ModuleInjector.get] Não encontrou no injector do módulo: $e, tentando BindResolver...', name: "GO_ROUTER_MODULAR");
+
       // Se não encontrou no injector do módulo, tentar através do sistema de resolução
       // Isso permite acessar binds do AppModule
+      // A cadeia de dependências já é rastreada em resolve(), então não precisa adicionar aqui
       return InjectionManager.instance.getWithModuleContext<T>(key: key);
     }
   }
