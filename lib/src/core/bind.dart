@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'package:flutter/foundation.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/exceptions/exception.dart';
 import 'package:go_router_modular/src/di/injector.dart';
@@ -97,119 +96,6 @@ class Bind<T> {
     }
   }
 
-  /// Auto-register interfaces for a concrete type
-  /// Cria uma instância temporária para descobrir interfaces e as registra
-  static void _registerInterfacesForType<T>(Bind<T> bind) {
-    try {
-      // Criar uma instância temporária para descobrir as interfaces
-      final tempInstance = bind.factoryFunction(Injector());
-
-      // Verificar interfaces conhecidas e registrá-las
-      final injector = InjectionManager.instance.injector;
-
-      // IService
-      if (tempInstance is IService) {
-        try {
-          injector.get<IService>(key: bind.key);
-        } catch (e) {
-          injector.uncommit();
-          if (bind.isSingleton) {
-            // Para singletons, retornar sempre a mesma instância
-            injector.addLazySingleton<IService>(
-              () => injector.get<T>(key: bind.key) as IService,
-              key: bind.key,
-            );
-          } else {
-            injector.add<IService>(
-              () => bind.factoryFunction(Injector()) as IService,
-              key: bind.key,
-            );
-          }
-          injector.commit();
-          _interfaceImplementations[IService] = T;
-        }
-      }
-
-      // IRepository
-      if (tempInstance is IRepository) {
-        try {
-          injector.get<IRepository>(key: bind.key);
-        } catch (e) {
-          injector.uncommit();
-          if (bind.isSingleton) {
-            injector.addLazySingleton<IRepository>(
-              () => injector.get<T>(key: bind.key) as IRepository,
-              key: bind.key,
-            );
-          } else {
-            injector.add<IRepository>(
-              () => bind.factoryFunction(Injector()) as IRepository,
-              key: bind.key,
-            );
-          }
-          injector.commit();
-          _interfaceImplementations[IRepository] = T;
-        }
-      }
-
-      // IController
-      if (tempInstance is IController) {
-        try {
-          injector.get<IController>(key: bind.key);
-        } catch (e) {
-          injector.uncommit();
-          if (bind.isSingleton) {
-            injector.addLazySingleton<IController>(
-              () => injector.get<T>(key: bind.key) as IController,
-              key: bind.key,
-            );
-          } else {
-            injector.add<IController>(
-              () => bind.factoryFunction(Injector()) as IController,
-              key: bind.key,
-            );
-          }
-          injector.commit();
-          _interfaceImplementations[IController] = T;
-        }
-      }
-
-      // IBindSingleton
-      if (tempInstance is IBindSingleton) {
-        try {
-          injector.get<IBindSingleton>(key: bind.key);
-        } catch (e) {
-          injector.uncommit();
-          if (bind.isSingleton) {
-            injector.addLazySingleton<IBindSingleton>(
-              () => injector.get<T>(key: bind.key) as IBindSingleton,
-              key: bind.key,
-            );
-          } else {
-            injector.add<IBindSingleton>(
-              () => bind.factoryFunction(Injector()) as IBindSingleton,
-              key: bind.key,
-            );
-          }
-          injector.commit();
-          _interfaceImplementations[IBindSingleton] = T;
-        }
-      }
-
-      // Limpar a instância temporária se ela for Disposable
-      if (tempInstance is Disposable) {
-        try {
-          tempInstance.dispose();
-        } catch (_) {}
-      }
-    } catch (e) {
-      // Ignorar erros de auto-registration - não é crítico
-      if (kDebugMode) {
-        log('⚠️ Failed to auto-register interfaces for ${T.toString()}: $e', name: "GO_ROUTER_MODULAR");
-      }
-    }
-  }
-
   /// Get instance using auto_injector
   static T get<T>({String? key}) {
     try {
@@ -264,22 +150,6 @@ class Bind<T> {
     } catch (e) {
       // Ignorar erros de dispose - pode não existir
       log('⚠️ Failed to dispose bind with key: $key - $e', name: "GO_ROUTER_MODULAR");
-    }
-  }
-
-  /// Dispose singleton by type using auto_injector
-  static void disposeByType(Type type) {
-    try {
-      // Para disposeByType, precisamos tentar diferentes abordagens
-      // já que auto_injector não tem um método direto para isso
-      final disposed = InjectionManager.instance.injector.disposeSingleton<dynamic>();
-      if (disposed != null && disposed.runtimeType == type) {
-        // Chamar CleanBind apenas uma vez
-        CleanBind.fromInstance(disposed);
-      }
-    } catch (e) {
-      // Ignorar erros de dispose - pode não existir
-      log('⚠️ Failed to dispose bind by type: $type - $e', name: "GO_ROUTER_MODULAR");
     }
   }
 

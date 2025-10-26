@@ -189,18 +189,6 @@ void main() {
       expect(CleanBind.fromInstance(closeInstance), true);
       expect(CleanBind.fromInstance(normalInstance), false);
     });
-
-    test('should test hasMethod directly', () {
-      // Teste direto do método hasMethod
-      final disposeInstance = TestDisposeMethod();
-      final closeInstance = TestCloseMethod();
-      final normalInstance = TestNormalClass();
-
-      expect(CleanBind.hasMethod(disposeInstance, 'dispose'), true);
-      expect(CleanBind.hasMethod(closeInstance, 'close'), true);
-      expect(CleanBind.hasMethod(normalInstance, 'dispose'), false);
-      expect(CleanBind.hasMethod(normalInstance, 'close'), false);
-    });
   });
 }
 

@@ -233,7 +233,39 @@ class InjectionManager {
   /// Clear all binds for testing purposes
   void clearAllForTesting() {
     try {
-      // Limpar mapas de módulos primeiro
+      // IMPORTANTE: Chamar dispose() antes de limpar para fazer cleanup das instâncias
+      // Usar callback para chamar CleanBind.fromInstance em cada instância
+      try {
+        _injector.dispose((instance) {
+          CleanBind.fromInstance(instance);
+        });
+      } catch (e) {
+        // Ignorar erros de dispose - pode não ter instâncias
+      }
+
+      // Limpar injectors de módulos
+      for (final moduleInjector in _moduleInjectors.values) {
+        try {
+          moduleInjector.dispose((instance) {
+            CleanBind.fromInstance(instance);
+          });
+        } catch (e) {
+          // Ignorar erros
+        }
+      }
+
+      // Limpar injectors importados
+      for (final importedInjector in _importedInjectors.values) {
+        try {
+          importedInjector.dispose((instance) {
+            CleanBind.fromInstance(instance);
+          });
+        } catch (e) {
+          // Ignorar erros
+        }
+      }
+
+      // Limpar mapas de módulos
       _moduleInjectors.clear();
       _activeModuleTags.clear();
       _importedInjectors.clear();

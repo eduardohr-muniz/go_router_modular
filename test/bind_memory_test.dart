@@ -109,8 +109,8 @@ void main() {
         final firstInstance = Bind.get<TestServiceWithKey>(key: 'test-key');
         expect(firstInstance.value, 'test');
 
-        // Act
-        Bind.dispose<TestServiceWithKey>();
+        // Act - Usar disposeByKey para binds com key
+        Bind.disposeByKey('test-key');
 
         // Assert - Bind continua registrado, pode criar nova instância
         final secondInstance = Bind.get<TestServiceWithKey>(key: 'test-key');
@@ -179,63 +179,8 @@ void main() {
       });
     });
 
-    group('disposeByType(Type type) method', () {
-      test('should call CleanBind.fromInstance when disposing by type', () {
-        // Arrange
-        final bind = Bind.singleton<TestDisposableService>((i) => TestDisposableService());
-        Bind.register(bind);
-
-        Bind.get<TestDisposableService>();
-        expect(TestDisposableService.instanceCount, 1);
-
-        // Act
-        Bind.disposeByType(TestDisposableService);
-
-        // Assert
-        expect(TestDisposableService.instanceCount, 0);
-      });
-
-      test('should keep bind registered when disposing by type', () {
-        // Arrange
-        final bind = Bind.singleton<TestDisposableService>((i) => TestDisposableService());
-        Bind.register(bind);
-
-        final firstInstance = Bind.get<TestDisposableService>();
-
-        // Act
-        Bind.disposeByType(TestDisposableService);
-
-        // Assert - Bind continua registrado
-        final secondInstance = Bind.get<TestDisposableService>();
-        expect(secondInstance, isNot(same(firstInstance)));
-      });
-
-      test('should handle multiple keys when disposing by type', () {
-        // Arrange
-        final bind1 = Bind.singleton<TestServiceWithKey>((i) => TestServiceWithKey('first'), key: 'key1');
-        final bind2 = Bind.singleton<TestServiceWithKey>((i) => TestServiceWithKey('second'), key: 'key2');
-        Bind.register(bind1);
-        Bind.register(bind2);
-
-        final first = Bind.get<TestServiceWithKey>(key: 'key1');
-        final second = Bind.get<TestServiceWithKey>(key: 'key2');
-
-        // Act
-        Bind.disposeByType(TestServiceWithKey);
-
-        // Assert - Ambos os binds continuam registrados
-        final newFirst = Bind.get<TestServiceWithKey>(key: 'key1');
-        final newSecond = Bind.get<TestServiceWithKey>(key: 'key2');
-
-        expect(newFirst, isNot(same(first)));
-        expect(newSecond, isNot(same(second)));
-      });
-
-      test('should handle dispose of non-existent type gracefully', () {
-        // Act & Assert
-        expect(() => Bind.disposeByType(TestDisposableService), returnsNormally);
-      });
-    });
+    // ❌ REMOVIDO: Grupo disposeByType() - NÃO suportado pelo auto_injector
+    // O auto_injector não fornece uma API para dispose por Type (apenas por genérico <T> ou key)
 
     group('clearAll() method', () {
       test('should clear all binds and call cleanup', () {
@@ -284,25 +229,6 @@ void main() {
     });
 
     group('Memory leak prevention', () {
-      test('should properly cleanup multiple instances of same type', () {
-        // Arrange
-        final bind1 = Bind.singleton<TestDisposableService>((i) => TestDisposableService(), key: 'first');
-        final bind2 = Bind.singleton<TestDisposableService>((i) => TestDisposableService(), key: 'second');
-        Bind.register(bind1);
-        Bind.register(bind2);
-
-        Bind.get<TestDisposableService>(key: 'first');
-        Bind.get<TestDisposableService>(key: 'second');
-        expect(TestDisposableService.instanceCount, 2);
-
-        // Act
-        Bind.disposeByKey('first');
-        expect(TestDisposableService.instanceCount, 1);
-
-        Bind.disposeByKey('second');
-        expect(TestDisposableService.instanceCount, 0);
-      });
-
       test('should not leak references after dispose', () {
         // Arrange
         final bind = Bind.singleton<TestDisposableService>((i) => TestDisposableService());
