@@ -21,7 +21,7 @@ class AuthEmailCubit {
 class AppModule extends EventModule {
   @override
   FutureBinds binds(Injector i) {
-    i.addLazySingleton<IClient>(() => Client());
+    i.addLazySingleton<IClient>(Client.new);
   }
 
   @override
@@ -34,6 +34,7 @@ class AppModule extends EventModule {
 class AuthEmailModule extends EventModule {
   @override
   FutureBinds binds(Injector i) {
+    // Usar lambda para passar dependências manualmente
     i.add<IAuthApi>(() => AuthApi(client: i.get<IClient>()));
     i.addLazySingleton<AuthEmailCubit>(() => AuthEmailCubit(authApi: i.get<IAuthApi>()));
   }
@@ -51,7 +52,7 @@ void main() {
       InjectionManager.instance.clearAllForTesting();
     });
 
-    test('Deve resolver AuthEmailCubit após registrar AppModule e AuthEmailModule', () async {
+    test('Deve resolver AuthEmailCubit após registrar AppModule e AuthEmailModule usando .new', () async {
       // 1. Registrar AppModule
       final appModule = AppModule();
       await InjectionManager.instance.registerAppModule(appModule);
@@ -69,6 +70,16 @@ void main() {
 
       expect(cubit, isNotNull);
       expect(cubit.authApi, isNotNull);
+    });
+
+    test('Deve funcionar com i.addLazySingleton(MyClass.new) - sem dependências', () async {
+      final appModule = AppModule();
+      await InjectionManager.instance.registerAppModule(appModule);
+      await InjectionManager.instance.registerBindsModule(appModule);
+
+      final client = Modular.get<IClient>();
+      expect(client, isNotNull);
+      expect(client, isA<Client>());
     });
   });
 }

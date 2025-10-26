@@ -41,21 +41,22 @@ class Injector {
   }
 
   /// Métodos para registrar binds diretamente (padrão flutter_modular)
-  void add<T>(T Function() builder, {String? key}) {
+  /// Aceita tanto Function (MyClass.new) quanto T Function()
+  void add<T>(Function constructor, {String? key}) {
     if (_autoInjector != null) {
-      _autoInjector.add<T>(builder, key: key);
+      _autoInjector.add<T>(constructor, key: key);
     }
   }
 
-  void addSingleton<T>(T Function() builder, {String? key}) {
+  void addSingleton<T>(Function constructor, {String? key}) {
     if (_autoInjector != null) {
-      _autoInjector.addSingleton<T>(builder, key: key);
+      _autoInjector.addSingleton<T>(constructor, key: key);
     }
   }
 
-  void addLazySingleton<T>(T Function() builder, {String? key}) {
+  void addLazySingleton<T>(Function constructor, {String? key}) {
     if (_autoInjector != null) {
-      _autoInjector.addLazySingleton<T>(builder, key: key);
+      _autoInjector.addLazySingleton<T>(constructor, key: key);
     }
   }
 }
