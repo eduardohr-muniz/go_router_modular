@@ -21,9 +21,6 @@ abstract class Module {
   /// Suporta binds assíncronos para inicialização de dependências que precisam de await
   FutureBinds binds(Injector i) {}
 
-  /// DEPRECATED: Use binds(Injector i) em vez disso
-  @Deprecated('Use binds(Injector i) para seguir o padrão do flutter_modular')
-  FutureOr<List<Bind<Object>>> legacyBinds() => [];
   List<ModularRoute> get routes => const [];
 
   void initState(Injector i) {}
