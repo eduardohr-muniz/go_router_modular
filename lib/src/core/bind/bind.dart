@@ -89,7 +89,9 @@ class Bind<T extends Object> {
       return InjectionManager.instance.getWithModuleContext<T>(key: key);
     } catch (e) {
       log('❌ Bind not found for type: ${T.toString()}${key != null ? ' with key: $key' : ''}', name: "GO_ROUTER_MODULAR");
-      throw GoRouterModularException('❌ Bind not found for type ${T.toString()}${key != null ? ' with key: $key' : ''}');
+
+      // Re-throw o erro com a mensagem detalhada do BindResolver
+      throw GoRouterModularException(e.toString());
     }
   }
 

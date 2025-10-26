@@ -8,7 +8,6 @@ import 'package:go_router_modular/src/di/clean_bind.dart';
 import '_module_registry.dart';
 import '_bind_resolver.dart';
 import '_module_injector.dart';
-import '_bind_log_formatter.dart';
 
 /// InjectionManager usando AutoInjector com isolamento via prefixos de módulo
 ///
@@ -108,21 +107,20 @@ class InjectionManager {
 
     _registry.registerModule(module.runtimeType);
 
-    // SEGUINDO O PADRÃO DO FLUTTER_MODULAR:
-    // Criar um AutoInjector SEPARADO para cada módulo
+    // SEGUINDO O PADRÃO DO FLUTTER_MODULAR (tracker.dart linhas 207-213):
+    // 1. Criar injector para o módulo
     final moduleInjector = _createModuleInjector(module);
 
-    // Uncommit o injector principal para adicionar o módulo
+    // 2. Adicionar ao mapa de injectors ANTES de commitar
+    _moduleInjectors[module.runtimeType] = moduleInjector;
+
+    // 3. Uncommit → addInjector → commit (padrão flutter_modular)
     _autoInjector.uncommit();
-
-    // Adicionar o injector do módulo ao injector principal (addInjector)
     _autoInjector.addInjector(moduleInjector);
-
-    // Commit novamente
     _autoInjector.commit();
 
     // Inicializar estado do módulo
-    final moduleInjectorWrapper = ModuleInjector(moduleInjector, _registry);
+    final moduleInjectorWrapper = ModuleInjector(moduleInjector);
     module.initState(moduleInjectorWrapper);
 
     if (debugLog) {
@@ -130,9 +128,9 @@ class InjectionManager {
     }
   }
 
-  /// Cria um AutoInjector para um módulo (seguindo padrão flutter_modular)
+  /// Cria um AutoInjector para um módulo (seguindo padrão flutter_modular - tracker.dart linha 275)
   AutoInjector _createModuleInjector(Module module) {
-    // Criar um novo AutoInjector para este módulo
+    // Criar um novo AutoInjector para este módulo (sem commit ainda!)
     final moduleInjector = AutoInjector(tag: module.runtimeType.toString());
 
     // Processar imports do módulo
@@ -153,8 +151,8 @@ class InjectionManager {
     // Cada módulo só tem acesso aos seus próprios binds e aos binds importados explicitamente
     // Para usar o AppModule, o módulo precisa importá-lo explicitamente
 
-    // Criar um wrapper Injector e chamar module.binds()
-    final injectorWrapper = ModuleInjector(moduleInjector, _registry);
+    // Criar um wrapper Injector e chamar module.binds() (SEGUINDO PADRÃO FLUTTER_MODULAR linha 282)
+    final injectorWrapper = ModuleInjector(moduleInjector);
     module.binds(injectorWrapper);
 
     return moduleInjector;

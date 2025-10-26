@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:auto_injector/auto_injector.dart';
 import 'package:go_router_modular/src/core/injection_manager/_module_registry.dart';
 import 'package:go_router_modular/src/core/injection_manager/injection_manager.dart';
@@ -16,63 +15,47 @@ class BindResolver {
 
   T resolve<T extends Object>({String? key}) {
     final currentContext = _registry.currentContext;
-    log('🔍 [BindResolver.resolve] Tipo: ${T.toString()}${key != null ? ' key: $key' : ''}', name: "GO_ROUTER_MODULAR");
-    log('🔍 [BindResolver.resolve] Contexto: ${currentContext?.toString() ?? "null"}', name: "GO_ROUTER_MODULAR");
 
     // Se não há contexto definido, tentar resolver no AppModule
     if (currentContext == null) {
-      log('🔍 [BindResolver] Sem contexto, tentando AppModule', name: "GO_ROUTER_MODULAR");
       try {
-        final result = _autoInjector.get<T>(key: key);
-        log('✅ [BindResolver] Encontrado no AppModule (sem contexto)', name: "GO_ROUTER_MODULAR");
-        return result;
+        return _autoInjector.get<T>(key: key);
       } catch (e) {
-        log('❌ [BindResolver] Erro no AppModule (sem contexto): $e', name: "GO_ROUTER_MODULAR");
         throw Exception('Bind not found for type: ${T.toString()}${key != null ? ' with key: $key' : ''}');
       }
     }
 
     // Se o contexto é o AppModule, resolver no injector principal
     if (currentContext == _registry.appModule?.runtimeType) {
-      log('🔍 [BindResolver] Contexto é AppModule', name: "GO_ROUTER_MODULAR");
       try {
-        final result = _autoInjector.get<T>(key: key);
-        log('✅ [BindResolver] Encontrado no AppModule', name: "GO_ROUTER_MODULAR");
-        return result;
+        return _autoInjector.get<T>(key: key);
       } catch (e) {
-        log('❌ [BindResolver] Erro no AppModule: $e', name: "GO_ROUTER_MODULAR");
         throw Exception('Bind not found for type: ${T.toString()}${key != null ? ' with key: $key' : ''}');
       }
     }
 
     // Buscar o injector do módulo atual
     final moduleInjector = _getModuleInjector(currentContext);
-    log('🔍 [BindResolver] Injector do módulo: ${moduleInjector != null ? moduleInjector.toString() : "null"}', name: "GO_ROUTER_MODULAR");
 
     if (moduleInjector != null) {
       try {
-        log('🔍 [BindResolver] Tentando resolver no injector do módulo...', name: "GO_ROUTER_MODULAR");
         // Tentar resolver no injector do módulo atual (que inclui seus próprios binds e imports)
-        final result = moduleInjector.get<T>(key: key);
-        log('✅ [BindResolver] Encontrado no injector do módulo', name: "GO_ROUTER_MODULAR");
-        return result;
+        return moduleInjector.get<T>(key: key);
       } catch (e) {
-        log('❌ [BindResolver] Não encontrado no injector do módulo: $e', name: "GO_ROUTER_MODULAR");
         // Não encontrou no módulo atual ou nos imports
         // TENTAR NO APPMODULE GLOBAL (sempre disponível)
         if (_registry.appModule != null) {
           try {
-            log('🔍 [BindResolver] Tentando AppModule como fallback...', name: "GO_ROUTER_MODULAR");
-            final result = _autoInjector.get<T>(key: key);
-            log('✅ [BindResolver] Encontrado no AppModule (fallback)', name: "GO_ROUTER_MODULAR");
-            return result;
+            return _autoInjector.get<T>(key: key);
           } catch (e2) {
-            log('❌ [BindResolver] Erro no AppModule (fallback): $e2', name: "GO_ROUTER_MODULAR");
-            throw Exception('Bind not found for type: ${T.toString()}${key != null ? ' with key: $key' : ''}');
+            // Gerar mensagem de erro detalhada
+            final errorMessage = _generateDetailedErrorMessage<T>(currentContext, key, e2);
+            throw Exception(errorMessage);
           }
         }
-        log('❌ [BindResolver] Sem AppModule, lançando exceção', name: "GO_ROUTER_MODULAR");
-        throw Exception('Bind not found for type: ${T.toString()}${key != null ? ' with key: $key' : ''}');
+        // Gerar mensagem de erro detalhada
+        final errorMessage = _generateDetailedErrorMessage<T>(currentContext, key, e);
+        throw Exception(errorMessage);
       }
     }
 
@@ -98,5 +81,67 @@ class BindResolver {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Gera mensagem de erro detalhada com orientações ao usuário
+  String _generateDetailedErrorMessage<T extends Object>(Type? moduleContext, String? key, [dynamic originalError]) {
+    final typeName = T.toString();
+
+    final sb = StringBuffer();
+
+    // Título
+    sb.writeln('Dependency Injection Error');
+    sb.writeln('Bind not found for type: `$typeName` | Module: `${moduleContext?.toString() ?? "Global"}`');
+
+    // Descrição
+    sb.writeln('The dependency `$typeName` is not registered in the DI container.');
+
+    // Incluir trace do auto_injector se disponível
+    String? chain;
+    if (originalError != null) {
+      final errorStr = originalError.toString();
+      final traceMatch = RegExp(r'Trace: (.*)', multiLine: true).firstMatch(errorStr);
+      if (traceMatch != null) {
+        chain = traceMatch.group(1);
+        if (chain != null) {
+          sb.writeln('$chain');
+        }
+      }
+    }
+
+    // Tentar extrair arquivo .dart mais provável do stack trace
+    String? mostLikelyFile;
+    if (originalError != null) {
+      final errorStr = originalError.toString();
+      // Procurar por padrão: package:package_name/path/file.dart
+      final fileMatch = RegExp(r'(package:[^\s]+\.dart)').firstMatch(errorStr);
+      if (fileMatch != null) {
+        mostLikelyFile = fileMatch.group(1);
+      }
+    }
+
+    // Recomendação de fix
+    sb.writeln('');
+    sb.writeln('RECOMMENDED FIX:');
+    sb.writeln('Ensure all required dependencies are registered before usage:');
+
+    // Gerar exemplos de registros baseados na cadeia de dependências
+    if (chain != null) {
+      final types = chain.split('->');
+      for (var i = 0; i < types.length; i++) {
+        final type = types[i].trim();
+        sb.writeln('  i.add<$type>(() => YourImplementation());');
+      }
+    } else {
+      sb.writeln('  i.add<$typeName>(() => YourImplementation());');
+    }
+
+    // Adicionar arquivo mais provável se encontrado
+    if (mostLikelyFile != null) {
+      sb.writeln('');
+      sb.writeln('📍 Most likely file: $mostLikelyFile');
+    }
+
+    return sb.toString();
   }
 }

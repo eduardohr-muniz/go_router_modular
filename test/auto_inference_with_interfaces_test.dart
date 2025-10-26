@@ -46,6 +46,39 @@ void main() {
 
     log('🎉 TESTE PASSOU! Auto-resolução de dependências funcionou!', name: 'TEST');
   });
+
+  test('✅ Teste: AppModule fornece dependências para outro módulo', () async {
+    log('🔬 Teste: Módulo tentando acessar dependências do AppModule...', name: 'TEST');
+
+    // AppModule registra algumas dependências
+    final appModule = AppModuleComDependencias();
+    await InjectionManager.instance.registerAppModule(appModule);
+
+    // Outro módulo tenta acessar dependências do AppModule
+    final module = ModuloQueUsaAppModule();
+    await InjectionManager.instance.registerBindsModule(module);
+    await Future.delayed(Duration(milliseconds: 10));
+
+    // Definir contexto do módulo
+    InjectionManager.instance.setModuleContext(ModuloQueUsaAppModule);
+
+    log('🔍 Tentando resolver dependências do AppModule...', name: 'TEST');
+
+    // ✅ Deve conseguir acessar dependências do AppModule
+    final appService = Modular.get<AppService>();
+    log('✅ AppService resolvido: ${appService.runtimeType}', name: 'TEST');
+    expect(appService, isA<AppServiceImpl>());
+
+    final moduleService = Modular.get<ModuleService>();
+    log('✅ ModuleService resolvido: ${moduleService.runtimeType}', name: 'TEST');
+    expect(moduleService, isA<ModuleServiceImpl>());
+
+    // Verificar que ModuleService conseguiu acessar AppService (do AppModule)
+    expect(moduleService.appService, isNotNull);
+    expect(moduleService.appService, isA<AppServiceImpl>());
+
+    log('🎉 TESTE PASSOU! Módulo acessou dependências do AppModule!', name: 'TEST');
+  });
 }
 
 // AppModule vazio para o teste
@@ -148,5 +181,54 @@ class MyApiService implements IApiService {
   void fetchData() {
     log('Fetching data via API client', name: 'API_SERVICE');
     _client.makeRequest();
+  }
+}
+
+// ============ TESTE 2: AppModule fornece dependências ============
+
+abstract class AppService {
+  String getAppData();
+}
+
+class AppServiceImpl implements AppService {
+  @override
+  String getAppData() => 'Data from AppModule';
+}
+
+abstract class ModuleService {
+  AppService get appService;
+  String processAppData();
+}
+
+class ModuleServiceImpl implements ModuleService {
+  final AppService _appService;
+
+  ModuleServiceImpl(this._appService);
+
+  @override
+  AppService get appService => _appService;
+
+  @override
+  String processAppData() => 'Processed: ${_appService.getAppData()}';
+}
+
+class AppModuleComDependencias extends Module {
+  @override
+  void binds(Injector i) {
+    log('📝 AppModule registrando dependências...', name: 'TEST');
+    i.add<AppService>(() => AppServiceImpl());
+    log('📝 AppModule registrado!', name: 'TEST');
+  }
+}
+
+class ModuloQueUsaAppModule extends Module {
+  @override
+  void binds(Injector i) {
+    log('📝 Módulo registrando que depende do AppModule...', name: 'TEST');
+
+    // Este módulo precisa acessar AppService do AppModule!
+    i.add<ModuleService>(() => ModuleServiceImpl(i.get<AppService>()));
+
+    log('📝 Módulo registrado!', name: 'TEST');
   }
 }
