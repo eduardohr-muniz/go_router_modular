@@ -20,7 +20,7 @@ class AppModule extends Module {
 
 class HomeModule extends Module {
   @override
-  void binds(Injector i) {
+ FutureBinds binds(Injector i) {
     i.addSingleton<HomeController>(() => HomeController());
   }
 

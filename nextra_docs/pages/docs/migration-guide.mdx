@@ -25,7 +25,7 @@ class MyModule extends Module {
 ```dart
 class MyModule extends Module {
   @override
-  void binds(Injector i) {
+ FutureBinds binds(Injector i) {
     i.addSingleton<ApiService>(() => ApiService());
     i.addSingleton<DatabaseService>(() => DatabaseService());
   }
@@ -82,7 +82,7 @@ void binds(Injector i) {
 ```dart
 class MyModule extends Module {
   @override
-  void binds(Injector i) {
+ FutureBinds binds(Injector i) {
     i.addSingleton<ApiService>(() => ApiService(), key: 'main');
     i.addSingleton<DatabaseService>(() => DatabaseService());
     i.add<CacheService>(() => CacheService());

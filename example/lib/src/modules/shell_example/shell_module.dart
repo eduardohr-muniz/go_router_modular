@@ -8,7 +8,7 @@ import 'pages/settings_page.dart';
 
 class ShellModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton(() => ShellService());
   }
 
@@ -51,7 +51,7 @@ class ShellModule extends Module {
 
 class ProfileModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton<ProfileService>(() => ProfileService());
   }
 
@@ -78,7 +78,7 @@ class ProfileModule extends Module {
 
 class SettingsModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton<SettingsService>(() => SettingsService());
   }
 

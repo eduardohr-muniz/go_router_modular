@@ -14,7 +14,7 @@ import 'package:go_router_modular/src/core/injection_manager/injection_manager.d
 /// ```dart
 /// class MyModule extends Module {
 ///   @override
-///   void binds(Injector i) {
+///  FutureBinds binds(Injector i) {
 ///     // 1. Registrar a implementação concreta
 ///     i.addLazySingleton<MyServiceImpl>(() => MyServiceImpl());
 ///

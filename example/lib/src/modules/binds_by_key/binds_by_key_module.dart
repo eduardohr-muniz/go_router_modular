@@ -11,7 +11,7 @@ class BindsByKeyModule extends Module {
   }
 
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     // Registrar BindSingleton com interface
     i.addLazySingleton<IBindSingleton>(() => BindSingleton());
 
@@ -39,7 +39,7 @@ class BindsByKeyModule extends Module {
 
 class BindsByKeyImportTest extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.add(() => DioFake(baseUrl: 'https://google.com'), key: 'dio_google');
   }
 }

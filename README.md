@@ -121,7 +121,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
   @override
-  void binds(Injector i) {
+ FutureBinds binds(Injector i) {
     // Registra seus binds usando o Injector
     i.addSingleton<HomeController>(() => HomeController());
     i.addLazySingleton<AuthService>(() => AuthService());
@@ -162,7 +162,7 @@ Future<void> main() async {
 ```dart
 class HomeModule extends Module {
   @override
-  void binds(Injector i) {
+ FutureBinds binds(Injector i) {
     i.addSingleton<HomeController>(() => HomeController());
     i.addLazySingleton<HomeService>(() => HomeService(i.get<HomeController>()));
   }
@@ -184,7 +184,7 @@ class HomeModule extends Module {
 // features/cart/lib/cart_module.dart
 class CartModule extends Module {
   @override
-  void binds(Injector i) {
+ FutureBinds binds(Injector i) {
     // Singleton: uma única instância compartilhada
     i.addSingleton<CartController>(() => CartController());
     

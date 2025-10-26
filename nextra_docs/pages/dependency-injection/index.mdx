@@ -22,7 +22,7 @@ final service = Bind.get<MyService>();
 ```dart
 class HomeModule extends Module {
   @override
-  void binds(Injector i) {
+ FutureBinds binds(Injector i) {
     i.addSingleton<HomeController>(() => HomeController());
     i.add<ApiService>(() => ApiService());
   }
@@ -113,7 +113,7 @@ class MyWidget extends StatelessWidget {
 ```dart
 class ProductsModule extends Module {
   @override
-  void binds(Injector i) {
+ FutureBinds binds(Injector i) {
     i.addSingleton<ProductsController>(() => ProductsController());
     i.add<ProductsRepository>(() => ProductsRepository());
     i.addLazySingleton<ApiService>(() => ApiService());

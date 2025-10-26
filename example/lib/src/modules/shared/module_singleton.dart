@@ -2,7 +2,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class ModuleSingleton extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     // Registrar a implementação concreta
     i.addLazySingleton<BindSingleton>(() => BindSingleton());
 

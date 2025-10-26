@@ -7,7 +7,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addSingleton(() => DioFake(baseUrl: 'https://padrao.com'));
   }
 

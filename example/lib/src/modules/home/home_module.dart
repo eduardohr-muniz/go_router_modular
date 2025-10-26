@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:example/src/modules/binds_by_key/binds_by_key_module.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:example/src/modules/shared/shared_module.dart';
@@ -9,12 +7,12 @@ import 'pages/demo_page.dart';
 
 class HomeModule extends Module {
   @override
-  FutureOr<List<Module>> imports() {
+  FutureModules imports() {
     return [SharedModule(), BindsByKeyModule()];
   }
 
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton(() => HomeService());
   }
 

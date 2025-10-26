@@ -14,7 +14,7 @@
     
     // After (4.3.x):
     @override
-    void binds(Injector i) {
+   FutureBinds binds(Injector i) {
       i.addLazySingleton<MyService>(() => MyService());
       i.add<ApiService>(() => ApiService());
     }
@@ -171,7 +171,7 @@
     ];
     
     @override
-    FutureOr<List<Module>> imports() => [SharedModule()];
+    FutureModules imports() => [SharedModule()];
     ```
 
 * **Loader API Changes**: Updated loader system implementation
@@ -217,7 +217,7 @@
     ];
     
     @override
-    FutureOr<List<Module>> imports() => [ // ✅ Async method
+    FutureModules imports() => [ // ✅ Async method
       SharedModule()
     ];
   }
@@ -253,7 +253,7 @@
   
   // Example of async imports
   @override
-  FutureOr<List<Module>> imports() async {
+  FutureModules imports() async {
     if (await shouldLoadFeatureModule()) {
       return [FeatureModule()];
     }

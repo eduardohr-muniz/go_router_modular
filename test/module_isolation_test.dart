@@ -215,7 +215,7 @@ class AppModuleEmpty extends Module {}
 /// AppModule de teste com GlobalService
 class AppModuleTest extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton(() => GlobalService());
   }
 }
@@ -223,7 +223,7 @@ class AppModuleTest extends Module {
 /// Módulo A - Fornece ServiceA
 class ModuleA extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton(() => ServiceA());
   }
 }
@@ -231,7 +231,7 @@ class ModuleA extends Module {
 /// Módulo B - NÃO importa A, mas fornece ServiceB
 class ModuleB extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton(() => ServiceB(serviceA: null)); // Não depende de A
   }
 }
@@ -239,10 +239,10 @@ class ModuleB extends Module {
 /// Módulo B com imports - BOA PRÁTICA
 class ModuleBWithImports extends Module {
   @override
-  List<Module> imports() => [ModuleA()];
+  FutureModules imports() => [ModuleA()];
 
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton(() => ServiceB(serviceA: i.get<ServiceA>()));
   }
 }
@@ -250,10 +250,10 @@ class ModuleBWithImports extends Module {
 /// Módulo C - Importa B
 class ModuleCImportsB extends Module {
   @override
-  List<Module> imports() => [ModuleB()];
+  FutureModules imports() => [ModuleB()];
 
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton(() => ServiceC(serviceB: i.get<ServiceB>()));
   }
 }
