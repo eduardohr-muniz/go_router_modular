@@ -1,3 +1,66 @@
+## 5.0.0
+
+### Breaking Changes
+* **Dependency Injection System**: Migrated from custom injection system to GetIt
+  - Migration examples:
+    ```dart
+    // Before (4.2.x):
+    @override
+    List<Bind<Object>> get binds => [
+      Bind.singleton<MyService>((i) => MyService()),
+      Bind.factory<ApiService>((i) => ApiService()),
+    ];
+    final service = Modular.get<MyService>();
+    
+    // After (4.3.x):
+    @override
+    void binds(Injector i) {
+      i.addLazySingleton<MyService>(() => MyService());
+      i.add<ApiService>(() => ApiService());
+    }
+
+    ```
+### Added
+* **Enhanced Dependency Injection**: New `Bind.get<T>()` API with key support
+  - Support for retrieving dependencies with unique keys
+  - Better type safety and error handling
+  - Improved service composition capabilities
+  - Example:
+    ```dart
+    // Register with key
+    Bind.register(Bind.singleton<ApiService>((i) => ApiService(), key: 'api'));
+    
+    // Retrieve with key
+    final apiService = Bind.get<ApiService>(key: 'api');
+    ```
+
+* **Advanced Transition System**: Integrated go_transitions package
+  - Rich set of built-in transitions (fade, slide, scale, rotate, etc.)
+  - Transition inheritance system (child routes inherit from parent modules)
+  - Customizable duration and curve settings
+  - Example:
+    ```dart
+    // Module with transition
+    ModuleRoute('/', module: HomeModule(), 
+      transition: GoTransitions.fadeUpwards, 
+      duration: Duration(milliseconds: 300))
+    
+    // Child route inherits or overrides
+    ChildRoute('/details', child: (_, __) => DetailsPage(),
+      transition: GoTransitions.slide.toRight.withFade)
+    ```
+
+### Improved
+* **Performance**: Optimized dependency injection with GetIt
+  - Faster dependency resolution
+  - Better memory management
+  - Reduced overhead in dependency lookup
+
+* **Developer Experience**: Enhanced transition system
+  - More intuitive transition configuration
+  - Better error messages for transition issues
+  - Comprehensive transition inheritance
+
 ## 4.2.2
 ### Improved
 * Improved the dispose process to ensure proper resource release and prevent memory leaks.
