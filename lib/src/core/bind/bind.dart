@@ -1,9 +1,8 @@
 import 'dart:developer';
-import 'package:get_it/get_it.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/exceptions/exception.dart';
 import 'package:go_router_modular/src/di/injector.dart';
-import 'package:go_router_modular/src/core/injection_manager.dart';
+import 'package:go_router_modular/src/core/injection_manager/injection_manager.dart';
 
 /// Simplified Bind class that delegates to GetIt
 ///

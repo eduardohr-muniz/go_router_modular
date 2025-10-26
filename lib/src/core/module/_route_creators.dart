@@ -1,45 +1,7 @@
-import 'dart:async';
-import 'dart:developer';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
-import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
+part of 'module.dart';
 
-abstract class Module {
-  FutureOr<List<Module>> imports() => [];
-
-  /// Seguindo o padrão do flutter_modular: recebe o injector e registra os binds diretamente
-  void binds(Injector i) {}
-
-  /// DEPRECATED: Use binds(Injector i) em vez disso
-  @Deprecated('Use binds(Injector i) para seguir o padrão do flutter_modular')
-  FutureOr<List<Bind<Object>>> legacyBinds() => [];
-  List<ModularRoute> get routes => const [];
-
-  void initState(Injector i) {}
-  void dispose() {}
-
-  List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
-    List<RouteBase> result = [];
-    InjectionManager.instance.registerAppModule(this);
-
-    result.addAll(_createChildRoutes(topLevel: topLevel));
-    result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
-    result.addAll(_createShellRoutes(topLevel, modulePath));
-
-    return result;
-  }
-
-  Set<Module> didChangeGoingReference = {};
-
-  void _onDidChange(Module module) {
-    didChangeGoingReference.add(module);
-    Future.microtask(() {
-      didChangeGoingReference.remove(module);
-    });
-  }
-
+/// Criadores de rotas (child, module, shell)
+extension RouteCreators on Module {
   GoRoute _createChild({required ChildRoute childRoute, required bool topLevel}) {
     return GoRoute(
       path: _normalizePath(path: childRoute.path, topLevel: topLevel),
@@ -59,12 +21,6 @@ abstract class Module {
       parentNavigatorKey: childRoute.parentNavigatorKey,
       redirect: childRoute.redirect,
     );
-  }
-
-  List<GoRoute> _createChildRoutes({required bool topLevel}) {
-    return routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) != '/').map((route) {
-      return _createChild(childRoute: route, topLevel: topLevel);
-    }).toList();
   }
 
   GoRoute _createModule({required ModuleRoute module, required String modulePath, required bool topLevel}) {
@@ -100,32 +56,10 @@ abstract class Module {
     );
   }
 
-  FutureOr<String?> _buildRedirectAndInjectBinds(
-    BuildContext context,
-    GoRouterState state, {
-    required Module module,
-    required String modulePath,
-    required bool topLevel,
-    FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
-  }) async {
-    final shouldShowLoader = !RouteWithCompleterService.hasRouteCompleter();
-
-    try {
-      final completer = RouteWithCompleterService.getLastCompleteRoute();
-      if (shouldShowLoader) ModularLoader.show();
-      await _registerModule(module);
-      completer.complete();
-    } catch (e) {
-      if (e is GoRouterModularException) {
-        log('${e.message}', name: 'GO_ROUTER_MODULAR');
-        rethrow;
-      }
-    } finally {
-      if (shouldShowLoader) ModularLoader.hide();
-    }
-
-    if (context.mounted) return redirect?.call(context, state);
-    return null;
+  List<GoRoute> _createChildRoutes({required bool topLevel}) {
+    return routes.whereType<ChildRoute>().where((route) => adjustRoute(route.path) != '/').map((route) {
+      return _createChild(childRoute: route, topLevel: topLevel);
+    }).toList();
   }
 
   List<GoRoute> _createModuleRoutes({required String modulePath, required bool topLevel}) {
@@ -172,55 +106,31 @@ abstract class Module {
     }).toList();
   }
 
-  String adjustRoute(String route) {
-    if (route == "/") {
-      return "/";
-    } else if (route.startsWith("/:")) {
-      return "/";
-    } else {
-      return route;
+  FutureOr<String?> _buildRedirectAndInjectBinds(
+    BuildContext context,
+    GoRouterState state, {
+    required Module module,
+    required String modulePath,
+    required bool topLevel,
+    FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
+  }) async {
+    final shouldShowLoader = !RouteWithCompleterService.hasRouteCompleter();
+
+    try {
+      final completer = RouteWithCompleterService.getLastCompleteRoute();
+      if (shouldShowLoader) ModularLoader.show();
+      await _registerModule(module);
+      completer.complete();
+    } catch (e) {
+      if (e is GoRouterModularException) {
+        log('${e.message}', name: 'GO_ROUTER_MODULAR');
+        rethrow;
+      }
+    } finally {
+      if (shouldShowLoader) ModularLoader.hide();
     }
-  }
 
-  String _normalizePath({required String path, required bool topLevel}) {
-    if (path.startsWith("/") && !topLevel && !path.startsWith("/:")) {
-      path = path.substring(1);
-    }
-    return _parsePath(path);
-  }
-
-  Widget _buildRouteChild(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
-    // Executa registro com prioridade (fire and forget - não bloqueia UI)
-
-    return route.child(context, state);
-  }
-
-  Page<void> _buildCustomTransitionPage(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
-    return CustomTransitionPage(
-      key: state.pageKey,
-      child: route.child(context, state),
-      transitionsBuilder: Transition.builder(
-        configRouteManager: () {},
-        pageTransition: route.pageTransition ?? Modular.getDefaultPageTransition,
-      ),
-    );
-  }
-
-  Future<void> _registerModule(Module module) async {
-    await InjectionManager.instance.registerBindsModule(module);
-  }
-
-  void _disposeModule(Module module) {
-    if (didChangeGoingReference.contains(module)) return;
-    InjectionManager.instance.unregisterModule(module);
-  }
-
-  String _parsePath(String path) {
-    if (!path.endsWith('/')) {
-      path = '$path/';
-    }
-    path = path.replaceAll(RegExp(r'/+'), '/');
-    if (path == '/') return path;
-    return path.substring(0, path.length - 1);
+    if (context.mounted) return redirect?.call(context, state);
+    return null;
   }
 }
