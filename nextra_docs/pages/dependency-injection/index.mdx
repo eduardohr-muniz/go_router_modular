@@ -64,6 +64,22 @@ Created only when first used:
 i.addLazySingleton<HeavyService>(() => HeavyService());
 ```
 
+## Async Dependencies
+
+For dependencies that need async initialization:
+
+```dart
+class DatabaseModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) async {
+    // Wait for database connection
+    await Future.delayed(Duration(seconds: 1));
+    
+    i.addSingleton<DatabaseService>(() => DatabaseService());
+  }
+}
+```
+
 ## Using Keys
 
 Register multiple instances of the same type:

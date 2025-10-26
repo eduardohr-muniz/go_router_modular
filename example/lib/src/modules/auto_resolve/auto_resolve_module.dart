@@ -7,7 +7,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class AutoResolveModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton(() => HomeService());
     i.addLazySingleton(() => A(i.get()));
     i.add(() => B(i.get()));

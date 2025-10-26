@@ -1,12 +1,10 @@
-import 'dart:async';
-
 import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'pages/bind_by_key_page.dart';
 
 class BindsByKeyModule extends Module {
   @override
-  FutureOr<List<Module>> imports() {
+  FutureModules imports() {
     return [
       BindsByKeyImportTest(),
     ];

@@ -73,6 +73,22 @@ class HomePage extends StatelessWidget {
 }
 ```
 
+## Async Dependencies
+
+For dependencies that need async initialization:
+
+```dart
+class DatabaseModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) async {
+    // Wait for database connection
+    await Future.delayed(Duration(seconds: 1));
+    
+    i.addSingleton<DatabaseService>(() => DatabaseService());
+  }
+}
+```
+
 ## Next Steps
 
 - [Routes & Modules](/routes/routes-system) - Learn routing

@@ -10,11 +10,16 @@ part '_route_builders.dart';
 part '_route_creators.dart';
 part '_path_utils.dart';
 
+/// Typedef para melhor semântica de binds assíncronos
+typedef FutureBinds = FutureOr<void>;
+typedef FutureModules = FutureOr<List<Module>>;
+
 abstract class Module {
-  FutureOr<List<Module>> imports() => [];
+  FutureModules imports() => [];
 
   /// Seguindo o padrão do flutter_modular: recebe o injector e registra os binds diretamente
-  void binds(Injector i) {}
+  /// Suporta binds assíncronos para inicialização de dependências que precisam de await
+  FutureBinds binds(Injector i) {}
 
   /// DEPRECATED: Use binds(Injector i) em vez disso
   @Deprecated('Use binds(Injector i) para seguir o padrão do flutter_modular')
