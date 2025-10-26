@@ -77,14 +77,23 @@ class InjectionManager {
   /// Obtém o AutoInjector correto baseado no contexto do módulo atual
   /// Retorna o injector do módulo atual (que inclui seus imports) ou o injector principal (AppModule)
   AutoInjector getContextualInjector() {
-    // Se temos um contexto de módulo específico, usar o injector desse módulo
     final currentContext = _registry.currentModuleContext;
+    final appModule = _registry.appModule;
+
+    // Se temos um contexto de módulo específico, usar o injector desse módulo
     if (currentContext != null && _moduleInjectors.containsKey(currentContext)) {
-      return _moduleInjectors[currentContext]!;
+      final injector = _moduleInjectors[currentContext]!;
+      return injector;
     }
 
-    // Fallback para o injector principal (AppModule)
-    return _autoInjector;
+    // Fallback para o injector principal (AppModule) ou injector do AppModule se disponível
+    AutoInjector fallbackInjector = _autoInjector;
+
+    if (appModule != null && _moduleInjectors.containsKey(appModule.runtimeType)) {
+      fallbackInjector = _moduleInjectors[appModule.runtimeType]!;
+    }
+
+    return fallbackInjector;
   }
 
   // Sistema de fila sequencial para operações de módulos
@@ -146,24 +155,17 @@ class InjectionManager {
 
     // SEGUINDO O PADRÃO DO FLUTTER_MODULAR (tracker.dart linhas 207-213):
     // 1. Criar injector para o módulo
-    final moduleInjector = _createModuleInjector(module);
+    final moduleInjector = await _createModuleInjector(module);
 
     // 2. Adicionar ao mapa de injectors ANTES de commitar
-    log('📝 [InjectionManager] Adicionando injector ao mapa para: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
     _moduleInjectors[module.runtimeType] = moduleInjector;
-    log('📝 [InjectionManager] Injector adicionado. Mapas atuais: ${_moduleInjectors.keys}', name: "GO_ROUTER_MODULAR");
 
     // 3. Adicionar injector do módulo ao injector principal
     // Como o injector principal já foi commitado no callback 'on', precisamos
     // uncommit temporariamente para adicionar novos injectors
     // (SEGUINDO O PADRÃO DO FLUTTER_MODULAR)
-    log('🔓 [InjectionManager] Uncommit temporário para adicionar injector', name: "GO_ROUTER_MODULAR");
     _autoInjector.uncommit();
-
-    log('➕ [InjectionManager] Adicionando injector do módulo', name: "GO_ROUTER_MODULAR");
     _autoInjector.addInjector(moduleInjector);
-
-    log('🔒 [InjectionManager] Commit do injector principal', name: "GO_ROUTER_MODULAR");
     _autoInjector.commit();
 
     // Inicializar estado do módulo
@@ -176,53 +178,33 @@ class InjectionManager {
   }
 
   /// Cria um AutoInjector para um módulo (seguindo padrão flutter_modular - tracker.dart linha 275)
-  AutoInjector _createModuleInjector(go_router_modular.Module module) {
+  Future<AutoInjector> _createModuleInjector(go_router_modular.Module module) async {
     // SEGUINDO O PADRÃO DO FLUTTER_MODULAR: criar injector sem callback 'on'
-    // Vamos registrar os binds primeiro e commitar depois
     final moduleInjector = AutoInjector(tag: module.runtimeType.toString());
-
-    log('🔧 [InjectionManager._createModuleInjector] Criado injector para: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
 
     // Processar imports do módulo
     final imports = module.imports();
     final importsList = imports is Future ? <go_router_modular.Module>[] : imports;
 
-    log('🔍 [InjectionManager._createModuleInjector] Processando ${importsList.length} imports', name: "GO_ROUTER_MODULAR");
-
     for (final importedModule in importsList) {
       _registry.addImport(module.runtimeType, importedModule.runtimeType);
-      log('📥 [InjectionManager._createModuleInjector] Import: $importedModule', name: "GO_ROUTER_MODULAR");
-
-      // Criar ou reusar o injector do módulo importado
-      final importedInjector = _getOrCreateModuleInjector(importedModule);
-
-      // Adicionar o injector importado ao injector do módulo atual
+      final importedInjector = await _getOrCreateModuleInjector(importedModule);
       moduleInjector.addInjector(importedInjector);
-      log('✅ [InjectionManager._createModuleInjector] Injector importado adicionado', name: "GO_ROUTER_MODULAR");
     }
 
-    // IMPORTANTE: Adicionar o AppModule ao injector do módulo
-    // Módulos devem ter acesso aos binds do AppModule (globais)
-    // Isso permite que during module.binds(), o módulo possa resolver dependências do AppModule
-    final appModule = _registry.appModule;
-    if (appModule != null && appModule.runtimeType != module.runtimeType) {
-      final appModuleInjector = _moduleInjectors[appModule.runtimeType];
-      if (appModuleInjector != null) {
-        moduleInjector.addInjector(appModuleInjector);
-        log('✅ [InjectionManager._createModuleInjector] AppModule adicionado ao injector do módulo', name: "GO_ROUTER_MODULAR");
-      }
-    }
+    // IMPORTANTE: NÃO adicionar o AppModule ao injector do módulo
+    // O AppModule fica no injector principal (_autoInjector) e é acessível por ele
+    // Módulos devem acessar binds do AppModule através do injector principal (fallback)
 
     // Criar um wrapper Injector e chamar module.binds() (SEGUINDO PADRÃO FLUTTER_MODULAR linha 282)
-    log('🔧 [InjectionManager._createModuleInjector] Chamando module.binds()', name: "GO_ROUTER_MODULAR");
-    // Importar di/injector explicitamente para evitar conflito com auto_injector
     final injectorWrapper = go_router_modular.Injector.fromAutoInjector(moduleInjector);
-    module.binds(injectorWrapper);
-    log('✅ [InjectionManager._createModuleInjector] module.binds() concluído', name: "GO_ROUTER_MODULAR");
+    final bindsResult = module.binds(injectorWrapper);
+    // Se binds retorna um Future, aguardar (FutureBinds é FutureOr<void>)
+    if (bindsResult is Future) {
+      await bindsResult;
+    }
 
     // Commit do injector do módulo após registrar todos os binds
-    // Isso evita warnings quando o injector for usado
-    log('🔒 [InjectionManager._createModuleInjector] Commit do injector do módulo', name: "GO_ROUTER_MODULAR");
     moduleInjector.commit();
 
     return moduleInjector;
@@ -235,12 +217,12 @@ class InjectionManager {
   Map<Type, AutoInjector> get moduleInjectors => _moduleInjectors;
 
   /// Obtém ou cria o injector de um módulo
-  AutoInjector _getOrCreateModuleInjector(go_router_modular.Module module) {
+  Future<AutoInjector> _getOrCreateModuleInjector(go_router_modular.Module module) async {
     if (_moduleInjectors.containsKey(module.runtimeType)) {
       return _moduleInjectors[module.runtimeType]!;
     }
 
-    final injector = _createModuleInjector(module);
+    final injector = await _createModuleInjector(module);
     _moduleInjectors[module.runtimeType] = injector;
 
     return injector;

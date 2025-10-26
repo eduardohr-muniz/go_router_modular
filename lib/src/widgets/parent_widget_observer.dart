@@ -15,6 +15,13 @@ class ParentWidgetObserver extends StatefulWidget {
 
 class _ParentWidgetObserverState extends State<ParentWidgetObserver> {
   @override
+  void initState() {
+    super.initState();
+    // IMPORTANTE: Definir o contexto ANTES do build para que os filhos possam resolver dependências
+    InjectionManager.instance.setModuleContext(widget.module.runtimeType);
+  }
+
+  @override
   void dispose() {
     widget.onDispose(widget.module);
     super.dispose();
@@ -22,7 +29,7 @@ class _ParentWidgetObserverState extends State<ParentWidgetObserver> {
 
   @override
   void didChangeDependencies() {
-    // Definir o contexto do módulo atual para resolução de binds
+    // Garantir que o contexto está definido sempre que as dependências mudam
     InjectionManager.instance.setModuleContext(widget.module.runtimeType);
 
     widget.didChangeDependencies(widget.module);
@@ -31,6 +38,9 @@ class _ParentWidgetObserverState extends State<ParentWidgetObserver> {
 
   @override
   Widget build(BuildContext context) {
+    // Garantir que o contexto está definido antes de renderizar o filho
+    // Isso permite que context.read<T>() funcione no initState/build dos filhos
+    InjectionManager.instance.setModuleContext(widget.module.runtimeType);
     return widget.child;
   }
 }

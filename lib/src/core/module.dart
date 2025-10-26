@@ -13,7 +13,8 @@ abstract class Module {
   FutureModules imports() => const [];
 
   /// Seguindo o padrão do flutter_modular: recebe o injector e registra os binds diretamente
-  void binds(Injector i) {}
+  /// Pode retornar um Future para injeções assíncronas
+  FutureBinds binds(Injector i) {}
 
   /// DEPRECATED: Use binds(Injector i) em vez disso
   @Deprecated('Use binds(Injector i) para seguir o padrão do flutter_modular')

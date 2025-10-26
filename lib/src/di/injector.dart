@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:auto_injector/auto_injector.dart' as ai;
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -14,13 +15,26 @@ class Injector {
     try {
       // Se temos um auto_injector específico (contexto de módulo), usar ele
       if (_autoInjector != null) {
-        return _autoInjector.get<T>(key: key);
+        try {
+          return _autoInjector.get<T>(key: key);
+        } catch (e) {
+          // Tentar fallback para o injector principal (AppModule) se não encontrou no módulo
+          try {
+            final mainInjector = InjectionManager.instance.injector;
+            return mainInjector.get<T>(key: key);
+          } catch (e2) {
+            rethrow;
+          }
+        }
       }
 
       // Caso contrário, usar o injector contextual (módulo atual ou AppModule)
       final contextualInjector = InjectionManager.instance.getContextualInjector();
-      final instance = contextualInjector.get<T>(key: key);
-      return instance;
+      try {
+        return contextualInjector.get<T>(key: key);
+      } catch (e) {
+        rethrow;
+      }
     } catch (e) {
       return Bind.get<T>(key: key); // Fallback to old system if needed
     }
