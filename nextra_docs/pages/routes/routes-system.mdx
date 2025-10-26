@@ -8,6 +8,7 @@ A comprehensive guide to routing, navigation, and module architecture with GoRou
 - [Route Types](#route-types)
 - [ChildRoute vs ModuleRoute](#childroute-vs-moduleroute)
 - [Shell Modules](#shell-modules)
+- [Page Transitions](#page-transitions)
 - [Navigation](#navigation)
 - [Route Parameters](#route-parameters)
 - [Module Nesting](#module-nesting)
@@ -389,6 +390,182 @@ class ConditionalShellPage extends StatelessWidget {
   }
 }
 ```
+
+## Page Transitions
+
+Go Router Modular integrates with the `go_transitions` package to provide a powerful and flexible page transition system. This allows you to create beautiful, smooth transitions between pages with minimal configuration.
+
+### Overview
+
+The transition system supports:
+- **Built-in transitions**: fade, slide, scale, rotate, and more
+- **Transition inheritance**: child routes inherit transitions from parent modules
+- **Customizable duration and curves**: fine-tune your animations
+- **Platform-specific defaults**: automatic fallbacks for different platforms
+
+### Basic Usage
+
+#### Module-Level Transitions
+
+Set transitions at the module level to apply to all child routes:
+
+```dart
+class HomeModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ModuleRoute(
+      '/',
+      module: HomeModule(),
+      transition: GoTransitions.fadeUpwards,
+      duration: Duration(milliseconds: 300),
+    ),
+  ];
+}
+```
+
+#### Child Route Transitions
+
+Override transitions for specific child routes:
+
+```dart
+class HomeModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    // Inherits fadeUpwards from parent module
+    ChildRoute('/', child: (_, __) => HomePage()),
+    
+    // Overrides with specific transition
+    ChildRoute('/details', 
+      child: (_, __) => DetailsPage(),
+      transition: GoTransitions.slide.toRight.withFade,
+      duration: Duration(milliseconds: 400),
+    ),
+  ];
+}
+```
+
+### Available Transitions
+
+#### Basic Transitions
+
+```dart
+// Fade transitions
+GoTransitions.fade
+GoTransitions.fadeUpwards
+GoTransitions.fadeDownwards
+
+// Slide transitions
+GoTransitions.slide.toLeft
+GoTransitions.slide.toRight
+GoTransitions.slide.toTop
+GoTransitions.slide.toBottom
+
+// Scale transitions
+GoTransitions.scale
+GoTransitions.scale.withFade
+
+// Rotate transitions
+GoTransitions.rotate
+GoTransitions.rotate.withFade
+
+// Platform-specific
+GoTransitions.cupertino  // iOS/macOS style
+GoTransitions.material   // Android style
+```
+
+#### Transition Modifiers
+
+Combine transitions with modifiers for enhanced effects:
+
+```dart
+// Slide with fade
+GoTransitions.slide.toRight.withFade
+
+// Scale with rotation
+GoTransitions.scale.withRotation
+
+// Slide with scale
+GoTransitions.slide.toLeft.withScale
+```
+
+### Transition Inheritance
+
+The transition system implements inheritance, allowing child routes to inherit or override parent transitions:
+
+```dart
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    // Parent module with transition
+    ModuleRoute(
+      '/home',
+      module: HomeModule(),
+      transition: GoTransitions.fadeUpwards,
+      duration: Duration(milliseconds: 300),
+    ),
+  ];
+}
+
+class HomeModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    // Inherits fadeUpwards from AppModule
+    ChildRoute('/', child: (_, __) => HomePage()),
+    
+    // Overrides with different transition
+    ChildRoute('/profile', 
+      child: (_, __) => ProfilePage(),
+      transition: GoTransitions.slide.toRight,
+      duration: Duration(milliseconds: 400),
+    ),
+  ];
+}
+```
+
+### Global Configuration
+
+Configure global default transitions in your app:
+
+```dart
+class AppWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Set global defaults
+    GoTransition.defaultCurve = Curves.easeInOut;
+    GoTransition.defaultDuration = Duration(milliseconds: 400);
+
+    return MaterialApp.router(
+      routerConfig: Modular.routerConfig,
+      theme: ThemeData(
+        // Platform-specific fallbacks
+        pageTransitionsTheme: PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: GoTransitions.fadeUpwards,
+            TargetPlatform.iOS: GoTransitions.cupertino,
+            TargetPlatform.macOS: GoTransitions.cupertino,
+            TargetPlatform.linux: GoTransitions.fade,
+            TargetPlatform.windows: GoTransitions.fade,
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
+### Migration from Previous Versions
+
+If you're migrating from the previous transition system:
+
+```dart
+// Before (4.2.x)
+ChildRoute('/', child: (_, __) => HomePage(), transition: PageTransition.fade)
+
+// After (5.0.x)
+ChildRoute('/', child: (_, __) => HomePage(), transition: GoTransitions.fade)
+```
+
+> **Note**: For more detailed examples and advanced usage patterns, see the [Page Transitions Examples](/routes/transitions/examples) section.
 
 ## Navigation
 
