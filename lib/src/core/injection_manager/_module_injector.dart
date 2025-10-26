@@ -22,6 +22,26 @@ class ModuleInjector extends Injector {
         _moduleInjector.add(builder, key: key);
       } else {
         log('✅ [ModuleInjector.add] Tipando como $T', name: "GO_ROUTER_MODULAR");
+
+        // INFERÊNCIA AUTOMÁTICA: Se T é uma interface e builder retorna uma implementação concreta,
+        // registrar TAMBÉM a implementação concreta automaticamente
+        try {
+          final tempInstance = builder();
+          final concreteType = tempInstance.runtimeType;
+
+          log('🔍 [ModuleInjector.add] Inferindo tipo concreto: $concreteType', name: "GO_ROUTER_MODULAR");
+
+          // Se T é uma interface abstrata e concreteType é diferente de T,
+          // registrar TAMBÉM concreteType para permitir i.get<Concrete>()
+          if (T != Object && T != concreteType) {
+            log('✅ [ModuleInjector.add] Auto-registrando implementação concreta: $concreteType', name: "GO_ROUTER_MODULAR");
+            // Usar auto_injector para registrar o tipo concreto dinamicamente
+            _moduleInjector.add(builder, key: key); // Registra automaticamente o tipo concreto
+          }
+        } catch (e) {
+          log('⚠️ [ModuleInjector.add] Erro na inferência automática: $e', name: "GO_ROUTER_MODULAR");
+        }
+
         // Passar o tipo explicitamente
         _moduleInjector.add<T>(builder, key: key);
       }
