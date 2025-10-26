@@ -12,14 +12,14 @@ import 'package:go_router_modular/go_router_modular.dart';
 /// apenas porque A foi inicializado antes (vazamento de dependências).
 void main() {
   group('Module Isolation Tests - Vazamento de Dependências', () {
-    setUp(() {
+    setUp(() async {
       // Limpar estado antes de cada teste
-      InjectionManager.instance.clearAllForTesting();
+      await InjectionManager.instance.clearAllForTesting();
     });
 
-    tearDown(() {
+    tearDown(() async {
       // Limpar estado após cada teste
-      InjectionManager.instance.clearAllForTesting();
+      await InjectionManager.instance.clearAllForTesting();
     });
 
     test('✅ CASO PERMITIDO #1: Módulos podem acessar binds do AppModule', () async {

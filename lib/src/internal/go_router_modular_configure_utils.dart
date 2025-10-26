@@ -57,7 +57,7 @@ class GoRouterModular {
   ///   ```dart
   ///   final myService = GoRouterModular.get<MyService>();
   ///   ```
-  static T get<T>() => Bind.get<T>();
+  static T get<T extends Object>() => Bind.get<T>();
 
   /// Returns the current route path based on the [BuildContext].
   ///

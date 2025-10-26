@@ -54,13 +54,12 @@ class GoRouterModular {
   ///   ```dart
   ///   final myService = GoRouterModular.get<MyService>();
   ///   ```
-  static T get<T>({String? key}) {
-    // Usar o injector contextual para respeitar o isolamento de módulos
+  static T get<T extends Object>({String? key}) {
+    // Usar o sistema de resolução com contexto de módulo
     try {
-      final contextualInjector = InjectionManager.instance.getContextualInjector();
-      return contextualInjector.get<T>(key: key);
+      return InjectionManager.instance.getWithModuleContext<T>(key: key);
     } catch (e) {
-      // Fallback para o sistema antigo se necessário
+      // Fallback para Bind.get se necessário
       return Bind.get<T>(key: key);
     }
   }

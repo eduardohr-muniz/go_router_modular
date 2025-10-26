@@ -1,47 +1,41 @@
-import 'package:auto_injector/auto_injector.dart' as ai;
+import 'package:get_it/get_it.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
+/// Wrapper para GetIt seguindo o padrão do flutter_modular
+/// Permite que módulos registrem binds usando i.add(), i.addSingleton(), etc.
 class Injector {
-  final ai.AutoInjector? _autoInjector;
+  final GetIt? _getIt;
 
-  Injector() : _autoInjector = null;
+  Injector() : _getIt = null;
 
-  /// Cria um Injector a partir de um AutoInjector específico
+  /// Cria um Injector a partir de um GetIt específico
   /// Usado para seguir o padrão do flutter_modular
-  Injector.fromAutoInjector(ai.AutoInjector injector) : _autoInjector = injector;
+  Injector.fromGetIt(GetIt getIt) : _getIt = getIt;
 
-  T get<T>({String? key}) {
-    try {
-      // Se temos um auto_injector específico (contexto de módulo), usar ele
-      if (_autoInjector != null) {
-        return _autoInjector.get<T>(key: key);
-      }
-
-      // Caso contrário, usar o injector contextual (módulo atual ou AppModule)
-      final contextualInjector = InjectionManager.instance.getContextualInjector();
-      final instance = contextualInjector.get<T>(key: key);
-      return instance;
-    } catch (e) {
-      return Bind.get<T>(key: key); // Fallback to old system if needed
-    }
+  /// Obtém uma instância registrada usando o sistema de resolução com contexto
+  T get<T extends Object>({String? key}) {
+    return InjectionManager.instance.getWithModuleContext<T>(key: key);
   }
 
-  /// Métodos para registrar binds diretamente (padrão flutter_modular)
-  void add<T>(T Function() builder, {String? key}) {
-    if (_autoInjector != null) {
-      _autoInjector.add<T>(builder, key: key);
-    }
+  /// Registra uma factory (nova instância a cada get)
+  /// Equivalente ao auto_injector.add()
+  void add<T extends Object>(T Function() builder, {String? key}) {
+    final getIt = _getIt ?? GetIt.instance;
+    getIt.registerFactory<T>(builder, instanceName: key);
   }
 
-  void addSingleton<T>(T Function() builder, {String? key}) {
-    if (_autoInjector != null) {
-      _autoInjector.addSingleton<T>(builder, key: key);
-    }
+  /// Registra um singleton (instância única criada imediatamente)
+  /// IMPORTANTE: GetIt.registerSingleton recebe a instância direta, não factory
+  /// Para manter compatibilidade, vamos usar registerLazySingleton que aceita factory
+  void addSingleton<T extends Object>(T Function() builder, {String? key}) {
+    final getIt = _getIt ?? GetIt.instance;
+    // Usar registerLazySingleton para aceitar factory function
+    getIt.registerLazySingleton<T>(builder, instanceName: key);
   }
 
-  void addLazySingleton<T>(T Function() builder, {String? key}) {
-    if (_autoInjector != null) {
-      _autoInjector.addLazySingleton<T>(builder, key: key);
-    }
+  /// Registra um lazy singleton (instância única criada no primeiro get)
+  void addLazySingleton<T extends Object>(T Function() builder, {String? key}) {
+    final getIt = _getIt ?? GetIt.instance;
+    getIt.registerLazySingleton<T>(builder, instanceName: key);
   }
 }

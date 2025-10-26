@@ -15,13 +15,14 @@ class BindsByKeyModule extends Module {
   @override
   void binds(Injector i) {
     // Registrar BindSingleton com interface
-
     i.addLazySingleton<IBindSingleton>(() => BindSingleton());
 
     // Registrar Dio com keys
     i.addLazySingleton(() => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local');
-    i.add(() => DioFake(baseUrl: 'http://api.remote.com'), key: 'dio_remote');
-    i.add(() => ApiFake(dio: i.get(key: 'dio_remote')));
+    i.addLazySingleton(() => DioFake(baseUrl: 'http://api.remote.com'), key: 'dio_remote');
+
+    // ApiFake depende de DioFake com key 'dio_remote'
+    i.add(() => ApiFake(dio: i.get<DioFake>(key: 'dio_remote')));
   }
 
   @override

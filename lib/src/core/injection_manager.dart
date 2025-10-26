@@ -1,37 +1,42 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
-import 'package:auto_injector/auto_injector.dart' as ai;
+import 'package:get_it/get_it.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
-import 'package:go_router_modular/src/internal/internal_logs.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 
-/// ValueObject para representar um bind único (Type + Key)
+/// Registro de um bind para rastreamento
+class _BindRegistration {
+  final Type type;
+  final String? instanceName;
 
+  _BindRegistration(this.type, this.instanceName);
+}
+
+/// InjectionManager usando GetIt com isolamento via prefixos de módulo
+///
+/// Estratégia de Isolamento:
+/// - AppModule: binds sem prefixo (globais)
+/// - Outros módulos: binds com prefixo "ModuleName_"
+/// - Resolução: tenta com prefixo do módulo atual, depois sem prefixo (AppModule)
+/// - Imports: módulos importados têm seus prefixos adicionados à lista de busca
 class InjectionManager {
   static InjectionManager? _instance;
-  InjectionManager._() {
-    // IMPORTANTE: Seguir o padrão do flutter_modular
-    // O injector principal deve ser committed imediatamente após criação
-    _injector.commit();
-  }
+  InjectionManager._();
   static InjectionManager get instance => _instance ??= InjectionManager._();
 
-  /// Main AutoInjector instance - similar to flutter_modular's approach
-  ai.AutoInjector _injector = ai.AutoInjector();
+  /// GetIt instance singleton
+  final GetIt _getIt = GetIt.instance;
 
-  /// Module-specific injectors tracked by module type
-  final Map<Type, ai.AutoInjector> _moduleInjectors = {};
+  /// Rastrear quais módulos estão ativos
+  final Set<Type> _activeModules = {};
 
-  /// Store which modules are currently active
-  final Map<Type, String> _activeModuleTags = {};
-
-  /// Cache de injectors importados (seguindo flutter_modular linha 59)
-  final Map<String, ai.AutoInjector> _importedInjectors = {};
-
-  /// Rastrear quais módulos cada módulo importa (para validação de acesso)
+  /// Rastrear quais módulos cada módulo importa
   final Map<Type, Set<Type>> _moduleImports = {};
+
+  /// Rastrear os binds registrados por cada módulo (para unregister)
+  final Map<Type, List<_BindRegistration>> _moduleBinds = {};
 
   /// Módulo ativo no contexto atual (para resolução de binds)
   Type? _currentModuleContext;
@@ -45,23 +50,85 @@ class InjectionManager {
     _currentModuleContext = moduleType;
   }
 
-  /// Obtém o injector correto baseado no contexto do módulo atual
-  /// Retorna o injector do módulo atual (que inclui seus imports) ou o injector principal (AppModule)
-  ai.AutoInjector getContextualInjector() {
-    // Se temos um contexto de módulo específico, usar o injector desse módulo
-    if (_currentModuleContext != null && _moduleInjectors.containsKey(_currentModuleContext)) {
-      return _moduleInjectors[_currentModuleContext]!;
+  /// Obtém o prefixo para um módulo
+  String _getModulePrefix(Type moduleType) {
+    return '${moduleType.toString()}_';
+  }
+
+  /// Obtém uma instância tentando diferentes contextos (módulo atual, imports, AppModule)
+  T getWithModuleContext<T extends Object>({String? key}) {
+    final typeName = T.toString();
+
+    // 1. Tentar no módulo atual (com prefixo)
+    if (_currentModuleContext != null && _activeModules.contains(_currentModuleContext)) {
+      final prefix = _getModulePrefix(_currentModuleContext!);
+
+      // Tentar com key se fornecida
+      if (key != null) {
+        final fullName = '$prefix$key';
+        if (_getIt.isRegistered<T>(instanceName: fullName)) {
+          return _getIt.get<T>(instanceName: fullName);
+        }
+      }
+
+      // Tentar com tipo
+      final fullTypeName = '$prefix$typeName';
+      if (_getIt.isRegistered<T>(instanceName: fullTypeName)) {
+        return _getIt.get<T>(instanceName: fullTypeName);
+      }
+
+      // 2. Tentar nos módulos importados (apenas se estiverem ativos)
+      final imports = _moduleImports[_currentModuleContext] ?? {};
+      for (final importedModule in imports) {
+        if (!_activeModules.contains(importedModule)) {
+          continue; // Pular módulos que foram disposed
+        }
+
+        final importPrefix = _getModulePrefix(importedModule);
+
+        if (key != null) {
+          final importFullName = '$importPrefix$key';
+          if (_getIt.isRegistered<T>(instanceName: importFullName)) {
+            return _getIt.get<T>(instanceName: importFullName);
+          }
+        }
+
+        final importFullTypeName = '$importPrefix$typeName';
+        if (_getIt.isRegistered<T>(instanceName: importFullTypeName)) {
+          return _getIt.get<T>(instanceName: importFullTypeName);
+        }
+      }
     }
 
-    // Fallback para o injector principal (AppModule)
-    return _injector;
+    // 3. Tentar no AppModule (sem prefixo - global)
+    if (key != null) {
+      if (_getIt.isRegistered<T>(instanceName: key)) {
+        return _getIt.get<T>(instanceName: key);
+      }
+    }
+
+    // Tentar com tipo como instanceName
+    if (_getIt.isRegistered<T>(instanceName: typeName)) {
+      return _getIt.get<T>(instanceName: typeName);
+    }
+
+    // 4. Tentar sem instanceName (registro direto por tipo - fallback)
+    if (key == null && _getIt.isRegistered<T>()) {
+      return _getIt.get<T>();
+    }
+
+    throw Exception('Bind not found for type: ${T.toString()}${key != null ? ' with key: $key' : ''}');
+  }
+
+  /// Obtém o GetIt principal
+  GetIt getContextualInjector() {
+    return _getIt;
   }
 
   // Sistema de fila sequencial para operações de módulos
   final Queue<Future<void> Function()> _operationQueue = Queue<Future<void> Function()>();
   bool _isProcessingQueue = false;
 
-  // Processa operações na fila sequencialmente
   Future<void> _processQueue() async {
     if (_isProcessingQueue || _operationQueue.isEmpty) {
       return;
@@ -79,7 +146,6 @@ class InjectionManager {
     }
   }
 
-  // Adiciona operação à fila e garante processamento sequencial
   Future<T> _enqueueOperation<T>(Future<T> Function() operation) async {
     final completer = Completer<T>();
 
@@ -105,83 +171,44 @@ class InjectionManager {
     await registerBindsModule(module);
   }
 
-  /// Cria um injector exportado para módulos importados (com cache)
-  /// Referência: flutter_modular linha 261-273
-  ai.AutoInjector _createExportedInjector(Module importedModule) {
-    final importTag = importedModule.runtimeType.toString();
-
-    if (_importedInjectors.containsKey(importTag)) {
-      return _importedInjectors[importTag]!;
-    }
-
-    final exportedInject = _createInjector(importedModule, '${importTag}_Imported');
-    _importedInjectors[importTag] = exportedInject;
-
-    return exportedInject;
-  }
-
-  /// Cria um injector para o módulo seguindo o padrão do flutter_modular
-  /// Referência: modular_core/lib/src/tracker.dart linha 275-284
-  ai.AutoInjector _createInjector(Module module, String tag, {bool trackImports = false}) {
-    final newInjector = ai.AutoInjector(tag: tag);
-
-    // Rastrear imports deste módulo (para validação de acesso)
-    if (trackImports) {
-      _moduleImports[module.runtimeType] = <Type>{};
-    }
-
-    // Adicionar injectors dos módulos importados primeiro
-    final imports = module.imports();
-    final importsList = imports is Future ? <Module>[] : imports;
-
-    for (final importedModule in importsList) {
-      // Usar injector exportado com cache
-      final exportedInjector = _createExportedInjector(importedModule);
-      newInjector.addInjector(exportedInjector);
-
-      // Rastrear que este módulo importa o módulo importado
-      if (trackImports) {
-        _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
-      }
-    }
-
-    // Chamar module.binds() passando o injector diretamente
-    // O módulo registra seus binds usando i.add(), i.addSingleton(), etc
-    module.binds(Injector.fromAutoInjector(newInjector));
-
-    // IMPORTANTE: Commitar o injector após registrar todos os binds
-    // Isso permite que os binds sejam resolvidos corretamente
-    newInjector.commit();
-
-    // Inicializar estado do módulo
-    module.initState(Injector.fromAutoInjector(newInjector));
-
-    return newInjector;
-  }
-
   Future<void> registerBindsModule(Module module) async {
     return _enqueueOperation(() => _registerBindsModuleInternal(module));
   }
 
   Future<void> _registerBindsModuleInternal(Module module) async {
-    if (_moduleInjectors.containsKey(module.runtimeType)) {
+    if (_activeModules.contains(module.runtimeType)) {
       return;
     }
 
-    // Criar injector para o módulo seguindo o padrão do flutter_modular
-    final moduleTag = '${module.runtimeType}_${DateTime.now().millisecondsSinceEpoch}';
-    final moduleInjector = _createInjector(module, moduleTag, trackImports: true);
+    _activeModules.add(module.runtimeType);
 
-    _moduleInjectors[module.runtimeType] = moduleInjector;
-    _activeModuleTags[module.runtimeType] = moduleTag;
+    // Rastrear imports deste módulo
+    _moduleImports[module.runtimeType] = <Type>{};
 
-    // IMPORTANTE: Apenas adicionar ao injector principal se for AppModule
-    // Outros módulos ficam isolados em seus próprios injectors
-    if (module == _appModule) {
-      _injector.uncommit();
-      _injector.addInjector(moduleInjector);
-      _injector.commit();
+    // Inicializar rastreamento de binds deste módulo
+    _moduleBinds[module.runtimeType] = [];
+
+    final imports = module.imports();
+    final importsList = imports is Future ? <Module>[] : imports;
+
+    for (final importedModule in importsList) {
+      _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
+
+      // Registrar módulo importado se ainda não foi registrado
+      if (!_activeModules.contains(importedModule.runtimeType)) {
+        await _registerBindsModuleInternal(importedModule);
+      }
     }
+
+    // Criar um Injector com contexto do módulo
+    final modulePrefix = module == _appModule ? null : _getModulePrefix(module.runtimeType);
+    final injector = ModuleInjector(_getIt, modulePrefix, module.runtimeType);
+
+    // Chamar module.binds() passando o injector com contexto
+    module.binds(injector);
+
+    // Inicializar estado do módulo
+    module.initState(injector);
 
     if (debugLog) {
       log('💉 INJECTED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
@@ -189,96 +216,85 @@ class InjectionManager {
   }
 
   Future<void> unregisterBinds(Module module) async {
-    // App module nunca é desregistrado
-    if (_appModule != null && module == _appModule!) {
-      return;
-    }
-
-    final moduleType = module.runtimeType;
-    final moduleInjector = _moduleInjectors[moduleType];
-
-    if (moduleInjector != null && _activeModuleTags.containsKey(moduleType)) {
-      final tag = _activeModuleTags[moduleType]!;
-
-      // Dispose do injector do módulo
-      _injector.disposeInjectorByTag(tag, (instance) {
-        // Chama dispose se implementar Disposable
-        if (instance is Disposable) {
-          instance.dispose();
-        }
-      });
-
-      _moduleInjectors.remove(moduleType);
-      _activeModuleTags.remove(moduleType);
-
-      if (debugLog) {
-        log('🗑️ DISPOSED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
-      }
-    }
+    return _enqueueOperation(() => _unregisterModuleInternal(module));
   }
 
   Future<void> unregisterModule(Module module) async {
-    if (module.runtimeType == _appModule?.runtimeType) return;
     return _enqueueOperation(() => _unregisterModuleInternal(module));
   }
 
   Future<void> _unregisterModuleInternal(Module module) async {
-    module.dispose();
-    await unregisterBinds(module);
+    if (!_activeModules.contains(module.runtimeType)) {
+      return;
+    }
+
+    try {
+      // Unregister todos os binds deste módulo
+      // IMPORTANTE: GetIt não permite unregister genérico sem o tipo
+      // Vamos usar uma abordagem de "marcar como removido" verificando se o módulo está ativo
+      // Os binds permanecerão no GetIt mas não serão acessíveis via getWithModuleContext
+      // Isso é uma limitação do GetIt vs auto_injector
+
+      // Para binds com instanceName, podemos tentar resetLazySingleton
+      final binds = _moduleBinds[module.runtimeType] ?? [];
+      for (final bind in binds) {
+        try {
+          if (bind.instanceName != null) {
+            // Tentar resetLazySingleton para limpar a instância
+            try {
+              await _getIt.resetLazySingleton(
+                instanceName: bind.instanceName,
+                disposingFunction: (instance) {
+                  CleanBind.fromInstance(instance);
+                },
+              );
+            } catch (_) {
+              // Se não for lazy singleton, ignorar
+            }
+          }
+        } catch (e) {
+          // Ignorar erros individuais
+          if (debugLog) {
+            log('⚠️ Failed to reset bind ${bind.type}: $e', name: "GO_ROUTER_MODULAR");
+          }
+        }
+      }
+
+      // Chamar dispose do módulo
+      module.dispose();
+
+      // Remover rastreamento
+      _activeModules.remove(module.runtimeType);
+      _moduleImports.remove(module.runtimeType);
+      _moduleBinds.remove(module.runtimeType);
+
+      if (debugLog) {
+        log('🗑️ DISPOSED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
+      }
+    } catch (e) {
+      if (debugLog) {
+        log('⚠️ Failed to unregister module ${module.runtimeType}: $e', name: "GO_ROUTER_MODULAR");
+      }
+    }
   }
 
-  /// Obtém instância do injector principal
-  ai.AutoInjector get injector => _injector;
+  /// Obtém instância do GetIt principal
+  GetIt get injector => _getIt;
 
   /// Clear all binds for testing purposes
-  void clearAllForTesting() {
+  Future<void> clearAllForTesting() async {
     try {
-      // IMPORTANTE: Chamar dispose() antes de limpar para fazer cleanup das instâncias
-      // Usar callback para chamar CleanBind.fromInstance em cada instância
-      try {
-        _injector.dispose((instance) {
-          CleanBind.fromInstance(instance);
-        });
-      } catch (e) {
-        // Ignorar erros de dispose - pode não ter instâncias
-      }
+      // Reset GetIt completamente (é assíncrono!)
+      await _getIt.reset(dispose: true);
 
-      // Limpar injectors de módulos
-      for (final moduleInjector in _moduleInjectors.values) {
-        try {
-          moduleInjector.dispose((instance) {
-            CleanBind.fromInstance(instance);
-          });
-        } catch (e) {
-          // Ignorar erros
-        }
-      }
-
-      // Limpar injectors importados
-      for (final importedInjector in _importedInjectors.values) {
-        try {
-          importedInjector.dispose((instance) {
-            CleanBind.fromInstance(instance);
-          });
-        } catch (e) {
-          // Ignorar erros
-        }
-      }
-
-      // Limpar mapas de módulos
-      _moduleInjectors.clear();
-      _activeModuleTags.clear();
-      _importedInjectors.clear();
+      // Limpar mapas de rastreamento
+      _activeModules.clear();
       _moduleImports.clear();
+      _moduleBinds.clear();
 
       // Resetar contexto e app module
       _currentModuleContext = null;
       _appModule = null;
-
-      // Criar um novo injector principal para limpeza completa
-      _injector = ai.AutoInjector();
-      // IMPORTANTE: Commitar o novo injector imediatamente
-      _injector.commit();
 
       if (debugLog) {
         log('🧹 Cleared all injectors for testing', name: "GO_ROUTER_MODULAR");
@@ -288,5 +304,92 @@ class InjectionManager {
         log('⚠️ Failed to clear injectors: $e', name: "GO_ROUTER_MODULAR");
       }
     }
+  }
+}
+
+/// Injector com contexto de módulo para registrar binds com prefixo
+class ModuleInjector extends Injector {
+  final GetIt _getIt;
+  final String? _modulePrefix;
+  final Type _moduleType;
+
+  ModuleInjector(this._getIt, this._modulePrefix, this._moduleType) : super.fromGetIt(_getIt);
+
+  String _getInstanceName<T>(String? key) {
+    final baseName = key ?? T.toString();
+    return _modulePrefix != null ? '$_modulePrefix$baseName' : baseName;
+  }
+
+  void _trackBind<T>(String? instanceName) {
+    final binds = InjectionManager.instance._moduleBinds[_moduleType];
+    if (binds != null) {
+      binds.add(_BindRegistration(T, instanceName));
+    }
+  }
+
+  @override
+  void add<T extends Object>(T Function() builder, {String? key}) {
+    if (_modulePrefix == null && key == null) {
+      // AppModule sem key: registrar sem instanceName
+      _getIt.registerFactory<T>(builder);
+      _trackBind<T>(null);
+    } else {
+      final instanceName = _getInstanceName<T>(key);
+      _getIt.registerFactory<T>(builder, instanceName: instanceName);
+      _trackBind<T>(instanceName);
+    }
+  }
+
+  @override
+  void addSingleton<T extends Object>(T Function() builder, {String? key}) {
+    if (_modulePrefix == null && key == null) {
+      // AppModule sem key: registrar sem instanceName
+      _getIt.registerLazySingleton<T>(
+        builder,
+        dispose: (instance) {
+          CleanBind.fromInstance(instance);
+        },
+      );
+      _trackBind<T>(null);
+    } else {
+      final instanceName = _getInstanceName<T>(key);
+      _getIt.registerLazySingleton<T>(
+        builder,
+        instanceName: instanceName,
+        dispose: (instance) {
+          CleanBind.fromInstance(instance);
+        },
+      );
+      _trackBind<T>(instanceName);
+    }
+  }
+
+  @override
+  void addLazySingleton<T extends Object>(T Function() builder, {String? key}) {
+    if (_modulePrefix == null && key == null) {
+      // AppModule sem key: registrar sem instanceName
+      _getIt.registerLazySingleton<T>(
+        builder,
+        dispose: (instance) {
+          CleanBind.fromInstance(instance);
+        },
+      );
+      _trackBind<T>(null);
+    } else {
+      final instanceName = _getInstanceName<T>(key);
+      _getIt.registerLazySingleton<T>(
+        builder,
+        instanceName: instanceName,
+        dispose: (instance) {
+          CleanBind.fromInstance(instance);
+        },
+      );
+      _trackBind<T>(instanceName);
+    }
+  }
+
+  @override
+  T get<T extends Object>({String? key}) {
+    return InjectionManager.instance.getWithModuleContext<T>(key: key);
   }
 }

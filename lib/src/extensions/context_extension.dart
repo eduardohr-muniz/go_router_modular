@@ -3,7 +3,7 @@ import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/core/bind.dart';
 
 extension BindContextExtension on BuildContext {
-  T read<T>() {
+  T read<T extends Object>() {
     final bind = Bind.get<T>();
     return bind;
   }
