@@ -15,20 +15,24 @@ class Injector {
   }
 
   /// Registra uma factory (nova instância a cada get)
-  void add<T extends Object>(T Function() builder, {String? key}) {
+  /// Suporta sintaxe `.new` do auto_injector
+  void add<T extends Object>(dynamic builder, {String? key}) {
     final injector = _autoInjector ?? InjectionManager.instance.injector;
-    injector.add<T>(builder, key: key);
+    // Auto-injector resolve parâmetros do construtor automaticamente
+    injector.add<T>(builder is Function ? builder : () => builder, key: key);
   }
 
   /// Registra um singleton (instância única criada imediatamente)
-  void addSingleton<T extends Object>(T Function() builder, {String? key}) {
+  /// Suporta sintaxe `.new` do auto_injector
+  void addSingleton<T extends Object>(dynamic builder, {String? key}) {
     final injector = _autoInjector ?? InjectionManager.instance.injector;
-    injector.addSingleton<T>(builder, key: key);
+    injector.addSingleton<T>(builder is Function ? builder : () => builder, key: key);
   }
 
   /// Registra um lazy singleton (instância única criada no primeiro get)
-  void addLazySingleton<T extends Object>(T Function() builder, {String? key}) {
+  /// Suporta sintaxe `.new` do auto_injector
+  void addLazySingleton<T extends Object>(dynamic builder, {String? key}) {
     final injector = _autoInjector ?? InjectionManager.instance.injector;
-    injector.addLazySingleton<T>(builder, key: key);
+    injector.addLazySingleton<T>(builder is Function ? builder : () => builder, key: key);
   }
 }

@@ -13,18 +13,18 @@ class ModuleInjector extends Injector {
   ModuleInjector(this._moduleInjector, this._registry);
 
   @override
-  void add<T extends Object>(T Function() builder, {String? key}) {
-    _moduleInjector.add<T>(builder, key: key);
+  void add<T extends Object>(dynamic builder, {String? key}) {
+    _moduleInjector.add<T>(builder is Function ? builder : () => builder, key: key);
   }
 
   @override
-  void addSingleton<T extends Object>(T Function() builder, {String? key}) {
-    _moduleInjector.addSingleton<T>(builder, key: key);
+  void addSingleton<T extends Object>(dynamic builder, {String? key}) {
+    _moduleInjector.addSingleton<T>(builder is Function ? builder : () => builder, key: key);
   }
 
   @override
-  void addLazySingleton<T extends Object>(T Function() builder, {String? key}) {
-    _moduleInjector.addLazySingleton<T>(builder, key: key);
+  void addLazySingleton<T extends Object>(dynamic builder, {String? key}) {
+    _moduleInjector.addLazySingleton<T>(builder is Function ? builder : () => builder, key: key);
   }
 
   @override
