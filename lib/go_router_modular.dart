@@ -34,3 +34,4 @@ export 'src/events/event_module.dart' show EventModule, ModularEvent;
 export 'package:go_router/go_router.dart' hide ShellRoute;
 export 'package:event_bus/event_bus.dart';
 export 'package:go_transitions/go_transitions.dart';
+export 'package:auto_injector/auto_injector.dart' show AutoInjector;

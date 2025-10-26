@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
-import 'package:get_it/get_it.dart';
+import 'package:auto_injector/auto_injector.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
@@ -10,26 +10,29 @@ import '_bind_resolver.dart';
 import '_module_injector.dart';
 import '_bind_log_formatter.dart';
 
-/// InjectionManager usando GetIt com isolamento via prefixos de módulo
+/// InjectionManager usando AutoInjector com isolamento via prefixos de módulo
 ///
 /// Estratégia de Isolamento:
 /// - AppModule: binds sem prefixo (globais)
 /// - Outros módulos: binds com prefixo "ModuleName_"
 /// - Resolução: tenta com prefixo do módulo atual, depois sem prefixo (AppModule)
 /// - Imports: módulos importados têm seus prefixos adicionados à lista de busca
+/// - AutoInjector: resolve interfaces automaticamente! 🎉
 class InjectionManager {
   static InjectionManager? _instance;
   InjectionManager._();
   static InjectionManager get instance => _instance ??= InjectionManager._();
 
-  /// GetIt instance singleton
-  final GetIt _getIt = GetIt.instance;
+  /// AutoInjector instance singleton
+  final AutoInjector _autoInjector = AutoInjector(
+    tag: 'go_router_modular_main',
+  );
 
   /// Registry para rastrear módulos
   final ModuleRegistry _registry = ModuleRegistry();
 
   /// Resolver para binds
-  late final BindResolver _resolver = BindResolver(_getIt, _registry);
+  late final BindResolver _resolver = BindResolver(_autoInjector, _registry);
 
   bool get debugLog => SetupModular.instance.debugLogGoRouterModular;
 
@@ -43,9 +46,9 @@ class InjectionManager {
     return _resolver.resolve<T>(key: key);
   }
 
-  /// Obtém o GetIt principal
-  GetIt getContextualInjector() {
-    return _getIt;
+  /// Obtém o AutoInjector principal
+  AutoInjector getContextualInjector() {
+    return _autoInjector;
   }
 
   // Sistema de fila sequencial para operações de módulos
@@ -105,32 +108,74 @@ class InjectionManager {
 
     _registry.registerModule(module.runtimeType);
 
+    // SEGUINDO O PADRÃO DO FLUTTER_MODULAR:
+    // Criar um AutoInjector SEPARADO para cada módulo
+    final moduleInjector = _createModuleInjector(module);
+
+    // Uncommit o injector principal para adicionar o módulo
+    _autoInjector.uncommit();
+
+    // Adicionar o injector do módulo ao injector principal (addInjector)
+    _autoInjector.addInjector(moduleInjector);
+
+    // Commit novamente
+    _autoInjector.commit();
+
+    // Inicializar estado do módulo
+    final moduleInjectorWrapper = ModuleInjector(moduleInjector, _registry);
+    module.initState(moduleInjectorWrapper);
+
+    if (debugLog) {
+      log('💉 INJECTED: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
+    }
+  }
+
+  /// Cria um AutoInjector para um módulo (seguindo padrão flutter_modular)
+  AutoInjector _createModuleInjector(Module module) {
+    // Criar um novo AutoInjector para este módulo
+    final moduleInjector = AutoInjector(tag: module.runtimeType.toString());
+
+    // Processar imports do módulo
     final imports = module.imports();
     final importsList = imports is Future ? <Module>[] : imports;
 
     for (final importedModule in importsList) {
       _registry.addImport(module.runtimeType, importedModule.runtimeType);
 
-      // Registrar módulo importado se ainda não foi registrado
-      if (!_registry.isActive(importedModule.runtimeType)) {
-        await _registerBindsModuleInternal(importedModule);
-      }
+      // Criar ou reusar o injector do módulo importado
+      final importedInjector = _getOrCreateModuleInjector(importedModule);
+
+      // Adicionar o injector importado ao injector do módulo atual
+      moduleInjector.addInjector(importedInjector);
     }
 
-    // Criar um Injector com contexto do módulo
-    final modulePrefix = module == _registry.appModule ? null : _registry.getPrefix(module.runtimeType);
-    final injector = ModuleInjector(_getIt, modulePrefix, module.runtimeType, _registry);
+    // IMPORTANTE: NÃO auto-importar o AppModule
+    // Cada módulo só tem acesso aos seus próprios binds e aos binds importados explicitamente
+    // Para usar o AppModule, o módulo precisa importá-lo explicitamente
 
-    // Chamar module.binds() passando o injector com contexto
-    module.binds(injector);
+    // Criar um wrapper Injector e chamar module.binds()
+    final injectorWrapper = ModuleInjector(moduleInjector, _registry);
+    module.binds(injectorWrapper);
 
-    // Inicializar estado do módulo
-    module.initState(injector);
+    return moduleInjector;
+  }
 
-    if (debugLog) {
-      final binds = _registry.getBinds(module.runtimeType);
-      log('💉 INJECTED: ${module.runtimeType} ${binds.isNotEmpty ? '\n 📦 Binds: \n${BindLogFormatter.formatBinds(binds, module.runtimeType, _registry, false)}' : ''} ', name: "GO_ROUTER_MODULAR");
+  /// Mapa para armazenar os injectors dos módulos
+  final Map<Type, AutoInjector> _moduleInjectors = {};
+
+  /// Getter público para acessar o mapa de injectors
+  Map<Type, AutoInjector> get moduleInjectors => _moduleInjectors;
+
+  /// Obtém ou cria o injector de um módulo
+  AutoInjector _getOrCreateModuleInjector(Module module) {
+    if (_moduleInjectors.containsKey(module.runtimeType)) {
+      return _moduleInjectors[module.runtimeType]!;
     }
+
+    final injector = _createModuleInjector(module);
+    _moduleInjectors[module.runtimeType] = injector;
+
+    return injector;
   }
 
   Future<void> unregisterBinds(Module module) async {
@@ -147,38 +192,22 @@ class InjectionManager {
     }
 
     try {
-      // Para binds com instanceName, podemos tentar resetLazySingleton
-      final binds = _registry.getBinds(module.runtimeType);
-
-      if (debugLog && binds.isNotEmpty) {
-        log('🗑️ DISPOSING: ${module.runtimeType} ${binds.isNotEmpty ? '\n 📦 Binds: \n${BindLogFormatter.formatBinds(binds, module.runtimeType, _registry, true)}' : ''} ', name: "GO_ROUTER_MODULAR");
-      }
-
-      for (final bind in binds) {
-        try {
-          if (bind.instanceName != null) {
-            // Tentar resetLazySingleton para limpar a instância
-            try {
-              await _getIt.resetLazySingleton(
-                instanceName: bind.instanceName,
-                disposingFunction: (instance) {
-                  CleanBind.fromInstance(instance);
-                },
-              );
-            } catch (_) {
-              // Se não for lazy singleton, ignorar
-            }
-          }
-        } catch (e) {
-          // Ignorar erros individuais
-          if (debugLog) {
-            log('⚠️ Failed to reset bind ${bind.type}: $e', name: "GO_ROUTER_MODULAR");
-          }
-        }
+      if (debugLog) {
+        log('🗑️ DISPOSING: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
       }
 
       // Chamar dispose do módulo
       module.dispose();
+
+      // SEGUINDO O PADRÃO DO FLUTTER_MODULAR:
+      // Dispose do injector do módulo usando disposeInjectorByTag
+      final moduleTag = module.runtimeType.toString();
+      _autoInjector.disposeInjectorByTag(moduleTag, (instance) {
+        CleanBind.fromInstance(instance);
+      });
+
+      // Remover do mapa de injectors
+      _moduleInjectors.remove(module.runtimeType);
 
       // Remover rastreamento
       _registry.unregisterModule(module.runtimeType);
@@ -193,14 +222,19 @@ class InjectionManager {
     }
   }
 
-  /// Obtém instância do GetIt principal
-  GetIt get injector => _getIt;
+  /// Obtém instância do AutoInjector principal
+  AutoInjector get injector => _autoInjector;
 
   /// Clear all binds for testing purposes
   Future<void> clearAllForTesting() async {
     try {
-      // Reset GetIt completamente (é assíncrono!)
-      await _getIt.reset(dispose: true);
+      // Uncommit antes de dispose (necesário para o AutoInjector)
+      _autoInjector.uncommit();
+
+      // Dispose all instances
+      _autoInjector.dispose((instance) {
+        CleanBind.fromInstance(instance);
+      });
 
       // Limpar registry
       _registry.clear();

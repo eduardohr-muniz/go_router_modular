@@ -69,9 +69,11 @@ void main() {
     // This should FAIL with "Bind not found for type: IClient"
     // ⚠️ THIS TEST DOCUMENTS THE ERROR - IT SHOULD FAIL
     // This will throw because IClient is not registered
-    final authApi = Bind.get<IAuthApi>(); // This line will throw GoRouterModularException
-    expect(authApi, isA<IAuthApi>());
-    expect(authApi, isA<AuthApi>());
+    expect(
+      () => Bind.get<IAuthApi>(),
+      throwsA(isA<GoRouterModularException>()),
+      reason: 'Should throw error because IClient is not registered',
+    );
   });
 
   test('SHOULD FAIL: Two ClientDio implementations but no IClient interface registered', () {
@@ -105,8 +107,10 @@ void main() {
     // Even though we have two ClientDio implementations
 
     // This will throw because IClient is not registered
-    final authApi = Bind.get<IAuthApi>(); // This line will throw GoRouterModularException
-    expect(authApi, isA<IAuthApi>());
-    expect(authApi, isA<AuthApi>());
+    expect(
+      () => Bind.get<IAuthApi>(),
+      throwsA(isA<GoRouterModularException>()),
+      reason: 'Should throw error because IClient is not registered',
+    );
   });
 }

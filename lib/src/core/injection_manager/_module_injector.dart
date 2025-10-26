@@ -1,90 +1,40 @@
-import 'package:get_it/get_it.dart';
+import 'package:auto_injector/auto_injector.dart' as ai;
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/core/injection_manager/_bind_registration.dart';
 import 'package:go_router_modular/src/core/injection_manager/_module_registry.dart';
-import 'package:go_router_modular/src/di/clean_bind.dart';
+import 'package:go_router_modular/src/core/injection_manager/injection_manager.dart';
 
-/// Injector com contexto de módulo para registrar binds com prefixo
+/// Injector com contexto de módulo - Segue o padrão do flutter_modular
+/// Cada módulo tem seu próprio AutoInjector, que é adicionado ao injector principal
 class ModuleInjector extends Injector {
-  final GetIt _getIt;
-  final String? _modulePrefix;
-  final Type _moduleType;
+  final ai.AutoInjector _moduleInjector;
   final ModuleRegistry _registry;
 
-  ModuleInjector(this._getIt, this._modulePrefix, this._moduleType, this._registry) : super.fromGetIt(_getIt);
-
-  String _getInstanceName<T>(String? key) {
-    final baseName = key ?? T.toString();
-    return _modulePrefix != null ? '$_modulePrefix$baseName' : baseName;
-  }
-
-  void _trackBind<T>(String? instanceName) {
-    _registry.trackBind(_moduleType, BindRegistration(T, instanceName));
-  }
+  ModuleInjector(this._moduleInjector, this._registry);
 
   @override
   void add<T extends Object>(T Function() builder, {String? key}) {
-    if (_modulePrefix == null && key == null) {
-      // AppModule sem key: registrar sem instanceName
-      _getIt.registerFactory<T>(builder);
-      _trackBind<T>(null);
-    } else {
-      final instanceName = _getInstanceName<T>(key);
-      _getIt.registerFactory<T>(builder, instanceName: instanceName);
-      _trackBind<T>(instanceName);
-    }
+    _moduleInjector.add<T>(builder, key: key);
   }
 
   @override
   void addSingleton<T extends Object>(T Function() builder, {String? key}) {
-    if (_modulePrefix == null && key == null) {
-      // AppModule sem key: registrar sem instanceName
-      _getIt.registerLazySingleton<T>(
-        builder,
-        dispose: (instance) {
-          CleanBind.fromInstance(instance);
-        },
-      );
-      _trackBind<T>(null);
-    } else {
-      final instanceName = _getInstanceName<T>(key);
-      _getIt.registerLazySingleton<T>(
-        builder,
-        instanceName: instanceName,
-        dispose: (instance) {
-          CleanBind.fromInstance(instance);
-        },
-      );
-      _trackBind<T>(instanceName);
-    }
+    _moduleInjector.addSingleton<T>(builder, key: key);
   }
 
   @override
   void addLazySingleton<T extends Object>(T Function() builder, {String? key}) {
-    if (_modulePrefix == null && key == null) {
-      // AppModule sem key: registrar sem instanceName
-      _getIt.registerLazySingleton<T>(
-        builder,
-        dispose: (instance) {
-          CleanBind.fromInstance(instance);
-        },
-      );
-      _trackBind<T>(null);
-    } else {
-      final instanceName = _getInstanceName<T>(key);
-      _getIt.registerLazySingleton<T>(
-        builder,
-        instanceName: instanceName,
-        dispose: (instance) {
-          CleanBind.fromInstance(instance);
-        },
-      );
-      _trackBind<T>(instanceName);
-    }
+    _moduleInjector.addLazySingleton<T>(builder, key: key);
   }
 
   @override
   T get<T extends Object>({String? key}) {
-    return InjectionManager.instance.getWithModuleContext<T>(key: key);
+    try {
+      return _moduleInjector.get<T>(key: key);
+    } catch (e) {
+      // Se não encontrou no injector do módulo, tentar através do sistema de resolução
+      // Isso permite acessar binds do AppModule
+      return InjectionManager.instance.getWithModuleContext<T>(key: key);
+    }
   }
 }
