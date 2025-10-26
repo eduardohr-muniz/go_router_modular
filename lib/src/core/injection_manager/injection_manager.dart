@@ -179,30 +179,57 @@ class InjectionManager {
 
   /// Cria um AutoInjector para um módulo (seguindo padrão flutter_modular - tracker.dart linha 275)
   Future<AutoInjector> _createModuleInjector(go_router_modular.Module module) async {
+    print('🔧 [InjectionManager._createModuleInjector] INÍCIO para: ${module.runtimeType}');
     // SEGUINDO O PADRÃO DO FLUTTER_MODULAR: criar injector sem callback 'on'
     final moduleInjector = AutoInjector(tag: module.runtimeType.toString());
+    print('✅ [InjectionManager._createModuleInjector] Injector criado para: ${module.runtimeType}');
 
     // Processar imports do módulo
     final imports = module.imports();
     final importsList = imports is Future ? <go_router_modular.Module>[] : imports;
+    print('🔍 [InjectionManager._createModuleInjector] Processando ${importsList.length} imports para: ${module.runtimeType}');
 
     for (final importedModule in importsList) {
       _registry.addImport(module.runtimeType, importedModule.runtimeType);
       final importedInjector = await _getOrCreateModuleInjector(importedModule);
       moduleInjector.addInjector(importedInjector);
+      print('✅ [InjectionManager._createModuleInjector] Import ${importedModule.runtimeType} adicionado ao injector de ${module.runtimeType}');
     }
 
-    // IMPORTANTE: NÃO adicionar o AppModule ao injector do módulo
-    // O AppModule fica no injector principal (_autoInjector) e é acessível por ele
-    // Módulos devem acessar binds do AppModule através do injector principal (fallback)
+    // IMPORTANTE: Adicionar o AppModule ao injector do módulo para que dependências sejam resolvidas
+    // O AppModule contém binds globais (como IClient) que os módulos precisam acessar
+    print('🔍 [InjectionManager._createModuleInjector] Verificando AppModule para: ${module.runtimeType}');
+    final appModule = _registry.appModule;
+    print('🔍 [InjectionManager._createModuleInjector] appModule: ${appModule?.runtimeType}');
+    print('🔍 [InjectionManager._createModuleInjector] module.runtimeType: ${module.runtimeType}');
+    print('🔍 [InjectionManager._createModuleInjector] Injectors disponíveis: ${_moduleInjectors.keys}');
+    if (appModule != null && appModule.runtimeType != module.runtimeType) {
+      final appModuleInjector = _moduleInjectors[appModule.runtimeType];
+      print('🔍 [InjectionManager._createModuleInjector] appModuleInjector: ${appModuleInjector != null ? "encontrado" : "null"}');
+      if (appModuleInjector != null) {
+        print('🔧 [InjectionManager._createModuleInjector] Adicionando AppModule ao injector de ${module.runtimeType}');
+        moduleInjector.addInjector(appModuleInjector);
+        print('✅ [InjectionManager._createModuleInjector] AppModule adicionado ao injector de ${module.runtimeType}');
+      } else {
+        print('⚠️ [InjectionManager._createModuleInjector] AppModule não encontrado no mapa de injectors');
+      }
+    } else {
+      print('⚠️ [InjectionManager._createModuleInjector] AppModule é null ou é o próprio módulo');
+    }
 
     // Criar um wrapper Injector e chamar module.binds() (SEGUINDO PADRÃO FLUTTER_MODULAR linha 282)
+    print('🔧 [InjectionManager._createModuleInjector] Chamando module.binds() para: ${module.runtimeType}');
+    print('🔧 [InjectionManager._createModuleInjector] moduleInjector: $moduleInjector');
     final injectorWrapper = go_router_modular.Injector.fromAutoInjector(moduleInjector);
+    print('🔧 [InjectionManager._createModuleInjector] injectorWrapper criado, chamando binds()...');
     final bindsResult = module.binds(injectorWrapper);
     // Se binds retorna um Future, aguardar (FutureBinds é FutureOr<void>)
     if (bindsResult is Future) {
+      print('⏳ [InjectionManager._createModuleInjector] Aguardando binds assíncronos para ${module.runtimeType}...');
       await bindsResult;
+      print('✅ [InjectionManager._createModuleInjector] Binds assíncronos concluídos para ${module.runtimeType}');
     }
+    print('✅ [InjectionManager._createModuleInjector] module.binds() concluído para: ${module.runtimeType}');
 
     // Commit do injector do módulo após registrar todos os binds
     moduleInjector.commit();

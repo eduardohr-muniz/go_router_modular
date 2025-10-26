@@ -100,14 +100,16 @@ class Bind<T> {
     // Isso permite que módulos resolvam seus próprios binds antes de tentar o AppModule
     if (contextInjector != mainInjector) {
       try {
-        return contextInjector.get<T>(key: key);
+        final result = contextInjector.get<T>(key: key);
+        return result;
       } catch (e) {
         // Fallback para injector principal
       }
     }
 
     try {
-      return mainInjector.get<T>(key: key);
+      final result = mainInjector.get<T>(key: key);
+      return result;
     } catch (e) {
       // Tentar resolver pela implementação conhecida se T for uma interface
       if (_interfaceImplementations.containsKey(T)) {

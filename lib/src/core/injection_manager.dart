@@ -4,7 +4,6 @@ import 'dart:developer';
 import 'package:auto_injector/auto_injector.dart' as ai;
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
-import 'package:go_router_modular/src/internal/internal_logs.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 
 /// ValueObject para representar um bind único (Type + Key)
@@ -132,7 +131,7 @@ class InjectionManager {
 
     // Adicionar injectors dos módulos importados primeiro
     final imports = await module.imports();
-    final importsList = imports is List ? imports : <Module>[];
+    final importsList = imports;
 
     for (final importedModule in importsList) {
       // Usar injector exportado com cache
@@ -142,6 +141,15 @@ class InjectionManager {
       // Rastrear que este módulo importa o módulo importado
       if (trackImports) {
         _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
+      }
+    }
+
+    // IMPORTANTE: Adicionar o AppModule ao injector do módulo para que dependências sejam resolvidas
+    // O AppModule contém binds globais (como IClient) que os módulos precisam acessar
+    if (_appModule != null && _appModule != module) {
+      final appModuleInjector = _moduleInjectors[_appModule!.runtimeType];
+      if (appModuleInjector != null) {
+        newInjector.addInjector(appModuleInjector);
       }
     }
 
