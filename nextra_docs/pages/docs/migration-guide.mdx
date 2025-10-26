@@ -1,0 +1,142 @@
+# 🔄 Migration Guide
+
+Simple guide to migrate to the new **Bind.get()** API with keys support.
+
+## 🎯 What Changed?
+
+The new **Bind.get()** API allows retrieving specific dependencies using keys, solving the problem of multiple instances of the same type.
+
+## 📋 Before vs After
+
+### ❌ Before (Old API)
+
+```dart
+// Registration
+class MyModule extends Module {
+  @override
+  void binds(Injector i) {
+    i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api1.com'), key: 'api1');
+    i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api2.com')); // No key
+  }
+}
+
+// Retrieval - PROBLEM: always returned the last registered
+final client = Modular.get<ApiClient>(); // ❌ Always api2, never api1
+```
+
+### ✅ After (New API)
+
+```dart
+// Registration
+class MyModule extends Module {
+  @override
+  void binds(Injector i) {
+    i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api1.com'), key: 'api1');
+    i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api2.com'), key: 'api2');
+  }
+}
+
+// Retrieval - SOLUTION: specific access to each instance
+final api1 = Bind.get<ApiClient>(key: 'api1'); // ✅ Client api1
+final api2 = Bind.get<ApiClient>(key: 'api2'); // ✅ Client api2
+```
+
+## 🚀 Migration in 3 Steps
+
+### 1. Add specific keys in registration
+
+```dart
+// ❌ Before
+i.addSingleton<ApiClient>(() => ApiClient(), key: 'api1');
+i.addSingleton<ApiClient>(() => ApiClient()); // No key
+
+// ✅ After
+i.addSingleton<ApiClient>(() => ApiClient(), key: 'api1');
+i.addSingleton<ApiClient>(() => ApiClient(), key: 'api2');
+```
+
+### 2. Replace Modular.get() with Bind.get()
+
+```dart
+// ❌ Before
+final client = Modular.get<ApiClient>();
+
+// ✅ After
+final client = Bind.get<ApiClient>(key: 'api1');
+```
+
+### 3. Use consistent keys
+
+```dart
+// ✅ Registration and retrieval with the same key
+i.addSingleton<ApiClient>(() => ApiClient(), key: 'main');
+final client = Bind.get<ApiClient>(key: 'main');
+```
+
+## 🔑 Use Cases
+
+### Multiple APIs
+```dart
+i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api1.com'), key: 'api1');
+i.addSingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api2.com'), key: 'api2');
+
+final api1 = Bind.get<ApiClient>(key: 'api1');
+final api2 = Bind.get<ApiClient>(key: 'api2');
+```
+
+### Environments (Dev/Prod)
+```dart
+i.addSingleton<ApiService>(() => ApiService(baseUrl: 'http://localhost'), key: 'dev');
+i.addSingleton<ApiService>(() => ApiService(baseUrl: 'https://prod.com'), key: 'prod');
+
+final devApi = Bind.get<ApiService>(key: 'dev');
+final prodApi = Bind.get<ApiService>(key: 'prod');
+```
+
+### Testing
+```dart
+i.addSingleton<UserService>(() => UserService(), key: 'real');
+i.addSingleton<UserService>(() => MockUserService(), key: 'mock');
+
+final mockService = Bind.get<UserService>(key: 'mock');
+```
+
+## ⚠️ Important Points
+
+- **Keys are optional**: No key = default instance
+- **Keys must be consistent**: Same key in registration and retrieval
+- **Don't duplicate keys**: Each key must be unique
+
+## 🆘 Common Issues
+
+### "Bind not found"
+```dart
+// ❌ Key doesn't exist
+final service = Bind.get<ApiService>(key: 'nonexistent');
+
+// ✅ Check if the key was registered
+i.addSingleton<ApiService>(() => ApiService(), key: 'api');
+final service = Bind.get<ApiService>(key: 'api');
+```
+
+### "Key already registered"
+```dart
+// ❌ Duplicate key
+i.addSingleton<ApiService>(() => ApiService(), key: 'api');
+i.addSingleton<ApiService>(() => ApiService(), key: 'api');
+
+// ✅ Use different keys
+i.addSingleton<ApiService>(() => ApiService(), key: 'api1');
+i.addSingleton<ApiService>(() => ApiService(), key: 'api2');
+```
+
+## 🔧 Quick Checklist
+
+- [ ] Add specific keys in `binds()`
+- [ ] Replace `Modular.get<T>()` with `Bind.get<T>(key: 'key')`
+- [ ] Test if all dependencies are found
+- [ ] Check for duplicate keys
+
+---
+
+**🎉 Done!** Your app now uses the new **Bind.get()** API with keys!

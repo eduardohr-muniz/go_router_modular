@@ -121,13 +121,16 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() => [
-   // Bind.singleton<HomeController>((i) => HomeController()),
-  ];
+  void binds(Injector i) {
+    // Registra seus binds usando o Injector
+    i.addSingleton<HomeController>(() => HomeController());
+    i.addLazySingleton<AuthService>(() => AuthService());
+    i.add<UserRepository>(() => UserRepository());
+  }
 
   @override
   List<ModularRoute> get routes => [
-   // ModuleRoute('/', child: (context, state) => HomeModule()),
+    // ModuleRoute('/', child: (context, state) => HomeModule()),
   ];
 }
 ```
@@ -159,9 +162,10 @@ Future<void> main() async {
 ```dart
 class HomeModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<HomeController>((i) => HomeController()),
-  ];
+  void binds(Injector i) {
+    i.addSingleton<HomeController>(() => HomeController());
+    i.addLazySingleton<HomeService>(() => HomeService(i.get<HomeController>()));
+  }
 
   @override
   List<ModularRoute> get routes => [
@@ -180,10 +184,16 @@ class HomeModule extends Module {
 // features/cart/lib/cart_module.dart
 class CartModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<CartController>((i) => CartController()),
-    Bind.factory<CartService>((i) => CartService()),
-  ];
+  void binds(Injector i) {
+    // Singleton: uma única instância compartilhada
+    i.addSingleton<CartController>(() => CartController());
+    
+    // Lazy Singleton: cria apenas quando necessário
+    i.addLazySingleton<CartService>(() => CartService());
+    
+    // Factory: nova instância a cada chamada
+    i.add<CartItem>(() => CartItem());
+  }
 
   @override
   List<ModularRoute> get routes => [
@@ -191,11 +201,17 @@ class CartModule extends Module {
   ];
 }
 ```
+
+### Types of Binds
+
+- **`addSingleton`**: Cria uma única instância que será reutilizada sempre
+- **`addLazySingleton`**: Cria apenas quando necessário (primeira vez que é usado)
+- **`add`** (factory): Cria uma nova instância toda vez que é solicitado
 ---
 
 ### How to use your injected dependencies
 
-You can retrieve your dependencies in two main ways:
+You can retrieve your dependencies in three main ways:
 
 **1. Using `Modular.get<T>()` anywhere:**
 
@@ -203,7 +219,13 @@ You can retrieve your dependencies in two main ways:
 final cartController = Modular.get<CartController>();
 ```
 
-**2. Using `context.read<T>()` inside a widget:**
+**2. Using `Bind.get<T>()` directly:**
+
+```dart
+final cartController = Bind.get<CartController>();
+```
+
+**3. Using `context.read<T>()` inside a widget:**
 
 ```dart
 class CartPage extends StatelessWidget {
@@ -216,8 +238,21 @@ class CartPage extends StatelessWidget {
 }
 ```
 
-- Use `Modular.get<T>()` for global access (not recommended inside widgets).
-- Use `context.read<T>()` for widget-specific access (recommended for UI).
+### Binding with Keys
+
+You can also bind with custom keys for multiple instances of the same type:
+
+```dart
+@override
+void binds(Injector i) {
+  i.addLazySingleton<ApiClient>(() => ApiClient(baseUrl: 'https://api.example.com'), key: 'remote');
+  i.addLazySingleton<ApiClient>(() => ApiClient(baseUrl: 'http://localhost:3000'), key: 'local');
+}
+
+// Usage
+final remoteApi = Bind.get<ApiClient>(key: 'remote');
+final localApi = Bind.get<ApiClient>(key: 'local');
+```
 
 ---
 

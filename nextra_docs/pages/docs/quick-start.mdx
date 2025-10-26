@@ -33,16 +33,52 @@ class AppModule extends Module {
 
 class HomeModule extends Module {
   @override
+  void binds(Injector i) {
+    // Register dependencies
+    i.addSingleton<HomeController>(() => HomeController());
+    i.addLazySingleton<ApiService>(() => ApiService(), key: 'api');
+  }
+
+  @override
   List<ModularRoute> get routes => [
     ChildRoute(
       "/",
-      child: (context, state) => Scaffold(
-        body: Center(
-          child: Text('Hello GoRouter Modular'),
-        ),
-      ),
+      child: (context, state) => HomePage(),
     ),
   ];
+}
+
+// Simple controller
+class HomeController {
+  String get message => 'Hello GoRouter Modular!';
+}
+
+// Simple API service
+class ApiService {
+  String get baseUrl => 'https://api.example.com';
+}
+
+// Home page using dependencies
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Get dependencies using Bind.get()
+    final controller = Bind.get<HomeController>();
+    final apiService = Bind.get<ApiService>(key: 'api');
+    
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(controller.message),
+            SizedBox(height: 16),
+            Text('API: ${apiService.baseUrl}'),
+          ],
+        ),
+      ),
+    );
+  }
 }
 ```
 

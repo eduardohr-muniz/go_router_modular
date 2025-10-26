@@ -9,11 +9,11 @@ GoRouter Modular provides a powerful dependency injection system with automatic 
 ```dart
 class HomeModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    Bind.singleton<HomeController>((i) => HomeController()),
-    Bind.factory<UserRepository>((i) => UserRepository()),
-    Bind.lazySingleton<ApiService>((i) => ApiService()),
-  ];
+  void binds(Injector i) {
+    i.addSingleton<HomeController>(() => HomeController());
+    i.add<UserRepository>(() => UserRepository());
+    i.addLazySingleton<ApiService>(() => ApiService());
+  }
 
   @override
   List<ModularRoute> get routes => [
@@ -26,17 +26,17 @@ class HomeModule extends Module {
 
 #### **Singleton** - One instance for the entire module lifecycle
 ```dart
-Bind.singleton<HomeController>((i) => HomeController());
+i.addSingleton<HomeController>(() => HomeController());
 ```
 
 #### **Factory** - New instance every time
 ```dart
-Bind.factory<UserRepository>((i) => UserRepository());
+i.add<UserRepository>(() => UserRepository());
 ```
 
 #### **Lazy Singleton** - Created only when first accessed
 ```dart
-Bind.lazySingleton<ApiService>((i) => ApiService());
+i.addLazySingleton<ApiService>(() => ApiService());
 ```
 
 ## 🔍 Retrieving Dependencies
@@ -67,6 +67,90 @@ final repository = Modular.get<UserRepository>();
 final controller = Bind.get<HomeController>();
 final repository = Bind.get<UserRepository>();
 ```
+
+### **Using Bind with Keys**
+```dart
+// Retrieve dependencies with specific keys
+final localApi = Bind.get<ApiClient>(key: 'local');
+final remoteApi = Bind.get<ApiClient>(key: 'remote');
+final googleApi = Bind.get<ApiClient>(key: 'google');
+```
+
+## 🔑 Key System
+
+The key system allows you to register multiple instances of the same type with different identifiers, enabling flexible dependency management for different environments or use cases.
+
+### **Registering with Keys**
+```dart
+class ApiModule extends Module {
+  @override
+  void binds(Injector i) {
+    // Register multiple ApiClient instances with different keys
+    i.addLazySingleton<ApiClient>(
+      () => ApiClient(baseUrl: 'http://localhost:8080'), 
+      key: 'local'
+    );
+    i.addLazySingleton<ApiClient>(
+      () => ApiClient(baseUrl: 'https://api.remote.com'), 
+      key: 'remote'
+    );
+    i.addLazySingleton<ApiClient>(
+      () => ApiClient(baseUrl: 'https://google.com'), 
+      key: 'google'
+    );
+    
+    // Register without key (default instance)
+    i.addLazySingleton<ApiClient>(
+      () => ApiClient(baseUrl: 'https://api.default.com')
+    );
+  }
+}
+```
+
+### **Retrieving with Keys**
+```dart
+class ApiService {
+  final ApiClient localApi;
+  final ApiClient remoteApi;
+  final ApiClient googleApi;
+  final ApiClient defaultApi;
+  
+  ApiService() 
+    : localApi = Bind.get<ApiClient>(key: 'local'),
+      remoteApi = Bind.get<ApiClient>(key: 'remote'),
+      googleApi = Bind.get<ApiClient>(key: 'google'),
+      defaultApi = Bind.get<ApiClient>(); // No key = default instance
+}
+```
+
+### **Dependency Injection with Keys**
+```dart
+class ApiModule extends Module {
+  @override
+  void binds(Injector i) {
+    // Register Dio instances with keys
+    i.addLazySingleton<Dio>(
+      () => Dio(BaseOptions(baseUrl: 'http://localhost:8080')), 
+      key: 'dio_local'
+    );
+    i.addLazySingleton<Dio>(
+      () => Dio(BaseOptions(baseUrl: 'https://api.remote.com')), 
+      key: 'dio_remote'
+    );
+    
+    // Register service that depends on specific Dio instance
+    i.add<ApiService>(
+      () => ApiService(dio: i.get<Dio>(key: 'dio_remote'))
+    );
+  }
+}
+```
+
+### **Key System Benefits**
+- **Environment Management**: Different API endpoints for dev/staging/prod
+- **Feature Flags**: Enable/disable features with different implementations
+- **Testing**: Mock implementations with specific keys
+- **Modularity**: Import modules that provide services with keys
 
 ## 🔄 Module Lifecycle
 

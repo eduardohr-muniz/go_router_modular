@@ -36,25 +36,213 @@ class AppModule extends Module {
 
 ## 2 - Create the Home Module
 
-```dart title="lib/src/app_module.dart"
+```dart title="lib/src/modules/home/home_module.dart"
 import 'dart:async';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'modules/home/home_page.dart';
+import 'home_page.dart';
 
-
-class AppModule extends Module {
+class HomeModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() => [
-    // Module binds
-  ];
+  void binds(Injector i) {
+    // Register dependencies with keys
+    i.addSingleton<HomeController>(() => HomeController());
+    i.addLazySingleton<ApiService>(() => ApiService(), key: 'api');
+    i.addLazySingleton<LocalStorageService>(() => LocalStorageService(), key: 'storage');
+  }
 
   @override
   List<ModularRoute> get routes => [
-    // A good practice in App Module is to use only ModuleRoutes
-    ModuleRoute('/', module: HomePage()),
+    ChildRoute('/', child: (context, state) => HomePage()),
   ];
 }
 
+// Controller for home page
+class HomeController {
+  String get welcomeMessage => 'Welcome to GoRouter Modular!';
+  
+  Future<void> loadData() async {
+    // Simulate data loading
+    await Future.delayed(Duration(seconds: 1));
+  }
+}
+
+// API service
+class ApiService {
+  String get baseUrl => 'https://api.example.com';
+  
+  Future<Map<String, dynamic>> fetchData() async {
+    // Simulate API call
+    await Future.delayed(Duration(milliseconds: 500));
+    return {'message': 'Data loaded successfully!'};
+  }
+}
+
+// Local storage service
+class LocalStorageService {
+  Future<void> saveData(String key, String value) async {
+    // Simulate local storage
+    print('Saving $key: $value');
+  }
+  
+  Future<String?> getData(String key) async {
+    // Simulate local storage retrieval
+    return 'cached_data_for_$key';
+  }
+}
+```
+
+## 2.1 - Create the Home Page
+
+```dart title="lib/src/modules/home/home_page.dart"
+import 'package:flutter/material.dart';
+import 'package:go_router_modular/go_router_modular.dart';
+
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String? data;
+  bool isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Get dependencies using Bind.get() with keys
+    final controller = Bind.get<HomeController>();
+    final apiService = Bind.get<ApiService>(key: 'api');
+    final storageService = Bind.get<LocalStorageService>(key: 'storage');
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('GoRouter Modular Demo'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome message from controller
+            Card(
+              color: Colors.blue.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  controller.welcomeMessage,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade800,
+                  ),
+                ),
+              ),
+            ),
+            
+            SizedBox(height: 20),
+            
+            // API Service info
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'API Service Info:',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text('Base URL: ${apiService.baseUrl}'),
+                  ],
+                ),
+              ),
+            ),
+            
+            SizedBox(height: 20),
+            
+            // Action buttons
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: isLoading ? null : _loadData,
+                  icon: Icon(Icons.refresh),
+                  label: Text('Load Data'),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: _saveToStorage,
+                  icon: Icon(Icons.save),
+                  label: Text('Save to Storage'),
+                ),
+              ],
+            ),
+            
+            SizedBox(height: 20),
+            
+            // Data display
+            if (data != null) ...[
+              Card(
+                color: Colors.green.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Loaded Data:',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 8),
+                      Text(data!),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            
+            if (isLoading) ...[
+              SizedBox(height: 20),
+              Center(
+                child: CircularProgressIndicator(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadData() async {
+    setState(() => isLoading = true);
+    
+    try {
+      // Get API service using Bind.get() with key
+      final apiService = Bind.get<ApiService>(key: 'api');
+      final result = await apiService.fetchData();
+      
+      setState(() {
+        data = result['message'];
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        data = 'Error loading data: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveToStorage() async {
+    // Get storage service using Bind.get() with key
+    final storageService = Bind.get<LocalStorageService>(key: 'storage');
+    await storageService.saveData('user_data', 'Sample data from home page');
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Data saved to storage!')),
+    );
+  }
+}
 ```
 
 ## 3 - Create the App Widget
