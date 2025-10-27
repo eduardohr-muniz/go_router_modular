@@ -1,0 +1,149 @@
+# Dependency Injection
+
+Manage your app's dependencies easily with built-in DI.
+
+## What Is Dependency Injection?
+
+Instead of creating objects directly, you register them and let the system provide them when needed.
+
+```dart
+// Instead of this
+final service = MyService();
+
+// Do this
+i.addSingleton<MyService>(() => MyService());
+final service = Bind.get<MyService>();
+```
+
+## Quick Start
+
+### 1. Register Dependencies
+
+```dart
+class HomeModule extends Module {
+  @override
+ FutureBinds binds(Injector i) {
+    i.addSingleton<HomeController>(() => HomeController());
+    i.add<ApiService>(() => ApiService());
+  }
+}
+```
+
+### 2. Use Dependencies
+
+```dart
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = Bind.get<HomeController>();
+    return Scaffold(/* ... */);
+  }
+}
+```
+
+## Dependency Types
+
+### Singleton
+One instance for the entire app:
+
+```dart
+i.addSingleton<DatabaseService>(() => DatabaseService());
+```
+
+### Factory
+New instance every time:
+
+```dart
+i.add<ApiClient>(() => ApiClient());
+```
+
+### Lazy Singleton
+Created only when first used:
+
+```dart
+i.addLazySingleton<HeavyService>(() => HeavyService());
+```
+
+## Async Dependencies
+
+For dependencies that need async initialization:
+
+```dart
+class DatabaseModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) async {
+    // Wait for database connection
+    await Future.delayed(Duration(seconds: 1));
+    
+    i.addSingleton<DatabaseService>(() => DatabaseService());
+  }
+}
+```
+
+## Using Keys
+
+Register multiple instances of the same type:
+
+```dart
+// Register with keys
+i.addSingleton<ApiService>(() => ApiService(), key: 'main');
+i.addSingleton<ApiService>(() => ApiService(), key: 'backup');
+
+// Use with keys
+final mainApi = Bind.get<ApiService>(key: 'main');
+final backupApi = Bind.get<ApiService>(key: 'backup');
+```
+
+## Context Extension
+
+Use the convenient `context.read()` extension:
+
+```dart
+class MyWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final service = context.read<MyService>();
+    return Text(service.getData());
+  }
+}
+```
+
+## Real Example
+
+```dart
+class ProductsModule extends Module {
+  @override
+ FutureBinds binds(Injector i) {
+    i.addSingleton<ProductsController>(() => ProductsController());
+    i.add<ProductsRepository>(() => ProductsRepository());
+    i.addLazySingleton<ApiService>(() => ApiService());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => ProductsPage()),
+  ];
+}
+
+class ProductsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.read<ProductsController>();
+    return Scaffold(
+      body: controller.buildProductsList(),
+    );
+  }
+}
+```
+
+## Best Practices
+
+1. **Register in modules** - Keep dependencies organized
+2. **Use singletons for services** - Database, API clients
+3. **Use factories for data** - Models, DTOs
+4. **Use keys when needed** - Multiple instances of same type
+5. **Keep modules focused** - One module, one feature
+
+---
+
+**Need more details?** Check out the [Key System](#key-system) section below.

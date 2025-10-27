@@ -1,0 +1,72 @@
+# GoRouter Modular
+
+<div style={{textAlign: 'center', margin: '2rem 0'}}>
+  <img 
+    src="/assets/go-router-modular-banner.png" 
+    alt="GoRouter Modular Banner" 
+    style={{maxWidth: '100%', height: 'auto', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+  />
+</div>
+
+**Modular architecture for Flutter apps 🧩**
+
+Build scalable apps with clean modules and powerful routing.
+
+## Quick Start
+
+```bash
+flutter pub add go_router_modular
+```
+
+```dart
+void main() async {
+  await Modular.configure(appModule: AppModule());
+  runApp(AppWidget());
+}
+
+class AppWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ModularApp.router(
+      title: 'My App',
+    );
+  }
+}
+
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => HomePage()),
+  ];
+}
+```
+
+## What You Get
+
+- 🧩 **Modules** - Independent app pieces
+- 💉 **Dependency Injection** - Built-in DI
+- 🛣️ **Smart Routing** - Enhanced navigation
+- ✨ **Page Transitions** - Beautiful animations
+
+## Learn More
+
+- [🚀 Get Started](/docs/getting-started) - Build your first module
+- [🛣️ Routes & Modules](/routes/routes-system) - Master routing
+- [💉 Dependency Injection](/dependency-injection) - Manage dependencies
+- [✨ Page Transitions](/routes/transitions) - Add animations
+
+---
+
+<div style={{ textAlign: 'center', marginTop: '2rem' }}>
+  <a href="/docs/getting-started" style={{ 
+    display: 'inline-block', 
+    padding: '12px 24px', 
+    backgroundColor: '#0070f3', 
+    color: 'white', 
+    textDecoration: 'none', 
+    borderRadius: '6px',
+    fontWeight: 'bold'
+  }}>
+    Start Building →
+  </a>
+</div>

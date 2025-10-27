@@ -1,0 +1,57 @@
+# Changelog
+
+History of changes and updates to GoRouter Modular.
+
+## [5.0.0] - 2024-12-XX
+
+### Breaking Changes
+* **Transition System**: Replaced custom transition system with go_transitions package
+  - **BREAKING**: `PageTransition` enum is removed, use `GoTransition` from go_transitions
+  - **BREAKING**: `transition` property in routes now uses `GoTransition` instead of `PageTransition`
+  - **BREAKING**: `pageTransition` parameter in `GoRouterModular.configure()` is removed
+  - Migration example:
+    ```dart
+    // Before (4.2.x):
+    ChildRoute('/', child: (_, __) => HomePage(), transition: PageTransition.fade)
+    
+    // After (5.0.x):
+    ChildRoute('/', child: (_, __) => HomePage(), transition: GoTransitions.fade)
+    ```
+
+### Added
+* **Enhanced Dependency Injection**: New `Bind.get<T>()` API with key support
+  - Support for retrieving dependencies with unique keys
+  - Better type safety and error handling
+  - Improved service composition capabilities
+  - Alternative bind registration using `binds(Injector i)` function
+  - Example:
+    ```dart
+    // New API with keys
+    final apiService = Bind.get<ApiService>(key: 'api');
+    
+    // Alternative registration (optional)
+    @override
+   FutureBinds binds(Injector i) {
+      i.addLazySingleton<MyService>(() => MyService());
+    }
+    ```
+
+* **Advanced Transition System**: Integrated go_transitions package
+  - Rich set of built-in transitions (fade, slide, scale, rotate, etc.)
+  - Transition inheritance system (child routes inherit from parent modules)
+  - Customizable duration and curve settings
+
+### Fixed
+* Fixed dependency injection issues with transitions
+* Improved module lifecycle management
+* Better error handling and debugging
+
+## [4.2.0] - 2024-11-XX
+
+### Added
+* Initial transition system
+* Basic dependency injection
+* Module architecture
+
+### Fixed
+* Various bug fixes and improvements

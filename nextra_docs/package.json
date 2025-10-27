@@ -1,0 +1,38 @@
+{
+    "name": "go-router-modular-docs",
+    "version": "1.0.0",
+    "description": "Documentation for GoRouter Modular package using Nextra",
+    "main": "index.js",
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
+        "export": "touch out/.nojekyll"
+    },
+    "keywords": [
+        "flutter",
+        "go-router",
+        "modular",
+        "navigation",
+        "documentation",
+        "nextra"
+    ],
+    "author": "GoRouter Modular Team",
+    "license": "MIT",
+    "dependencies": {
+        "@heroicons/react": "^2.2.0",
+        "next": "^14.0.0",
+        "nextra": "^2.13.0",
+        "nextra-theme-docs": "^2.13.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "20.8.0",
+        "@types/react": "18.2.25",
+        "@types/react-dom": "18.2.11",
+        "eslint": "^9.36.0",
+        "typescript": "5.2.2"
+    }
+}

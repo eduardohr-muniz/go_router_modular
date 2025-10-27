@@ -1,0 +1,110 @@
+# Migration Guide
+
+Migrate from the old `binds()` list to the new `binds(Injector i)` function.
+
+## What Changed?
+
+The bind registration system changed from returning a list to using a function with an injector.
+
+## Before vs After
+
+### ❌ Old Way
+
+```dart
+class MyModule extends Module {
+  @override
+  FutureOr<List<Bind<Object>>> binds() => [
+    Bind.singleton<ApiService>((i) => ApiService()),
+    Bind.singleton<DatabaseService>((i) => DatabaseService()),
+  ];
+}
+```
+
+### ✅ New Way
+
+```dart
+class MyModule extends Module {
+  @override
+ FutureBinds binds(Injector i) {
+    i.addSingleton<ApiService>(() => ApiService());
+    i.addSingleton<DatabaseService>(() => DatabaseService());
+  }
+}
+```
+
+## Migration Steps
+
+### 1. Change Method Signature
+
+```dart
+// Old
+@override
+FutureOr<List<Bind<Object>>> binds() => [
+  Bind.singleton<MyService>((i) => MyService()),
+];
+
+// New
+@override
+void binds(Injector i) {
+  i.addSingleton<MyService>(() => MyService());
+}
+```
+
+### 2. Update Registration Syntax
+
+```dart
+// Old
+Bind.singleton<ApiService>((i) => ApiService(), key: 'main')
+
+// New
+i.addSingleton<ApiService>(() => ApiService(), key: 'main')
+```
+
+### 3. Use Keys When Needed
+
+```dart
+@override
+void binds(Injector i) {
+  i.addSingleton<ApiService>(() => ApiService(), key: 'main');
+  i.addSingleton<ApiService>(() => ApiService(), key: 'backup');
+}
+```
+
+## Benefits
+
+- ✅ **Cleaner syntax** - No more Bind wrapper
+- ✅ **Better performance** - Direct registration
+- ✅ **Easier to read** - More intuitive API
+- ✅ **Same functionality** - All features preserved
+
+## Complete Example
+
+```dart
+class MyModule extends Module {
+  @override
+ FutureBinds binds(Injector i) {
+    i.addSingleton<ApiService>(() => ApiService(), key: 'main');
+    i.addSingleton<DatabaseService>(() => DatabaseService());
+    i.add<CacheService>(() => CacheService());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => MyPage()),
+  ];
+}
+
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final apiService = context.read<ApiService>(key: 'main');
+    final dbService = context.read<DatabaseService>();
+    
+    return Scaffold(
+      body: Text('Services loaded successfully!'),
+    );
+  }
+}
+```
+
+That's it! Your migration is complete.

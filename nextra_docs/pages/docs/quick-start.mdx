@@ -1,0 +1,78 @@
+# Quick Start
+
+Get your modular Flutter app running in 5 minutes!
+
+## 1. Install
+
+```bash
+flutter pub add go_router_modular
+```
+
+## 2. Create Modules
+
+```dart
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ModuleRoute("/", module: HomeModule()),
+  ];
+}
+
+class HomeModule extends Module {
+  @override
+ FutureBinds binds(Injector i) {
+    i.addSingleton<HomeController>(() => HomeController());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute("/", child: (_, __) => HomePage()),
+  ];
+}
+```
+
+## 3. Setup App
+
+```dart
+void main() async {
+  await Modular.configure();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      routerConfig: Modular.routerConfig,
+    );
+  }
+}
+```
+
+## 4. Use Dependencies
+
+```dart
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.read<HomeController>();
+    return Scaffold(
+      body: Center(child: Text(controller.message)),
+    );
+  }
+}
+```
+
+## 5. Run
+
+```bash
+flutter run
+```
+
+That's it! Your modular app is ready.
+
+## What's Next?
+
+- [Getting Started](/docs/getting-started) - Build a complete app
+- [Routes & Modules](/routes/routes-system) - Learn routing
+- [Dependency Injection](/dependency-injection) - Master DI

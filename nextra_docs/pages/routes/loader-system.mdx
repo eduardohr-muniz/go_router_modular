@@ -1,0 +1,102 @@
+# Loader System
+
+Show loading indicators during module loading and async operations.
+
+## Automatic Loading
+
+The loader appears automatically during:
+- Module initialization
+- Dependency injection
+- Route transitions
+
+```dart
+class AppWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      routerConfig: Modular.routerConfig,
+      // Loader works automatically
+    );
+  }
+}
+```
+
+## Manual Control
+
+Show/hide loader manually:
+
+```dart
+// Show loader
+ModularLoader.show();
+
+// Hide loader
+ModularLoader.hide();
+```
+
+## Custom Loader
+
+Create your own loader:
+
+```dart
+class CustomLoader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black54,
+      child: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
+
+// Use in app
+class AppWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      routerConfig: Modular.routerConfig,
+      builder: (context, child) => Stack(
+        children: [
+          child!,
+          ModularLoader.builder(context, child),
+        ],
+      ),
+    );
+  }
+}
+```
+
+## Real Example
+
+```dart
+class ProductsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: FutureBuilder<List<Product>>(
+        future: _loadProducts(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            ModularLoader.show();
+            return Container();
+          }
+          
+          ModularLoader.hide();
+          return ListView.builder(
+            itemCount: snapshot.data?.length ?? 0,
+            itemBuilder: (context, index) => ProductTile(snapshot.data![index]),
+          );
+        },
+      ),
+    );
+  }
+}
+```
+
+## Best Practices
+
+1. **Let it work automatically** - Don't overuse manual control
+2. **Use for async operations** - API calls, file loading
+3. **Keep it simple** - Default loader works great
+4. **Test on slow devices** - Ensure good UX

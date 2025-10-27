@@ -1,0 +1,121 @@
+# Transition Examples
+
+Real-world examples to get you started quickly.
+
+## Basic Examples
+
+### Fade Transition
+
+```dart
+ModuleRoute('/home', module: HomeModule(),
+  transition: GoTransitions.fade,
+  duration: Duration(milliseconds: 300))
+```
+
+### Slide Transition
+
+```dart
+ModuleRoute('/products', module: ProductsModule(),
+  transition: GoTransitions.slide.toRight,
+  duration: Duration(milliseconds: 400))
+```
+
+### Scale Transition
+
+```dart
+ModuleRoute('/profile', module: ProfileModule(),
+  transition: GoTransitions.scale.withFade,
+  duration: Duration(milliseconds: 500))
+```
+
+## Combined Effects
+
+### Slide + Fade
+
+```dart
+ChildRoute('/details', child: (_, __) => DetailsPage(),
+  transition: GoTransitions.slide.toRight.withFade)
+```
+
+### Scale + Rotation
+
+```dart
+ChildRoute('/settings', child: (_, __) => SettingsPage(),
+  transition: GoTransitions.scale.withRotation)
+```
+
+## Platform-Specific
+
+### iOS Style
+
+```dart
+ModuleRoute('/ios', module: IOSModule(),
+  transition: GoTransitions.cupertino)
+```
+
+### Android Style
+
+```dart
+ModuleRoute('/android', module: AndroidModule(),
+  transition: GoTransitions.fadeUpwards)
+```
+
+## Inheritance Examples
+
+### Parent Module
+
+```dart
+ModuleRoute('/shop', module: ShopModule(),
+  transition: GoTransitions.fadeUpwards)
+```
+
+### Child Routes
+
+```dart
+// Inherits fadeUpwards
+ChildRoute('/', child: (_, __) => ShopHomePage())
+
+// Override with slide
+ChildRoute('/cart', child: (_, __) => CartPage(),
+  transition: GoTransitions.slide.toLeft)
+
+// Override with scale
+ChildRoute('/checkout', child: (_, __) => CheckoutPage(),
+  transition: GoTransitions.scale.withFade)
+```
+
+## Complete App Example
+
+```dart
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ModuleRoute('/', module: HomeModule(),
+      transition: GoTransitions.fadeUpwards),
+    
+    ModuleRoute('/products', module: ProductsModule(),
+      transition: GoTransitions.slide.toRight.withFade),
+    
+    ModuleRoute('/profile', module: ProfileModule(),
+      transition: GoTransitions.scale.withFade),
+  ];
+}
+```
+
+## Performance Tips
+
+### Lightweight for Frequent Routes
+
+```dart
+ChildRoute('/home', child: (_, __) => HomePage(),
+  transition: GoTransitions.fade,
+  duration: Duration(milliseconds: 200))
+```
+
+### Special Occasions
+
+```dart
+ChildRoute('/celebration', child: (_, __) => CelebrationPage(),
+  transition: GoTransitions.rotate.withScale.withFade,
+  duration: Duration(milliseconds: 800))
+```

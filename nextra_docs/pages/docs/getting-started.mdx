@@ -1,0 +1,96 @@
+# Getting Started
+
+Build your first modular Flutter app in 3 steps.
+
+## 1. Install
+
+```bash
+flutter pub add go_router_modular
+```
+
+## 2. Create Module
+
+```dart
+class HomeModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => HomePage()),
+  ];
+}
+```
+
+## 3. Setup App
+
+```dart
+void main() async {
+  await Modular.configure(appModule: AppModule());
+  runApp(AppWidget());
+}
+
+class AppWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ModularApp.router(
+      title: 'My App',
+    );
+  }
+}
+
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ModuleRoute('/', module: HomeModule()),
+  ];
+}
+```
+
+That's it! Your modular app is ready.
+
+## Add Dependencies (Optional)
+
+```dart
+class HomeModule extends Module {
+  @override
+ FutureBinds binds(Injector i) {
+    i.addSingleton<HomeController>(() => HomeController());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => HomePage()),
+  ];
+}
+
+// Use in widget
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.read<HomeController>();
+    return Scaffold(
+      body: Text('Hello ${controller.name}!'),
+    );
+  }
+}
+```
+
+## Async Dependencies
+
+For dependencies that need async initialization:
+
+```dart
+class DatabaseModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) async {
+    // Wait for database connection
+    await Future.delayed(Duration(seconds: 1));
+    
+    i.addSingleton<DatabaseService>(() => DatabaseService());
+  }
+}
+```
+
+## Next Steps
+
+- [Routes & Modules](/routes/routes-system) - Learn routing
+- [Dependency Injection](/dependency-injection) - Master DI
+- [Page Transitions](/routes/transitions) - Add animations

@@ -1,0 +1,74 @@
+# Navigation
+
+Navigate between pages and modules easily.
+
+## Basic Navigation
+
+```dart
+// Go to a route (replaces current page)
+context.go('/profile');
+
+// Push new page
+context.push('/settings');
+
+// Go back
+context.pop();
+
+// Replace current page
+context.replace('/dashboard');
+```
+
+## Named Routes
+
+Use names for cleaner navigation:
+
+```dart
+// Define named route
+ChildRoute(
+  '/user/:id',
+  name: 'user',
+  child: (_, state) => UserPage(id: state.pathParameters['id']!),
+)
+
+// Navigate by name
+context.goNamed('user', pathParameters: {'id': '123'});
+```
+
+## Route Parameters
+
+Pass data through URLs:
+
+```dart
+// Define route with parameter
+ChildRoute('/product/:id', child: (_, state) => 
+  ProductPage(id: state.pathParameters['id']!))
+
+// Navigate with parameter
+context.go('/product/123');
+```
+
+## Query Parameters
+
+```dart
+// Navigate with query
+context.go('/search?q=flutter&category=mobile');
+
+// Access in route
+final query = state.uri.queryParameters;
+final searchTerm = query['q'];
+```
+
+## Web Support
+
+Works perfectly on web with browser navigation:
+- ✅ Back/forward buttons
+- ✅ URL changes
+- ✅ Deep linking
+- ✅ Bookmarking
+
+## Best Practices
+
+1. **Use descriptive routes** - `/products/123` not `/p/123`
+2. **Keep URLs clean** - Avoid complex parameters
+3. **Plan your structure** - Think about user flow
+4. **Test navigation** - Ensure all routes work

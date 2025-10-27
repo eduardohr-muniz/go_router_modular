@@ -1,0 +1,152 @@
+# Routes & Modules
+
+Build organized, scalable Flutter apps with modular routing.
+
+## What Are Modules?
+
+Modules are independent pieces of your app that contain:
+- **Routes** - Pages and navigation
+- **Dependencies** - Services and data
+- **Business Logic** - App functionality
+
+Think of them as mini-apps that work together.
+
+## Route Types
+
+### ChildRoute - Simple Pages
+
+For individual pages:
+
+```dart
+ChildRoute('/', child: (_, __) => HomePage())
+ChildRoute('/profile', child: (_, __) => ProfilePage())
+```
+
+### ModuleRoute - Full Modules
+
+For complete features:
+
+```dart
+ModuleRoute('/products', module: ProductsModule())
+ModuleRoute('/auth', module: AuthModule())
+```
+
+### ShellModularRoute - Shared Layouts
+
+For layouts with navigation:
+
+```dart
+ShellModularRoute(
+  builder: (context, state, child) => MainLayout(child: child),
+  routes: [
+    ModuleRoute('/home', module: HomeModule()),
+    ModuleRoute('/profile', module: ProfileModule()),
+  ]
+)
+```
+
+## Quick Example
+
+```dart
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    // Home page
+    ChildRoute('/', child: (_, __) => HomePage()),
+    
+    // Products feature
+    ModuleRoute('/products', module: ProductsModule()),
+    
+    // Auth feature  
+    ModuleRoute('/auth', module: AuthModule()),
+  ];
+}
+```
+
+## Navigation
+
+```dart
+// Navigate to route
+context.go('/products');
+
+// Push new page
+context.push('/product/123');
+
+// Go back
+context.pop();
+```
+
+## Route Parameters
+
+```dart
+// Define route with parameter
+ChildRoute('/user/:id', child: (_, state) => 
+  UserPage(id: state.pathParameters['id']!))
+
+// Navigate with parameter
+context.go('/user/123');
+```
+
+## Module Nesting
+
+Modules can contain other modules:
+
+```dart
+class ProductsModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => ProductsListPage()),
+    ModuleRoute('/details', module: ProductDetailsModule()),
+  ];
+}
+```
+
+## Page Transitions
+
+Add beautiful animations:
+
+```dart
+ModuleRoute('/home', module: HomeModule(),
+  transition: GoTransitions.fadeUpwards,
+  duration: Duration(milliseconds: 300))
+```
+
+[Learn more about transitions →](/routes/transitions)
+
+## Best Practices
+
+1. **One module per feature** - Keep related functionality together
+2. **Use descriptive names** - Make routes easy to understand
+3. **Keep modules small** - Easier to maintain and test
+4. **Plan your structure** - Think about your app's navigation flow
+
+## Common Patterns
+
+### Feature Modules
+
+```dart
+class AuthModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/login', child: (_, __) => LoginPage()),
+    ChildRoute('/register', child: (_, __) => RegisterPage()),
+  ];
+}
+```
+
+### Nested Navigation
+
+```dart
+class ShopModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => ShopHomePage()),
+    ModuleRoute('/products', module: ProductsModule()),
+    ModuleRoute('/cart', module: CartModule()),
+  ];
+}
+```
+
+---
+
+**Need more details?** Check out the [Navigation](/routes/navigation) and [Loader System](/routes/loader-system) guides.

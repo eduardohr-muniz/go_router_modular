@@ -1,0 +1,187 @@
+# Event Module
+
+Decoupled communication between modules using events.
+
+## What Is EventModule?
+
+EventModule allows modules to listen to events and respond to them automatically. It manages event listeners' lifecycle and provides context for navigation.
+
+## Quick Start
+
+### 1. Create Event Module
+
+```dart
+class MyEventModule extends EventModule {
+  @override
+  void listen() {
+    on<UserLoggedInEvent>((event, context) {
+      if (context != null) {
+        context.go('/home');
+      }
+    });
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => MyPage()),
+  ];
+}
+```
+
+### 2. Send Events
+
+```dart
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        // Send event
+        ModularEvent.fire(UserLoggedInEvent(userId: '123'));
+      },
+      child: Text('Login'),
+    );
+  }
+}
+```
+
+### 3. Listen to Events
+
+The `listen()` method automatically registers listeners when the module is initialized:
+
+```dart
+class AuthModule extends EventModule {
+  @override
+  void listen() {
+    on<UserLoggedInEvent>((event, context) {
+      print('User ${event.userId} logged in!');
+      if (context != null) {
+        context.go('/dashboard');
+      }
+    });
+  }
+}
+```
+
+## Event Types
+
+### Regular Events
+
+Multiple modules can listen to the same event:
+
+```dart
+@override
+void listen() {
+  on<DataUpdatedEvent>((event, context) {
+    print('Data: ${event.data}');
+  });
+}
+
+// Fire event
+ModularEvent.fire(DataUpdatedEvent(data: 'new data'));
+```
+
+### Exclusive Events
+
+Only one module receives the event at a time (FIFO queue):
+
+```dart
+@override
+void listen() {
+  on<ImportantEvent>((event, context) {
+    print('Handled: ${event.message}');
+  }, exclusive: true);
+}
+
+// Fire event
+ModularEvent.fire(ImportantEvent(message: 'urgent'));
+```
+
+## Real Example
+
+```dart
+// Event classes
+class UserLoggedInEvent {
+  final String userId;
+  UserLoggedInEvent({required this.userId});
+}
+
+class ShowSnackBarEvent {
+  final String message;
+  ShowSnackBarEvent({required this.message});
+}
+
+// Auth module listens for login
+class AuthModule extends EventModule {
+  @override
+  void listen() {
+    on<UserLoggedInEvent>((event, context) {
+      print('User ${event.userId} logged in!');
+      if (context != null) {
+        context.go('/dashboard');
+      }
+    });
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/login', child: (_, __) => LoginPage()),
+  ];
+}
+
+// UI module listens for snackbar events
+class UIModule extends EventModule {
+  @override
+  void listen() {
+    on<ShowSnackBarEvent>((event, context) {
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(event.message))
+        );
+      }
+    });
+  }
+}
+
+// Login page sends events
+class LoginPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        ModularEvent.fire(UserLoggedInEvent(userId: '123'));
+        ModularEvent.fire(ShowSnackBarEvent(message: 'Welcome!'));
+      },
+      child: Text('Login'),
+    );
+  }
+}
+```
+
+## Key Features
+
+- **Automatic lifecycle** - Listeners are registered/disposed automatically
+- **Context injection** - Navigation context provided automatically
+- **Exclusive events** - FIFO queue system for critical events
+- **Memory management** - No memory leaks, automatic cleanup
+
+## Best Practices
+
+1. **Check context null** - Always verify `context != null` before using
+2. **Use descriptive event names** - `UserLoggedInEvent` not `Event1`
+3. **Keep events simple** - Just data, no business logic
+4. **Use exclusive sparingly** - Only for critical operations
+5. **Test event flow** - Ensure events reach their destinations
+
+## When to Use
+
+✅ **Good for:**
+- User authentication changes
+- Cross-module notifications
+- Navigation triggers
+- UI updates from business logic
+
+❌ **Avoid for:**
+- Simple parent-child communication
+- Direct data passing
+- Frequent, high-volume events
