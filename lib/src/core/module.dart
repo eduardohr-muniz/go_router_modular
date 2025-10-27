@@ -55,11 +55,13 @@ abstract class Module {
       ),
       pageBuilder: childRoute.pageBuilder != null
           ? (context, state) => childRoute.pageBuilder!(context, state)
-          : (context, state) => _buildCustomTransitionPage(
-                context,
-                state: state,
-                route: childRoute,
-              ),
+          : (childRoute.transition != null || Modular.getDefaultTransition != null)
+              ? (context, state) => _buildCustomTransitionPage(
+                    context,
+                    state: state,
+                    route: childRoute,
+                  )
+              : null,
       parentNavigatorKey: childRoute.parentNavigatorKey,
       redirect: childRoute.redirect,
     );
@@ -101,7 +103,7 @@ abstract class Module {
               ),
       pageBuilder: childRoute?.pageBuilder != null
           ? (context, state) => childRoute!.pageBuilder!(context, state)
-          : childRoute?.transition != null
+          : (childRoute?.transition != null || Modular.getDefaultTransition != null)
               ? (context, state) => _buildCustomTransitionPageForModule(
                     context,
                     state: state,
