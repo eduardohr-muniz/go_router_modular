@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:auto_injector/auto_injector.dart' as ai;
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/exceptions/exception.dart';
 import 'package:go_router_modular/src/di/injector.dart';
@@ -91,39 +94,32 @@ class Bind<T> {
 
   /// Get instance using auto_injector
   static T get<T>({String? key}) {
-    final manager = InjectionManager.instance;
-    final mainInjector = manager.injector;
-    final contextInjector = manager.getContextualInjector();
-
-    // Estratégia: Tentar primeiro no injector contextual (módulo atual), depois no principal
-    // Isso permite que módulos resolvam seus próprios binds antes de tentar o AppModule
-    if (contextInjector != mainInjector) {
-      try {
-        final result = contextInjector.get<T>(key: key);
-        return result;
-      } catch (e) {
-        // Fallback para injector principal
-      }
-    }
-
     try {
-      final result = mainInjector.get<T>(key: key);
+      final manager = InjectionManager.instance;
+      final contextInjector = manager.getContextualInjector();
+
+      // Tentar primeiro no injector contextual (módulo atual)
+      // Sem fallback - falha rápido na primeira tentativa
+      final result = contextInjector.get<T>(key: key);
       return result;
-    } catch (e) {
-      // Tentar resolver pela implementação conhecida se T for uma interface
-      if (_interfaceImplementations.containsKey(T)) {
-        try {
-          final injector = InjectionManager.instance.injector;
-          final implementation = injector.get(key: key);
-          if (implementation is T) {
-            return implementation;
-          }
-        } catch (_) {
-          // Ignorar e lançar o erro original
-        }
+    } catch (e, s) {
+      // Propagar o erro original imediatamente com o stack trace completo
+      if (e is ai.UnregisteredInstance) {
+        final className = e.classNames.last;
+        log(
+          '❌ Bind not found: $className\n'
+          '📍 Make sure to register it in the module binds() method:\n'
+          '   ⚠️  IMPORTANT: Always use explicit typing!\n'
+          '   ✅ i.add<$className>($className.new);\n'
+          '   or\n'
+          '   ✅ i.add<$className>(() => $className());\n'
+          '\n'
+          '   ❌ DO NOT: i.add(() => $className()); // Missing type!',
+          name: 'GO_ROUTER_MODULAR',
+        );
       }
 
-      throw GoRouterModularException('❌ Bind not found for type ${T.toString()}${key != null ? ' with key: $key' : ''}');
+      Error.throwWithStackTrace(e, s);
     }
   }
 
