@@ -8,7 +8,6 @@
     "---": {
         "type": "separator"
     },
-    "changelog": "📝 Changelog",
     "github": {
         "title": "GitHub ↗",
         "href": "https://pub.dev/packages/go_router_modular",
