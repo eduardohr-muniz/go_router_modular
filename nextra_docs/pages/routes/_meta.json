@@ -2,5 +2,7 @@
     "routes-system": "🛣️ Routes System",
     "transitions": "✨ Page Transitions",
     "navigation": "🧭 Navigation",
-    "loader-system": "⏳ Loader System"
+    "loader-system": "⏳ Loader System",
+    "redirects": "↪️ Redirects",
+    "shell-route": "🧩 Shell Route"
 }
