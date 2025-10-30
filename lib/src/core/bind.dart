@@ -103,7 +103,7 @@ class Bind<T> {
       final result = contextInjector.get<T>(key: key);
       return result;
     } catch (e, s) {
-      // Propagar o erro original imediatamente com o stack trace completo
+      // Tratamento específico: erros do auto_injector devem ser convertidos
       if (e is ai.UnregisteredInstance) {
         final className = e.classNames.last;
         final coloredClassName = '\x1B[32m$className\x1B[0m'; // green
@@ -118,9 +118,21 @@ class Bind<T> {
           '   ❌ DO NOT: i.add(() => $className()); // Missing type!',
           name: 'GO_ROUTER_MODULAR',
         );
+
+        // Converte para GoRouterModularException (mantendo compatibilidade dos testes)
+        final msg = '❌ Bind not found for type ' + className + '\nInner error: ' + e.toString();
+        throw GoRouterModularException(msg);
       }
 
-      Error.throwWithStackTrace(e, s);
+      // Se já for uma exceção do pacote, propaga com o stack trace original
+      if (e is GoRouterModularException) {
+        Error.throwWithStackTrace(e, s);
+      }
+
+      // Fallback: embrulha qualquer outro erro para manter uma mensagem padronizada
+      final msg = '❌ Bind not found for type ' + T.toString() + (key != null ? ' with key: ' + key : '') + '\nInner error: ' + e.toString();
+      print(msg);
+      throw GoRouterModularException(msg);
     }
   }
 
