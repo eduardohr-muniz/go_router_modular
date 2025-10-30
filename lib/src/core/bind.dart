@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/exceptions/exception.dart';
 import 'package:go_router_modular/src/di/injector.dart';

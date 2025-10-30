@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 class CleanBind {
   static bool fromInstance(dynamic instance) {
     try {
-      final typeName = instance.runtimeType.toString().toLowerCase();
+      // final typeName = instance.runtimeType.toString().toLowerCase();
 
       // 1. Se implementa Disposable (interface personalizada) - PRIORIDADE MÁXIMA
       if (instance is Disposable) {

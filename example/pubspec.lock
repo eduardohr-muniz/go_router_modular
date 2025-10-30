@@ -126,7 +126,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "4.2.3"
+    version: "5.0.0"
   go_transitions:
     dependency: transitive
     description:
