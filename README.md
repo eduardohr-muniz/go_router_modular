@@ -25,14 +25,9 @@
 
 <div align="left">
 
-
-
 [![Open the Docs](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/docs.svg)](https://eduardohr-muniz.github.io/go_router_modular)
 
-
 </div>
-
-
 
 ## Contents
 
