@@ -106,13 +106,14 @@ class Bind<T> {
       // Propagar o erro original imediatamente com o stack trace completo
       if (e is ai.UnregisteredInstance) {
         final className = e.classNames.last;
+        final coloredClassName = '\x1B[32m$className\x1B[0m'; // green
         log(
-          '❌ Bind not found: $className\n'
+          '❌ Bind not found: $coloredClassName\n'
           '📍 Make sure to register it in the module binds() method:\n'
           '   ⚠️  IMPORTANT: Always use explicit typing!\n'
-          '   ✅ i.add<$className>($className.new);\n'
+          '   ✅ i.add<$coloredClassName>($className.new);\n'
           '   or\n'
-          '   ✅ i.add<$className>(() => $className());\n'
+          '   ✅ i.add<$coloredClassName>(() => $className());\n'
           '\n'
           '   ❌ DO NOT: i.add(() => $className()); // Missing type!',
           name: 'GO_ROUTER_MODULAR',
