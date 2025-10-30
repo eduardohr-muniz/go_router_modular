@@ -204,7 +204,7 @@ void main() {
         );
       });
 
-      // REMOVIDO: Limitação do GetIt - unregister remove completamente o bind
+      // REMOVIDO: Limitação do  Auto Injector - unregister remove completamente o bind
       // test('should handle dispose of interface bind correctly')
     });
 

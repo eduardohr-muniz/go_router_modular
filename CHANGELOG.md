@@ -51,7 +51,7 @@
     ```
 
 ### Improved
-* **Performance**: Optimized dependency injection with GetIt
+* **Performance**: Optimized dependency injection with Auto Injector
   - Faster dependency resolution
   - Better memory management
   - Reduced overhead in dependency lookup

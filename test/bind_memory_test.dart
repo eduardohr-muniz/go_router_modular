@@ -80,10 +80,10 @@ void main() {
         expect(TestCloseService.instanceCount, 1);
       });
 
-      // REMOVIDO: Limitação do GetIt - unregister remove completamente o bind
+      // REMOVIDO: Limitação do  Auto Injector - unregister remove completamente o bind
       // test('should keep bind registered but remove instance when disposing')
 
-      // REMOVIDO: Limitação do GetIt - disposeByKey não é suportado sem tipo
+      // REMOVIDO: Limitação do  Auto Injector - disposeByKey não é suportado sem tipo
       // test('should keep bind registered when disposing singleton with key')
 
       test('should handle dispose of non-existent type gracefully', () {
@@ -97,15 +97,15 @@ void main() {
       });
     });
 
-    // REMOVIDO: Grupo disposeByKey() - Limitação do GetIt
-    // GetIt não suporta unregister apenas com instanceName sem o tipo genérico
+    // REMOVIDO: Grupo disposeByKey() - Limitação do  Auto Injector
+    //  Auto Injector não suporta unregister apenas com instanceName sem o tipo genérico
     // group('disposeByKey(String key) method', () { ... });
 
     // ❌ REMOVIDO: Grupo disposeByType() - NÃO suportado pelo auto_injector
     // O auto_injector não fornece uma API para dispose por Type (apenas por genérico <T> ou key)
 
     group('clearAll() method', () {
-      // REMOVIDO: Limitação do GetIt - reset pode não chamar todos os dispose callbacks
+      // REMOVIDO: Limitação do  Auto Injector - reset pode não chamar todos os dispose callbacks
       // test('should clear all binds and call cleanup')
 
       test('should clear internal tracking maps', () {
@@ -129,10 +129,10 @@ void main() {
     });
 
     group('Memory leak prevention', () {
-      // REMOVIDO: Limitação do GetIt - unregister remove completamente o bind
+      // REMOVIDO: Limitação do  Auto Injector - unregister remove completamente o bind
       // test('should not leak references after dispose')
 
-      // REMOVIDO: Limitação do GetIt - clearAll pode não chamar todos os dispose callbacks
+      // REMOVIDO: Limitação do  Auto Injector - clearAll pode não chamar todos os dispose callbacks
       // test('should handle mixed singleton and factory cleanup')
     });
 
