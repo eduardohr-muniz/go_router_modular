@@ -55,7 +55,7 @@ class AppModule extends Module {
 class HomeModule extends Module {
   @override
   void binds(Injector i) { // Optional
-    i.addLazySingleton(() => HomeController());
+    i.addLazySingleton<HomeController>(HomeController.new);
   }
 
   @override

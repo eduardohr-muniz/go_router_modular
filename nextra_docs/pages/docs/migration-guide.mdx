@@ -26,8 +26,8 @@ class MyModule extends Module {
 class MyModule extends Module {
   @override
  FutureBinds binds(Injector i) {
-    i.addSingleton<ApiService>(() => ApiService());
-    i.addSingleton<DatabaseService>(() => DatabaseService());
+    i.addSingleton<ApiService>(ApiService.new); 
+    i.addSingleton<DatabaseService>(() => DatabaseService()); // if you prefer not to use .new, just call a function
   }
 }
 ```
@@ -46,7 +46,7 @@ FutureOr<List<Bind<Object>>> binds() => [
 // New
 @override
 void binds(Injector i) {
-  i.addSingleton<MyService>(() => MyService());
+  i.addSingleton<MyService>(MyService.new);
 }
 ```
 
@@ -54,10 +54,12 @@ void binds(Injector i) {
 
 ```dart
 // Old
-Bind.singleton<ApiService>((i) => ApiService(), key: 'main')
+Bind.singleton<ApiService>((i) => ApiService())
 
 // New
-i.addSingleton<ApiService>(() => ApiService(), key: 'main')
+i.addSingleton<ApiService>(ApiService.new)
+//or
+i.addSingleton<ApiService>(() => ApiService())
 ```
 
 ### 3. Use Keys When Needed
@@ -65,8 +67,8 @@ i.addSingleton<ApiService>(() => ApiService(), key: 'main')
 ```dart
 @override
 void binds(Injector i) {
-  i.addSingleton<ApiService>(() => ApiService(), key: 'main');
-  i.addSingleton<ApiService>(() => ApiService(), key: 'backup');
+  i.addSingleton<ApiService>(ApiService.new, key: 'main');
+  i.addSingleton<ApiService>(ApiService.new, key: 'backup');
 }
 ```
 
@@ -83,9 +85,9 @@ void binds(Injector i) {
 class MyModule extends Module {
   @override
  FutureBinds binds(Injector i) {
-    i.addSingleton<ApiService>(() => ApiService(), key: 'main');
-    i.addSingleton<DatabaseService>(() => DatabaseService());
-    i.add<CacheService>(() => CacheService());
+    i.addSingleton<ApiService>(() => ApiService.new, key: 'main');
+    i.addSingleton<DatabaseService>(() => DatabaseService(api: i.get<ApiService>(key: 'main')));
+    i.add<CacheService>(CacheService.new);
   }
 
   @override

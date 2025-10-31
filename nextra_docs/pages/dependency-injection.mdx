@@ -11,8 +11,8 @@ Instead of creating objects directly, you register them and let the system provi
 final service = MyService();
 
 // Do this
-i.addSingleton<MyService>(() => MyService());
-final service = Bind.get<MyService>();
+i.addSingleton<MyService>(MyService.new);
+final service = Modular.get<MyService>();
 ```
 
 ## Quick Start
@@ -23,8 +23,8 @@ final service = Bind.get<MyService>();
 class HomeModule extends Module {
   @override
  FutureBinds binds(Injector i) {
-    i.addSingleton<HomeController>(() => HomeController());
-    i.add<ApiService>(() => ApiService());
+    i.addSingleton<HomeController>(HomeController.new);
+    i.add<ApiService>(ApiService.new);
   }
 }
 ```
@@ -32,10 +32,18 @@ class HomeModule extends Module {
 ### 2. Use Dependencies
 
 ```dart
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late final controller = context.read<HomeController>();
+  //or
+  final controller = Modular.get<HomeController>();
+
   @override
   Widget build(BuildContext context) {
-    final controller = Bind.get<HomeController>();
     return Scaffold(/* ... */);
   }
 }
@@ -47,21 +55,21 @@ class HomePage extends StatelessWidget {
 One instance for the entire app:
 
 ```dart
-i.addSingleton<DatabaseService>(() => DatabaseService());
+i.addSingleton<DatabaseService>(DatabaseService.new);
 ```
 
 ### Factory
 New instance every time:
 
 ```dart
-i.add<ApiClient>(() => ApiClient());
+i.add<ApiClient>(ApiClient.new);
 ```
 
 ### Lazy Singleton
 Created only when first used:
 
 ```dart
-i.addLazySingleton<HeavyService>(() => HeavyService());
+i.addLazySingleton<HeavyService>(HeavyService.new);
 ```
 
 ## Async Dependencies
@@ -75,7 +83,7 @@ class DatabaseModule extends Module {
     // Wait for database connection
     await Future.delayed(Duration(seconds: 1));
     
-    i.addSingleton<DatabaseService>(() => DatabaseService());
+    i.addSingleton<DatabaseService>(DatabaseService.new);
   }
 }
 ```
@@ -86,12 +94,12 @@ Register multiple instances of the same type:
 
 ```dart
 // Register with keys
-i.addSingleton<ApiService>(() => ApiService(), key: 'main');
-i.addSingleton<ApiService>(() => ApiService(), key: 'backup');
+i.addSingleton<ApiService>(ApiService.new, key: 'main');
+i.addSingleton<ApiService>(ApiService.new, key: 'backup');
 
 // Use with keys
-final mainApi = Bind.get<ApiService>(key: 'main');
-final backupApi = Bind.get<ApiService>(key: 'backup');
+final mainApi = Modular.get<ApiService>(key: 'main');
+final backupApi = Modular.get<ApiService>(key: 'backup');
 ```
 
 ## Context Extension
@@ -114,9 +122,9 @@ class MyWidget extends StatelessWidget {
 class ProductsModule extends Module {
   @override
  FutureBinds binds(Injector i) {
-    i.addSingleton<ProductsController>(() => ProductsController());
-    i.add<ProductsRepository>(() => ProductsRepository());
-    i.addLazySingleton<ApiService>(() => ApiService());
+    i.addSingleton<ProductsController>(ProductsController.new);
+    i.add<ProductsRepository>(ProductsRepository.new);
+    i.addLazySingleton<ApiService>(ApiService.new);
   }
 
   @override
@@ -130,7 +138,7 @@ class ProductsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.read<ProductsController>();
     return Scaffold(
-      body: controller.buildProductsList(),
+      body: ...,
     );
   }
 }
