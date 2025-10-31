@@ -242,7 +242,10 @@ class ModuleCImportsB extends Module {
 
   @override
   FutureBinds binds(Injector i) {
-    i.addLazySingleton(() => ServiceC(serviceB: i.get<ServiceB>()));
+    // IMPORTANTE: Não podemos usar i.get() para buscar em imports durante binds()
+    // porque o injector ainda não está commitado.
+    // Solução: Deixar o auto_injector resolver automaticamente via construtor
+    i.addLazySingleton<ServiceC>(ServiceC.new);
   }
 }
 

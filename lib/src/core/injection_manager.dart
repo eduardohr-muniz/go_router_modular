@@ -198,20 +198,17 @@ class InjectionManager {
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       // Registrar binds do módulo
-      // O injector já está commitado se tem AppModule
-      // auto_injector permite adicionar binds mesmo após commit
+      // auto_injector permite adicionar binds antes de commitar
       module.binds(Injector.fromAutoInjector(newInjector));
       print('✅ ${module.runtimeType}.binds() CONCLUÍDO');
       
-      // Commitar se não tem AppModule (não foi commitado ainda)
-      if (_appModule == null || _appModule == module) {
-        print('🔒 Commitando injector de ${module.runtimeType}...');
-        try {
-          newInjector.commit();
-          print('✅ Injector commitado');
-        } catch (e) {
-          print('ℹ️  Injector já estava commitado ou erro ao commitar: $e');
-        }
+      // IMPORTANTE: Commitar após binds() para permitir busca em sub-injectors
+      print('🔒 Commitando injector final de ${module.runtimeType}...');
+      try {
+        newInjector.commit();
+        print('✅ Injector commitado');
+      } catch (e) {
+        print('ℹ️  Erro ao commitar (pode já estar commitado): $e');
       }
     } else {
       print('ℹ️  AppModule.binds() já foi executado antes dos imports');

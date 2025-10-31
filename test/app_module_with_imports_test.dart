@@ -36,7 +36,7 @@ void main() {
     });
 
     test(
-      '❌ DEMONSTRA O PROBLEMA: Import não consegue usar i.get() durante binds() para buscar bind do AppModule',
+      '✅ SOLUÇÃO FUNCIONA: Import CONSEGUE usar i.get() durante binds() para buscar bind do AppModule',
       () async {
         // Criar AppModule que tem imports E registra IClient
         final appModule = AppModuleWithClientBind();
@@ -48,15 +48,16 @@ void main() {
         // Este módulo tentou fazer i.get<IClient>() durante seu binds()
         final authService = Modular.get<AuthService>();
 
-        // ❌ PROBLEMA DEMONSTRADO: AuthService foi criado, mas client é NULL
-        // porque IClient não estava disponível durante binds() do AuthModule
+        // ✅ SOLUÇÃO FUNCIONANDO: AuthService foi criado COM client preenchido
+        // porque AppModule.binds() foi executado ANTES dos imports
+        // e i.get() faz fallback para o AppModule automaticamente
         expect(authService, isNotNull);
         expect(
           authService.client,
-          isNull,
-          reason: 'AuthModule tentou fazer i.get<IClient>() durante binds(), '
-              'mas IClient ainda não existia porque AppModule.binds() não foi executado ainda. '
-              'Por isso, AuthService foi criado com client=null',
+          isNotNull,
+          reason: 'AuthModule conseguiu fazer i.get<IClient>() durante binds(), '
+              'porque AppModule.binds() foi executado antes dos imports, '
+              'e Injector.get() faz fallback automático para o AppModule.',
         );
 
         // Agora IClient está disponível (porque AppModule.binds() já executou)

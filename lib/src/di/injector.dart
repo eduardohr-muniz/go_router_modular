@@ -13,12 +13,13 @@ class Injector {
   T get<T>({String? key}) {
     try {
       // Se temos um auto_injector específico (contexto de módulo), usar ele
+      // Este injector já inclui os imports do módulo como sub-injectors
       if (_autoInjector != null) {
         try {
           final result = _autoInjector.get<T>(key: key);
           return result;
         } catch (e) {
-          // Tentar fallback para o AppModule se não encontrou no módulo
+          // Tentar fallback para o AppModule se não encontrou no módulo e seus imports
           try {
             final appModuleInjector = InjectionManager.instance.getAppModuleInjector();
             if (appModuleInjector != null) {
