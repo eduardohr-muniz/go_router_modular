@@ -86,24 +86,7 @@ class UsersModule extends Module {
 }
 ```
 
-## Deployment Strategy
 
-Each module can be deployed independently:
-
-```yaml
-# shop-module.yml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: shop-module
-spec:
-  replicas: 3
-  template:
-    spec:
-      containers:
-      - name: shop-module
-        image: myapp/shop-module:v1.2.0
-```
 
 ## Best Practices
 
