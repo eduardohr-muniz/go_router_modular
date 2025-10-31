@@ -310,47 +310,33 @@ class InjectionManager {
   /// Útil quando o contexto atual não tem a dependência, mas outro módulo sim
   T? tryGetFromAllModules<T extends Object>({String? key}) {
     try {
-      print('🔍 [tryGetFromAllModules] Buscando $T globalmente...');
       // Tentar no injector principal primeiro
       try {
-        final result = _injector.get<T>(key: key);
-        print('✅ [tryGetFromAllModules] Encontrado em injector principal: $T');
-        return result;
+        return _injector.get<T>(key: key);
       } catch (e) {
-        print('   ❌ Não em injector principal');
         // Continuar tentando outros módulos
       }
 
       // Tentar em todos os injectors de módulos
-      print('   Tentando em ${_moduleInjectors.length} módulos...');
       for (final entry in _moduleInjectors.entries) {
         try {
-          final result = entry.value.get<T>(key: key);
-          print('✅ [tryGetFromAllModules] Encontrado em ${entry.key}: $T');
-          return result;
+          return entry.value.get<T>(key: key);
         } catch (e) {
           // Continuar tentando próximo módulo
         }
       }
 
-      print('   ❌ Não encontrado em módulos');
-
       // Tentar em todos os injectors importados (cache)
-      print('   Tentando em ${_importedInjectors.length} injectors importados...');
       for (final entry in _importedInjectors.entries) {
         try {
-          final result = entry.value.get<T>(key: key);
-          print('✅ [tryGetFromAllModules] Encontrado em importado ${entry.key}: $T');
-          return result;
+          return entry.value.get<T>(key: key);
         } catch (e) {
           // Continuar tentando próximo
         }
       }
 
-      print('❌ [tryGetFromAllModules] Não encontrado em nenhum lugar: $T');
       return null;
     } catch (e) {
-      print('⚠️  [tryGetFromAllModules] Erro: $e');
       return null;
     }
   }
