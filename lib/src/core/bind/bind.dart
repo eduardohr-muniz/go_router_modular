@@ -85,23 +85,16 @@ class Bind<T extends Object> {
     }
   }
 
-  /// Get instance using AutoInjector with module context
+  /// Get instance using AutoInjector - igual flutter_modular
+  /// Busca no injector PRINCIPAL que tem todos os módulos como sub-injectors
   static T get<T extends Object>({String? key}) {
     try {
-      final contextualInjector = InjectionManager.instance.getContextualInjector();
-      return contextualInjector.get<T>(key: key);
+      // ✅ IGUAL FLUTTER_MODULAR: buscar no injector principal (tracker.dart linha 21)
+      // O injector principal tem todos os módulos registrados como sub-injectors
+      final mainInjector = InjectionManager.instance.injector;
+      return mainInjector.get<T>(key: key);
     } catch (e) {
-      // ✅ FALLBACK: Try AppModule if not found in current module
-      try {
-        final appModuleInjector = InjectionManager.instance.getAppModuleInjector();
-        if (appModuleInjector != null) {
-          return appModuleInjector.get<T>(key: key);
-        }
-      } catch (e2) {
-        // If AppModule also doesn't have it, re-throw original error
-      }
-
-      // Re-throw o erro com a mensagem detalhada do BindResolver
+      // Re-throw o erro com a mensagem detalhada
       throw GoRouterModularException(e.toString());
     }
   }
