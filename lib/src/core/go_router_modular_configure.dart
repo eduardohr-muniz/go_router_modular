@@ -42,6 +42,19 @@ class GoRouterModular {
 
   static Duration get getDefaultDuration => _defaultDuration;
 
+  /// Enable or disable internal debug logs for dependency injection
+  ///
+  /// When enabled, detailed logs will be printed showing the DI resolution process.
+  /// This is useful for debugging dependency injection issues.
+  ///
+  /// - **Example**:
+  ///   ```dart
+  ///   GoRouterModular.setInternalLogs(true);
+  ///   ```
+  static void setInternalLogs(bool enabled) {
+    Injector.enableInternalLogs = enabled;
+  }
+
   /// Retrieves a registered dependency from the injection container.
   ///
   /// - [T]: The type of the dependency to return.

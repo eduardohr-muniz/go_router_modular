@@ -94,6 +94,13 @@ class InjectionManager {
       return _importedInjectors[importTag]!;
     }
 
+    // ✅ IMPORTANTE: Se o módulo importado é o AppModule, usar o injector já registrado
+    if (importedModule == _appModule && _moduleInjectors.containsKey(_appModule!.runtimeType)) {
+      final appModuleInjector = _moduleInjectors[_appModule!.runtimeType]!;
+      _importedInjectors[importTag] = appModuleInjector;
+      return appModuleInjector;
+    }
+
     final exportedInject = await _createInjector(importedModule, '${importTag}_Imported');
     _importedInjectors[importTag] = exportedInject;
 
@@ -119,54 +126,60 @@ class InjectionManager {
     } else {
     }
 
-    // Registrar binds do módulo PRIMEIRO
-
+    // 🎯 ESTRATÉGIA DIFERENCIADA: AppModule vs Módulos Normais
+    
+    // 1️⃣ Adicionar binds do módulo
     final bindsResult = module.binds(Injector.fromAutoInjector(newInjector));
     if (bindsResult is Future) {
       await bindsResult;
     }
 
-    // Commitar ANTES de processar imports para que o módulo esteja disponível
-    try {
-      newInjector.commit();
-    } catch (e) {
-    }
-
-    // 🎯 CRÍTICO: Adicionar ao mapa ANTES de processar imports
-    // Para que imports possam fazer fallback ao AppModule
-    _moduleInjectors[module.runtimeType] = newInjector;
+    // 2️⃣ Para o AppModule: commitar e adicionar ao mapa ANTES de processar imports
+    //    Isso garante que imports possam resolver binds do AppModule
     if (isAppModule) {
-    } else {
+      newInjector.commit();
+      _moduleInjectors[module.runtimeType] = newInjector;
     }
 
-    // Adicionar injectors dos módulos importados
+    // 3️⃣ Processar imports
     final imports = await module.imports();
     final importsList = await imports;
-    if (importsList.isNotEmpty) {
-    }
 
-    for (var i = 0; i < importsList.length; i++) {
-      final importedModule = importsList[i];
+    // 4️⃣ Para módulos normais: adicionar imports antes de commitar (evita uncommit/commit)
+    //    Para AppModule: uncommit, adicionar imports, re-commitar
+    if (!isAppModule) {
+      // Módulos normais: adicionar imports ANTES do commit
+      for (var i = 0; i < importsList.length; i++) {
+        final importedModule = importsList[i];
+        final exportedInjector = await _createExportedInjector(importedModule);
+        newInjector.addInjector(exportedInjector);
 
-      // Usar injector exportado com cache
-      final exportedInjector = await _createExportedInjector(importedModule);
-      newInjector.addInjector(exportedInjector);
+        if (trackImports) {
+          _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
+        }
+      }
+      
+      // Commitar uma única vez
+      newInjector.commit();
+      _moduleInjectors[module.runtimeType] = newInjector;
+    } else {
+      // AppModule: já foi commitado, precisa uncommit para adicionar imports
+      if (importsList.isNotEmpty) {
+        newInjector.uncommit();
+        
+        for (var i = 0; i < importsList.length; i++) {
+          final importedModule = importsList[i];
+          final exportedInjector = await _createExportedInjector(importedModule);
+          newInjector.addInjector(exportedInjector);
 
-      // Rastrear que este módulo importa o módulo importado
-      if (trackImports) {
-        _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
+          if (trackImports) {
+            _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
+          }
+        }
+        
+        newInjector.commit();
       }
     }
-
-    if (importsList.isNotEmpty) {
-    }
-
-    // IMPORTANTE: Adicionar o AppModule ao injector do módulo para que dependências sejam resolvidas
-    // O AppModule contém binds globais (como IClient) que os módulos precisam acessar
-
-    // NÃO adicionar AppModule como sub-injector
-    // Deixar o Injector.get() fazer fallback para AppModule automaticamente
-    // Isso evita o problema de "Injector committed!" do auto_injector
 
     // binds() já foi executado ANTES dos imports (para TODOS os módulos)
 
@@ -192,13 +205,8 @@ class InjectionManager {
     _moduleInjectors[module.runtimeType] = moduleInjector;
     _activeModuleTags[module.runtimeType] = moduleTag;
 
-    // IMPORTANTE: Apenas adicionar ao injector principal se for AppModule
-    // Outros módulos ficam isolados em seus próprios injectors
-    if (module == _appModule) {
-      _injector.uncommit();
-      _injector.addInjector(moduleInjector);
-      _injector.commit();
-    }
+    // NOTA: Não precisamos adicionar o AppModule ao _injector principal
+    // O sistema de fallback do Injector.get() já busca no AppModule quando necessário
 
     if (debugLog) {
       log('💉 INJECTED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
