@@ -49,7 +49,7 @@ class GoRouterModular {
   ///   ```dart
   ///   final myService = GoRouterModular.get<MyService>();
   ///   ```
-  static T get<T>({String? key}) {
+  static T get<T extends Object>({String? key}) {
     // Usar o injector contextual para respeitar o isolamento de módulos
     try {
       final contextualInjector = InjectionManager.instance.getContextualInjector();

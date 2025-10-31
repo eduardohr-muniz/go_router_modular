@@ -88,7 +88,8 @@ class Bind<T extends Object> {
   /// Get instance using AutoInjector with module context
   static T get<T extends Object>({String? key}) {
     try {
-      return InjectionManager.instance.getWithModuleContext<T>(key: key);
+      final contextualInjector = InjectionManager.instance.getContextualInjector();
+      return contextualInjector.get<T>(key: key);
     } catch (e) {
       // Re-throw o erro com a mensagem detalhada do BindResolver
       throw GoRouterModularException(e.toString());
@@ -128,10 +129,10 @@ class Bind<T extends Object> {
   }
 
   /// Clear all binds - not recommended in production
-  static Future<void> clearAll() async {
+  static void clearAll() {
     try {
       // Usar o método de limpeza do InjectionManager
-      await InjectionManager.instance.clearAllForTesting();
+      InjectionManager.instance.clearAllForTesting();
     } catch (e) {
       // Ignorar erros de cleanup
     }

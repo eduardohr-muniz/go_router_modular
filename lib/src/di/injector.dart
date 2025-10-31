@@ -10,7 +10,7 @@ class Injector {
   /// Usado para seguir o padrão do flutter_modular
   Injector.fromAutoInjector(ai.AutoInjector injector) : _autoInjector = injector;
 
-  T get<T>({String? key}) {
+  T get<T extends Object>({String? key}) {
     try {
       // Se temos um auto_injector específico (contexto de módulo), usar ele
       // Este injector já inclui os imports do módulo como sub-injectors

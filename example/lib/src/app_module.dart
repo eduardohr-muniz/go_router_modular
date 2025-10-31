@@ -1,3 +1,4 @@
+import 'package:example/src/modules/async_binds/async_binds_module.dart';
 import 'package:example/src/modules/auto_resolve/auto_resolve_module.dart';
 import 'package:example/src/modules/binds_by_key/binds_by_key_module.dart';
 import 'package:example/src/modules/example_event_module/example_event_module.dart';
@@ -65,5 +66,7 @@ class AppModule extends Module {
         ModuleRoute('/binds-by-key', module: BindsByKeyModule()),
         // Imports Bug Demo - Demonstra o problema de ordem de processamento
         ModuleRoute('/imports-bug', module: ImportsBugModule()),
+        // Async Binds Demo - Demonstra binds assíncronos com imports
+        ModuleRoute('/async-binds', module: AsyncBindsModule()),
       ];
 }

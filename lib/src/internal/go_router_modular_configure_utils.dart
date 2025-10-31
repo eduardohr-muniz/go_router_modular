@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/src/core/bind.dart';
+import 'package:go_router_modular/src/core/bind/bind.dart';
 import 'package:go_router_modular/src/core/module.dart';
 import 'package:go_router_modular/src/routing/page_transition_enum.dart';
 
@@ -57,7 +57,7 @@ class GoRouterModular {
   ///   ```dart
   ///   final myService = GoRouterModular.get<MyService>();
   ///   ```
-  static T get<T>() => Bind.get<T>();
+  static T get<T extends Object>() => Bind.get<T>();
 
   /// Returns the current route path based on the [BuildContext].
   ///

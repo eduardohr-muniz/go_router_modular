@@ -108,6 +108,22 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _navigateToAsyncBinds() async {
+    setState(() => isLoading = true);
+    _showSnackBar('🔄 Navegando para Async Binds Demo...', Colors.deepPurple);
+
+    try {
+      await context.pushAsync('/async-binds', onComplete: () {
+        print('✅ Navegação para Async Binds Demo completada');
+      });
+    } catch (e) {
+      print('❌ Erro na navegação: $e');
+      _showSnackBar('❌ Erro na navegação: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   Future<void> _navigateToUser() async {
     setState(() => isLoading = true);
     _showSnackBar('👤 Navegando para User...', Colors.purple);
@@ -332,6 +348,15 @@ class _HomePageState extends State<HomePage> {
                           label: const Text('🐛 Imports Bug Demo'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red.shade700,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isLoading ? null : _navigateToAsyncBinds,
+                          icon: const Icon(Icons.sync),
+                          label: const Text('🔄 Async Binds Demo'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
                             foregroundColor: Colors.white,
                           ),
                         ),
