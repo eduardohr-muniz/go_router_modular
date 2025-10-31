@@ -135,6 +135,7 @@ class GoRouterModular {
     PageTransition pageTransition = PageTransition.fade,
     int delayDisposeMilliseconds = 1000,
   }) async {
+    print('version: 2');
     if (_router != null) return _router!;
     _pageTansition = pageTransition;
     _debugLogDiagnostics = debugLogDiagnostics;

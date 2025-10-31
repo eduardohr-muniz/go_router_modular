@@ -50,12 +50,29 @@ class GoRouterModular {
   ///   final myService = GoRouterModular.get<MyService>();
   ///   ```
   static T get<T extends Object>({String? key}) {
-    // Usar o injector contextual para respeitar o isolamento de módulos
+    print('version: 2 [GoRouterModular.get START]');
     try {
+      // Tentar primeiro no injector contextual (módulo atual ou AppModule)
       final contextualInjector = InjectionManager.instance.getContextualInjector();
-      return contextualInjector.get<T>(key: key);
+      final result = contextualInjector.get<T>(key: key);
+      print('version: 2 [GoRouterModular.get] ✅ Encontrado em contexto: $T');
+      return result;
     } catch (e) {
-      // Fallback para o sistema antigo se necessário
+      // Se não encontrou no contexto, tentar globalmente em todos os módulos
+      print('version: 2 ❌ [GoRouterModular.get] Não encontrado em contexto para $T, tentando globalmente...');
+      try {
+        final globalResult = InjectionManager.instance.tryGetFromAllModules<T>(key: key);
+        if (globalResult != null) {
+          print('version: 2 ✅ [GoRouterModular.get] Encontrado globalmente: $T');
+          return globalResult;
+        }
+        print('version: 2 ⚠️  [GoRouterModular.get] Não encontrado em nenhum módulo: $T');
+      } catch (e2) {
+        print('version: 2 ⚠️  [GoRouterModular.get] Erro ao buscar globalmente: $e2');
+        // Continuar com fallback antigo
+      }
+      // Fallback final para o sistema antigo
+      print('version: 2 📍 [GoRouterModular.get] Usando Bind.get como último fallback para $T');
       return Bind.get<T>(key: key);
     }
   }
