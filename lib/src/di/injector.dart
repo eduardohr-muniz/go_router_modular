@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:auto_injector/auto_injector.dart' as ai;
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -41,6 +43,27 @@ class Injector {
             rethrow;
           } catch (e2) {
             iLog('❌ [Injector.get] $T também NÃO encontrado no AppModule. Erro: $e2', name: 'GO_ROUTER_MODULAR');
+            if (e2 is ai.UnregisteredInstance) {
+              final classNames = e2.classNames;
+              final classNameError = classNames.last;
+              final coloredClassName = '\x1B[32m$classNameError\x1B[0m'; // green
+              log(
+                '❌ Bind not found: $coloredClassName\n'
+                '📍 Make sure to register it in the module binds() method:\n'
+                '⛓ Dependency chain: ${classNames.join(' -> ')}'
+                '   ⚠️  IMPORTANT: Always use explicit typing!\n'
+                '   ✅ i.add<$coloredClassName>($classNameError.new);\n'
+                '   or\n'
+                '   ✅ i.add<$coloredClassName>(() => $classNameError());\n'
+                '\n'
+                '   ❌ DO NOT: i.add(() => $classNameError()); // Missing type!',
+                name: 'GO_ROUTER_MODULAR',
+              );
+
+              // Converte para GoRouterModularException (mantendo compatibilidade dos testes)
+              final msg = '❌ Bind not found for type ' + classNameError + '\nInner error: ' + e.toString();
+              throw GoRouterModularException(msg);
+            }
             rethrow;
           }
         }
