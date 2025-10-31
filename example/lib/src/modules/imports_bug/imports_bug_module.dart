@@ -23,24 +23,37 @@ class ImportsBugModule extends Module {
 class AuthPhoneModuleSimulated extends Module {
   @override
   void binds(Injector i) {
+    print('   ┌─ AuthPhoneModuleSimulated.binds() INICIADO');
+    print('   │  Tentando buscar IClient do AppModule...');
+    
     // ❌ PROBLEMA: Tenta usar IClient que ainda não foi registrado
     // porque AppModule.binds() ainda não foi executado
     // (imports são processados ANTES de binds)
     try {
+      print('   │  Chamando i.get<IClient>()...');
       final client = i.get<IClient>();
+      print('   │  ✅ IClient encontrado: ${client.runtimeType}');
+      
       i.addSingleton<IAuthApi>(
         () => AuthApiSimulated(client: client),
       );
+      print('   │  ✅ IAuthApi registrado');
+      
       i.addSingleton<AuthPhoneService>(
         () => AuthPhoneService(api: i.get<IAuthApi>()),
       );
+      print('   │  ✅ AuthPhoneService registrado COM api');
     } catch (e) {
       // Se falhar, registra sem dependência (para não quebrar o exemplo)
-      print('⚠️ ERRO: Não conseguiu obter IClient durante binds(): $e');
+      print('   │  ❌ ERRO ao buscar IClient: $e');
+      print('   │  ⚠️  Registrando AuthPhoneService SEM api (api=null)');
       i.addSingleton<AuthPhoneService>(
         () => AuthPhoneService(api: null),
       );
+      print('   │  ✅ AuthPhoneService registrado SEM api');
     }
+    
+    print('   └─ AuthPhoneModuleSimulated.binds() CONCLUÍDO');
   }
 
   @override

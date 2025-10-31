@@ -27,18 +27,28 @@ class AppModule extends Module {
 
   @override
   void binds(Injector i) {
+    print('   ┌─ AppModule.binds() INICIADO');
+    
     // Registrar binds básicos (simulando IClient e IAuthApi)
+    print('   │  Registrando IClient...');
     i.addSingleton<IClient>(
       () => ClientDioSimulated(baseUrl: 'https://api.example.com'),
     );
+    print('   │  ✅ IClient registrado');
 
     // Tentar usar IClient que acabou de ser registrado
+    print('   │  Registrando IAuthApi (usando IClient)...');
     i.addSingleton<IAuthApi>(
       () => AuthApiSimulated(client: i.get<IClient>()),
     );
+    print('   │  ✅ IAuthApi registrado');
     
     // Manter o bind antigo para não quebrar outros exemplos
+    print('   │  Registrando DioFake...');
     i.addSingleton(() => DioFake(baseUrl: 'https://padrao.com'));
+    print('   │  ✅ DioFake registrado');
+    
+    print('   └─ AppModule.binds() CONCLUÍDO');
   }
 
   @override
