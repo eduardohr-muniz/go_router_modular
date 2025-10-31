@@ -85,14 +85,14 @@ class Bind<T extends Object> {
     }
   }
 
-  /// Get instance using AutoInjector - igual flutter_modular
-  /// Busca no injector PRINCIPAL que tem todos os módulos como sub-injectors
+  /// Get instance using AutoInjector - com suporte a isolamento modular
+  /// Busca no injector CONTEXTUAL (módulo atual + imports + AppModule)
   static T get<T extends Object>({String? key}) {
     try {
-      // ✅ IGUAL FLUTTER_MODULAR: buscar no injector principal (tracker.dart linha 21)
-      // O injector principal tem todos os módulos registrados como sub-injectors
-      final mainInjector = InjectionManager.instance.injector;
-      return mainInjector.get<T>(key: key);
+      // ✅ ISOLAMENTO MODULAR: usar injector contextual (módulo atual)
+      // Isso respeita o isolamento: módulo + seus imports + fallback para AppModule
+      final contextualInjector = InjectionManager.instance.getContextualInjector();
+      return contextualInjector.get<T>(key: key);
     } catch (e) {
       // Re-throw o erro com a mensagem detalhada
       throw GoRouterModularException(e.toString());
