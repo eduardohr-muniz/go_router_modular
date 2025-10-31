@@ -97,7 +97,7 @@ void main() {
         expect(complexService.config, isNotNull, reason: 'Config deve ter sido injetado');
         expect(complexService.logger, isNotNull, reason: 'Logger deve ter sido injetado');
         
-        expect(complexService.client!.name, equals('ClientImpl'));
+        expect(complexService.client!.name, equals('ClientImpl from AppModule'));
         expect(complexService.config!.apiUrl, equals('https://api.example.com'));
         expect(complexService.logger!.level, equals('DEBUG'));
       },

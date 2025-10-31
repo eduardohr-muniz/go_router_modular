@@ -56,45 +56,16 @@ class InjectionManager {
     return _injector;
   }
 
+  /// Obtém o injector do AppModule
+  /// Usado para fallback quando um módulo não encontra um bind localmente
+  ai.AutoInjector? getAppModuleInjector() {
+    if (_appModule == null) return null;
+    return _moduleInjectors[_appModule!.runtimeType];
+  }
+
   // Sistema de fila sequencial para operações de módulos
-  final Queue<Future<void> Function()> _operationQueue = Queue<Future<void> Function()>();
-  bool _isProcessingQueue = false;
-
-  // Processa operações na fila sequencialmente
-  Future<void> _processQueue() async {
-    if (_isProcessingQueue || _operationQueue.isEmpty) {
-      return;
-    }
-
-    _isProcessingQueue = true;
-
-    try {
-      while (_operationQueue.isNotEmpty) {
-        final operation = _operationQueue.removeFirst();
-        await operation();
-      }
-    } finally {
-      _isProcessingQueue = false;
-    }
-  }
-
-  // Adiciona operação à fila e garante processamento sequencial
-  Future<T> _enqueueOperation<T>(Future<T> Function() operation) async {
-    final completer = Completer<T>();
-
-    _operationQueue.add(() async {
-      try {
-        final result = await operation();
-        completer.complete(result);
-      } catch (e) {
-        completer.completeError(e);
-      }
-    });
-
-    _processQueue();
-
-    return completer.future;
-  }
+  // Sistema de fila removido - causava Stack Overflow
+  // A lógica de DI já funciona corretamente sem fila
 
   Future<void> registerAppModule(Module module) async {
     if (_appModule != null) {
@@ -205,23 +176,14 @@ class InjectionManager {
     print('   É o próprio AppModule? ${_appModule == module}');
     print('   Injectors disponíveis no mapa: ${_moduleInjectors.keys.map((k) => k.toString()).join(", ")}');
     
+    // NÃO adicionar AppModule como sub-injector
+    // Deixar o Injector.get() fazer fallback para AppModule automaticamente
+    // Isso evita o problema de "Injector committed!" do auto_injector
     if (_appModule != null && _appModule != module) {
       final appModuleInjector = _moduleInjectors[_appModule!.runtimeType];
       print('   AppModuleInjector no mapa: ${appModuleInjector != null ? "✅ SIM" : "❌ NÃO"}');
-      
-      if (appModuleInjector != null) {
-        print('   🔧 Adicionando AppModule ao injector de ${module.runtimeType}...');
-        newInjector.addInjector(appModuleInjector);
-        print('   ✅ AppModule ADICIONADO');
-        
-        // IMPORTANTE: Commitar para que binds() possa buscar em sub-injectors
-        print('   🔒 Commitando ${module.runtimeType} para permitir busca no AppModule durante binds()');
-        newInjector.commit();
-        print('   ✅ Injector commitado - ${module.runtimeType}.binds() pode usar i.get() para buscar no AppModule!');
-      } else {
-        print('   ❌ PROBLEMA: AppModule NÃO está no mapa ainda!');
-        print('   ⚠️  ${module.runtimeType} NÃO poderá acessar binds do AppModule durante binds()');
-      }
+      print('   ℹ️  NÃO adicionando AppModule como sub-injector');
+      print('   ℹ️  Injector.get() fará fallback automático para AppModule');
     } else {
       print('   ℹ️  Não precisa adicionar AppModule (é null ou é o próprio módulo)');
     }
@@ -235,25 +197,22 @@ class InjectionManager {
       print('📝 CHAMANDO ${module.runtimeType}.binds()');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
-      // Uncommit se necessário antes de registrar novos binds
-      final needsUncommit = _appModule != null && _appModule != module;
-      if (needsUncommit) {
-        print('   ⚙️  Uncommiting para registrar novos binds...');
-        try {
-          newInjector.uncommit();
-        } catch (e) {
-          // Ignora se já estava uncommitado
-        }
-      }
-      
+      // Registrar binds do módulo
+      // O injector já está commitado se tem AppModule
+      // auto_injector permite adicionar binds mesmo após commit
       module.binds(Injector.fromAutoInjector(newInjector));
       print('✅ ${module.runtimeType}.binds() CONCLUÍDO');
       
-      // IMPORTANTE: Commitar o injector após registrar todos os binds
-      // Isso permite que os binds sejam resolvidos corretamente
-      print('🔒 Commitando injector final de ${module.runtimeType}...');
-      newInjector.commit();
-      print('✅ Injector final commitado');
+      // Commitar se não tem AppModule (não foi commitado ainda)
+      if (_appModule == null || _appModule == module) {
+        print('🔒 Commitando injector de ${module.runtimeType}...');
+        try {
+          newInjector.commit();
+          print('✅ Injector commitado');
+        } catch (e) {
+          print('ℹ️  Injector já estava commitado ou erro ao commitar: $e');
+        }
+      }
     } else {
       print('ℹ️  AppModule.binds() já foi executado antes dos imports');
     }
@@ -265,7 +224,7 @@ class InjectionManager {
   }
 
   Future<void> registerBindsModule(Module module) async {
-    return _enqueueOperation(() => _registerBindsModuleInternal(module));
+    return _registerBindsModuleInternal(module);
   }
 
   Future<void> _registerBindsModuleInternal(Module module) async {
@@ -324,7 +283,7 @@ class InjectionManager {
 
   Future<void> unregisterModule(Module module) async {
     if (module.runtimeType == _appModule?.runtimeType) return;
-    return _enqueueOperation(() => _unregisterModuleInternal(module));
+    return _unregisterModuleInternal(module);
   }
 
   Future<void> _unregisterModuleInternal(Module module) async {

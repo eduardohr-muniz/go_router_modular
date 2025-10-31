@@ -18,11 +18,14 @@ class Injector {
           final result = _autoInjector.get<T>(key: key);
           return result;
         } catch (e) {
-          // Tentar fallback para o injector principal (AppModule) se não encontrou no módulo
+          // Tentar fallback para o AppModule se não encontrou no módulo
           try {
-            final mainInjector = InjectionManager.instance.injector;
-            final result = mainInjector.get<T>(key: key);
-            return result;
+            final appModuleInjector = InjectionManager.instance.getAppModuleInjector();
+            if (appModuleInjector != null) {
+              final result = appModuleInjector.get<T>(key: key);
+              return result;
+            }
+            rethrow;
           } catch (e2) {
             rethrow;
           }
