@@ -50,29 +50,39 @@ class GoRouterModular {
   ///   final myService = GoRouterModular.get<MyService>();
   ///   ```
   static T get<T extends Object>({String? key}) {
-    print('version: 2 [GoRouterModular.get START]');
+    print('version: 3 [GoRouterModular.get START]');
+    
+    // Verificar se há um contexto de módulo ativo (navegação para rota)
+    final hasModuleContext = InjectionManager.instance.currentModuleContext != null;
+    
     try {
       // Tentar primeiro no injector contextual (módulo atual ou AppModule)
       final contextualInjector = InjectionManager.instance.getContextualInjector();
       final result = contextualInjector.get<T>(key: key);
-      print('version: 2 [GoRouterModular.get] ✅ Encontrado em contexto: $T');
+      print('version: 3 [GoRouterModular.get] ✅ Encontrado em contexto: $T');
       return result;
     } catch (e) {
-      // Se não encontrou no contexto, tentar globalmente em todos os módulos
-      print('version: 2 ❌ [GoRouterModular.get] Não encontrado em contexto para $T, tentando globalmente...');
+      // 🔒 ISOLAMENTO: Só fazer busca global se NÃO há contexto ativo
+      // Se há contexto (navegação), respeitar o isolamento do módulo
+      if (hasModuleContext) {
+        print('version: 3 🔒 [GoRouterModular.get] Contexto ativo - respeitando isolamento');
+        print('version: 3 ❌ $T não encontrado no módulo/imports/AppModule');
+        return Bind.get<T>(key: key); // Lança exceção respeitando isolamento
+      }
+      
+      // ✅ BUSCA GLOBAL: Apenas quando contexto é null (fora de navegação)
+      print('version: 3 🌍 [GoRouterModular.get] Sem contexto - busca global...');
       try {
         final globalResult = InjectionManager.instance.tryGetFromAllModules<T>(key: key);
         if (globalResult != null) {
-          print('version: 2 ✅ [GoRouterModular.get] Encontrado globalmente: $T');
+          print('version: 3 ✅ [GoRouterModular.get] Encontrado globalmente: $T');
           return globalResult;
         }
-        print('version: 2 ⚠️  [GoRouterModular.get] Não encontrado em nenhum módulo: $T');
+        print('version: 3 ⚠️  [GoRouterModular.get] Não encontrado: $T');
       } catch (e2) {
-        print('version: 2 ⚠️  [GoRouterModular.get] Erro ao buscar globalmente: $e2');
-        // Continuar com fallback antigo
+        print('version: 3 ❌ [GoRouterModular.get] Erro na busca global: $e2');
       }
-      // Fallback final para o sistema antigo
-      print('version: 2 📍 [GoRouterModular.get] Usando Bind.get como último fallback para $T');
+      print('version: 3 📍 [GoRouterModular.get] Fallback para Bind.get');
       return Bind.get<T>(key: key);
     }
   }

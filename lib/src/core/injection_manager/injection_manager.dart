@@ -46,6 +46,9 @@ class InjectionManager {
     }
   }
 
+  /// Retorna o contexto do módulo atual (ou null se não há contexto)
+  Type? get currentModuleContext => _currentModuleContext;
+
   /// Obtém o injector correto baseado no contexto do módulo atual
   /// Retorna o injector do módulo atual (que inclui seus imports) ou o injector principal (AppModule)
   ai.AutoInjector getContextualInjector() {
