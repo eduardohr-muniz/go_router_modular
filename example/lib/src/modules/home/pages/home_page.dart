@@ -92,6 +92,22 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _navigateToImportsBug() async {
+    setState(() => isLoading = true);
+    _showSnackBar('🐛 Navegando para Imports Bug Demo...', Colors.red);
+
+    try {
+      await context.pushAsync('/imports-bug', onComplete: () {
+        print('✅ Navegação para Imports Bug Demo completada');
+      });
+    } catch (e) {
+      print('❌ Erro na navegação: $e');
+      _showSnackBar('❌ Erro na navegação: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   Future<void> _navigateToUser() async {
     setState(() => isLoading = true);
     _showSnackBar('👤 Navegando para User...', Colors.purple);
@@ -307,6 +323,15 @@ class _HomePageState extends State<HomePage> {
                           label: const Text('6. Testar BindsByKey'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isLoading ? null : _navigateToImportsBug,
+                          icon: const Icon(Icons.bug_report, color: Colors.red),
+                          label: const Text('🐛 Imports Bug Demo'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade700,
                             foregroundColor: Colors.white,
                           ),
                         ),
