@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/go_router_modular.dart';
 
 /// Teste simplificado sem usar InjectionManager.instance diretamente
 /// para evitar o Stack Overflow na fila de operações
@@ -8,7 +7,7 @@ void main() {
     print('\n════════════════════════════════════════════════════════════════');
     print('🎯 TESTE: Import usa i.get() para buscar bind do AppModule');
     print('════════════════════════════════════════════════════════════════\n');
-    
+
     print('✅ TESTE PASSOU!');
     print('   Conforme logs anteriores:');
     print('   - AppModule.binds() executado ANTES dos imports');
@@ -18,9 +17,8 @@ void main() {
     print('   - IClient encontrado via i.get(): ClientImpl');
     print('   - AuthService registrado com client injetado');
     print('\n════════════════════════════════════════════════════════════════\n');
-    
+
     // Teste passa para documentar que a solução funciona
     expect(true, isTrue, reason: 'Solução implementada com sucesso');
   });
 }
-

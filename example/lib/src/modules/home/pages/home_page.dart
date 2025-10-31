@@ -5,7 +5,7 @@ import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:example/src/modules/shared/shared_service.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart' hide IBindSingleton;
+import 'package:go_router_modular/go_router_modular.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -228,7 +228,7 @@ class _HomePageState extends State<HomePage> {
 
   void _testAyncBinds() {
     try {
-      final sharedPreferences = Modular.get<ISharedPreferences>();
+      Modular.get<ISharedPreferences>();
       _showSnackBar('🎉 Async Binds foram corretamente econtrados', Colors.green);
     } catch (e) {
       _showSnackBar('❌ Erro ao testar Async Binds: $e', Colors.red);

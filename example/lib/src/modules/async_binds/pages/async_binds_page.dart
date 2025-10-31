@@ -15,14 +15,14 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
   IHttpClient? httpClient;
   IAuthService? authService;
   ISharedPreferences? sharedPrefs;
-  
+
   String? loginResult;
   bool isLoading = false;
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // Buscar todas as dependências injetadas usando context
     // didChangeDependencies é chamado após o widget estar no contexto
     if (config == null) {
@@ -39,7 +39,7 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
       isLoading = true;
       loginResult = null;
     });
-    
+
     try {
       final success = await authService!.login('demo_user', 'password123');
       setState(() {
@@ -68,7 +68,7 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
         ),
       );
     }
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Async Binds Demo'),
@@ -118,9 +118,9 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Config Info
             _buildCard(
               title: '⚙️ App Config',
@@ -131,9 +131,9 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
                 _buildInfoRow('Timeout', '${config!.timeout}s'),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // HTTP Client Info
             _buildCard(
               title: '🌐 HTTP Client',
@@ -145,9 +145,9 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
                 _buildInfoRow('Status', '✅ Injetado do módulo pai'),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Cache Info
             _buildCard(
               title: '💾 Cache Service',
@@ -190,9 +190,9 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
                 }).toList(),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Auth Service Test
             _buildCard(
               title: '🔐 Auth Service',
@@ -226,32 +226,26 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: loginResult!.contains('✅')
-                          ? Colors.green.shade50
-                          : Colors.red.shade50,
+                      color: loginResult!.contains('✅') ? Colors.green.shade50 : Colors.red.shade50,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: loginResult!.contains('✅')
-                            ? Colors.green
-                            : Colors.red,
+                        color: loginResult!.contains('✅') ? Colors.green : Colors.red,
                       ),
                     ),
                     child: Text(
                       loginResult!,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: loginResult!.contains('✅')
-                            ? Colors.green.shade900
-                            : Colors.red.shade900,
+                        color: loginResult!.contains('✅') ? Colors.green.shade900 : Colors.red.shade900,
                       ),
                     ),
                   ),
                 ],
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Explanation
             Container(
               padding: const EdgeInsets.all(16),
@@ -319,10 +313,10 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -381,4 +375,3 @@ class _AsyncBindsPageState extends State<AsyncBindsPage> {
     );
   }
 }
-

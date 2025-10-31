@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/core/injection_manager/injection_manager.dart';
 
 /// ═══════════════════════════════════════════════════════════════
 /// 🎯 TESTE DE IMPORTS ANINHADOS (NESTED IMPORTS)

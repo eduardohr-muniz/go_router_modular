@@ -167,10 +167,6 @@ class InjectionManager {
     // NÃO adicionar AppModule como sub-injector
     // Deixar o Injector.get() fazer fallback para AppModule automaticamente
     // Isso evita o problema de "Injector committed!" do auto_injector
-    if (_appModule != null && _appModule != module) {
-      final appModuleInjector = _moduleInjectors[_appModule!.runtimeType];
-    } else {
-    }
 
     // binds() já foi executado ANTES dos imports (para TODOS os módulos)
 
