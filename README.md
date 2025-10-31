@@ -79,9 +79,6 @@ class MyModule extends Module {
   @override
   FutureBinds binds(Injector i) {
     // Using .new with auto_injector - remember to type your dependencies!
-    i.add<ApiService>((i) => ApiService());
-    i.addSingleton<DatabaseService>((i) => DatabaseService());
-    //or
     i.add<ApiService>(ApiService.new);
     i.addSingleton<DatabaseService>(DatabaseService.new);
   }
@@ -118,10 +115,9 @@ Bind.singleton<ApiService>((i) => ApiService())
 // New (v5.x) - Using .new with auto_injector
 // Remember to type your dependencies!
 
-i.addSingleton<ApiService>(()=> ApiService())
-//or
 i.addSingleton<ApiService>(ApiService.new)
-
+//or
+i.addSingleton<ApiService>(()=> ApiService())
 ```
 
 **3. Use Keys When Needed**
