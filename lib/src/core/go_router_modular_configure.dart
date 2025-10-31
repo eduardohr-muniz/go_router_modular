@@ -51,9 +51,6 @@ class GoRouterModular {
   ///   ```dart
   ///   GoRouterModular.setInternalLogs(true);
   ///   ```
-  static void setInternalLogs(bool enabled) {
-    Injector.enableInternalLogs = enabled;
-  }
 
   /// Retrieves a registered dependency from the injection container.
   ///
@@ -65,7 +62,7 @@ class GoRouterModular {
   static T get<T extends Object>({String? key}) {
     // Verificar se há um contexto de módulo ativo (navegação para rota)
     final hasModuleContext = InjectionManager.instance.currentModuleContext != null;
-    
+
     try {
       // Tentar primeiro no injector contextual (módulo atual ou AppModule)
       final contextualInjector = InjectionManager.instance.getContextualInjector();
@@ -76,7 +73,7 @@ class GoRouterModular {
       if (hasModuleContext) {
         return Bind.get<T>(key: key); // Lança exceção respeitando isolamento
       }
-      
+
       // ✅ BUSCA GLOBAL: Apenas quando contexto é null (fora de navegação ou em listen() callbacks)
       try {
         final globalResult = InjectionManager.instance.tryGetFromAllModules<T>(key: key);
@@ -189,11 +186,11 @@ class GoRouterModular {
       delayDisposeMilliseconds > 500,
       '❌ delayDisposeMilliseconds must be at least 500ms - Check `go_router_modular main.dart`.',
     );
-    
+
     // ✅ CRITICAL: Register AppModule BEFORE creating the router
     // This ensures all async binds in AppModule are completed before navigation starts
     await InjectionManager.instance.registerAppModule(appModule);
-    
+
     modularNavigatorKey = navigatorKey ?? GlobalKey<NavigatorState>();
     _router = GoRouter(
       routes: appModule.configureRoutes(topLevel: true),

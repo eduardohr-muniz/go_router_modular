@@ -56,7 +56,6 @@ class InjectionManager {
   /// Obtém o injector correto baseado no contexto do módulo atual
   /// Retorna o injector do módulo atual (que inclui seus imports) ou o injector principal (AppModule)
   ai.AutoInjector getContextualInjector() {
-
     // Se temos um contexto de módulo específico, usar o injector desse módulo
     if (_currentModuleContext != null && _moduleInjectors.containsKey(_currentModuleContext)) {
       return _moduleInjectors[_currentModuleContext]!;
@@ -109,8 +108,10 @@ class InjectionManager {
 
   /// Cria um injector para o módulo seguindo o padrão do flutter_modular
   /// Referência: modular_core/lib/src/tracker.dart linha 275-284
+  ///
+  /// ⚠️ IMPORTANTE: O injector retornado NÃO está commitado!
+  /// Ele só será commitado quando for adicionado ao injector principal
   Future<ai.AutoInjector> _createInjector(Module module, String tag, {bool trackImports = false}) async {
-
     final newInjector = ai.AutoInjector(tag: tag);
 
     // Rastrear imports deste módulo (para validação de acesso)
@@ -118,73 +119,28 @@ class InjectionManager {
       _moduleImports[module.runtimeType] = <Type>{};
     }
 
-    // SOLUÇÃO UNIVERSAL: Registrar binds ANTES de processar imports
-    // Isso funciona para TODOS os módulos (AppModule e módulos normais)
-    final isAppModule = module == _appModule;
+    // 1️⃣ Adicionar imports PRIMEIRO (seguindo flutter_modular)
+    final imports = await module.imports();
+    final importsList = await imports;
 
-    if (isAppModule) {
-    } else {
+    for (var i = 0; i < importsList.length; i++) {
+      final importedModule = importsList[i];
+      final exportedInjector = await _createExportedInjector(importedModule);
+      newInjector.addInjector(exportedInjector);
+
+      if (trackImports) {
+        _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
+      }
     }
 
-    // 🎯 ESTRATÉGIA DIFERENCIADA: AppModule vs Módulos Normais
-    
-    // 1️⃣ Adicionar binds do módulo
+    // 2️⃣ Adicionar binds DEPOIS dos imports
     final bindsResult = module.binds(Injector.fromAutoInjector(newInjector));
     if (bindsResult is Future) {
       await bindsResult;
     }
 
-    // 2️⃣ Para o AppModule: commitar e adicionar ao mapa ANTES de processar imports
-    //    Isso garante que imports possam resolver binds do AppModule
-    if (isAppModule) {
-      newInjector.commit();
-      _moduleInjectors[module.runtimeType] = newInjector;
-    }
-
-    // 3️⃣ Processar imports
-    final imports = await module.imports();
-    final importsList = await imports;
-
-    // 4️⃣ Para módulos normais: adicionar imports antes de commitar (evita uncommit/commit)
-    //    Para AppModule: uncommit, adicionar imports, re-commitar
-    if (!isAppModule) {
-      // Módulos normais: adicionar imports ANTES do commit
-      for (var i = 0; i < importsList.length; i++) {
-        final importedModule = importsList[i];
-        final exportedInjector = await _createExportedInjector(importedModule);
-        newInjector.addInjector(exportedInjector);
-
-        if (trackImports) {
-          _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
-        }
-      }
-      
-      // Commitar uma única vez
-      newInjector.commit();
-      _moduleInjectors[module.runtimeType] = newInjector;
-    } else {
-      // AppModule: já foi commitado, precisa uncommit para adicionar imports
-      if (importsList.isNotEmpty) {
-        newInjector.uncommit();
-        
-        for (var i = 0; i < importsList.length; i++) {
-          final importedModule = importsList[i];
-          final exportedInjector = await _createExportedInjector(importedModule);
-          newInjector.addInjector(exportedInjector);
-
-          if (trackImports) {
-            _moduleImports[module.runtimeType]!.add(importedModule.runtimeType);
-          }
-        }
-        
-        newInjector.commit();
-      }
-    }
-
-    // binds() já foi executado ANTES dos imports (para TODOS os módulos)
-
-    // Inicializar estado do módulo
-    module.initState(Injector.fromAutoInjector(newInjector));
+    // ⚠️ NÃO commitar aqui! Seguindo flutter_modular, o injector só é commitado
+    // quando adicionado ao injector principal em _registerBindsModuleInternal
 
     return newInjector;
   }
@@ -198,15 +154,21 @@ class InjectionManager {
       return;
     }
 
-    // Criar injector para o módulo seguindo o padrão do flutter_modular
+    // Criar injector para o módulo (NÃO commitado ainda, seguindo flutter_modular)
     final moduleTag = '${module.runtimeType}_${DateTime.now().millisecondsSinceEpoch}';
     final moduleInjector = await _createInjector(module, moduleTag, trackImports: true);
+
+    // 🎯 SEGUINDO FLUTTER_MODULAR (tracker.dart linha 207-213):
+    // Uncommit o injector principal, adiciona o novo, re-commita
+    _injector.uncommit();
+    _injector.addInjector(moduleInjector);
+    _injector.commit();
 
     _moduleInjectors[module.runtimeType] = moduleInjector;
     _activeModuleTags[module.runtimeType] = moduleTag;
 
-    // NOTA: Não precisamos adicionar o AppModule ao _injector principal
-    // O sistema de fallback do Injector.get() já busca no AppModule quando necessário
+    // Inicializar estado do módulo DEPOIS de commitar
+    module.initState(Injector.fromAutoInjector(moduleInjector));
 
     if (debugLog) {
       log('💉 INJECTED 🧩 MODULE: ${module.runtimeType}', name: "GO_ROUTER_MODULAR");
