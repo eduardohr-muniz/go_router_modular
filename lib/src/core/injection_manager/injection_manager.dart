@@ -46,6 +46,11 @@ class InjectionManager {
     }
   }
 
+  /// Limpa temporariamente o contexto do módulo (para callbacks globais como listen())
+  void clearModuleContextTemporarily() {
+    _currentModuleContext = null;
+  }
+
   /// Retorna o contexto do módulo atual (ou null se não há contexto)
   Type? get currentModuleContext => _currentModuleContext;
 

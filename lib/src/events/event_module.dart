@@ -442,7 +442,22 @@ abstract class EventModule extends Module {
 
     _eventSubscriptions[_eventBusId]![T] = _internalEventBus.on<T>().listen((event) {
       if (_debugLog) log('🎭 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
-      return callback(event, _navigatorContext);
+      
+      // 🌍 IMPORTANTE: Executar callback SEM contexto de módulo ativo
+      // Isso permite busca global de dependências em listen() callbacks
+      final previousContext = InjectionManager.instance.currentModuleContext;
+      try {
+        // Limpar contexto temporariamente para permitir busca global
+        if (previousContext != null) {
+          InjectionManager.instance.clearModuleContextTemporarily();
+        }
+        return callback(event, _navigatorContext);
+      } finally {
+        // Restaurar contexto anterior
+        if (previousContext != null) {
+          InjectionManager.instance.setModuleContext(previousContext);
+        }
+      }
     });
   }
 
