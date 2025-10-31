@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
+import 'dart:math' hide log;
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/di/bind_indentifier.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
 import 'package:go_router_modular/src/internal/internal_logs.dart';
+import 'package:go_router_modular/src/core/dependency_analyzer.dart';
 
 /// ValueObject para representar um bind único (Type + Key)
 
@@ -271,12 +273,36 @@ class InjectionManager {
         .join('\n');
   }
 
-  void _recursiveRegisterBinds(List<Bind<Object>> binds, [int maxAttempts = 100]) {
+  /// Registra binds recursivamente usando cálculo probabilístico inteligente
+  /// para determinar o número máximo de tentativas baseado em:
+  /// - Número total de binds
+  /// - Taxa de resolução histórica
+  /// - Complexidade estimada do grafo de dependências
+  void _recursiveRegisterBinds(List<Bind<Object>> binds) {
+    if (binds.isEmpty) {
+      return;
+    }
+
+    // Calcula maxAttempts usando análise probabilística
+    final maxAttempts = DependencyAnalyzer.calculateRecursiveMaxAttempts(binds);
+
+    if (debugLog) {
+      iLog('🔄 _recursiveRegisterBinds: Iniciando registro de ${binds.length} binds com maxAttempts calculado: $maxAttempts', name: 'BIND_REGISTER');
+    }
+
+    _recursiveRegisterBindsInternal(binds, maxAttempts);
+  }
+
+  void _recursiveRegisterBindsInternal(List<Bind<Object>> binds, int maxAttempts) {
     if (binds.isEmpty || maxAttempts <= 0) {
+      if (debugLog && binds.isNotEmpty) {
+        iLog('⚠️ _recursiveRegisterBinds: MaxAttempts atingido ($maxAttempts) com ${binds.length} binds pendentes', name: 'BIND_REGISTER');
+      }
       return;
     }
 
     List<Bind<Object>> failedBinds = [];
+    int successCount = 0;
 
     for (var bind in binds) {
       try {
@@ -286,15 +312,39 @@ class InjectionManager {
         final bindId = BindIdentifier(type, key);
         _incrementBindReference(bindId);
         Bind.register(bind);
+        DependencyAnalyzer.recordSearchAttempt(type, true);
+        successCount++;
       } catch (e) {
         failedBinds.add(bind);
+        try {
+          final type = bind.instance.runtimeType;
+          DependencyAnalyzer.recordSearchAttempt(type, false);
+        } catch (_) {
+          // Ignorar se não conseguir obter o tipo
+        }
       }
     }
 
-    // Se ainda há binds que falharam, tenta novamente
+    if (debugLog) {
+      iLog('📊 _recursiveRegisterBinds: Iteração completa - ✅$successCount sucessos, ❌${failedBinds.length} falhas (maxAttempts restantes: ${maxAttempts - 1})', name: 'BIND_REGISTER');
+    }
+
+    // Se ainda há binds que falharam, calcula novo maxAttempts baseado em progresso
     if (failedBinds.isNotEmpty && failedBinds.length < binds.length) {
-      _recursiveRegisterBinds(failedBinds, maxAttempts - 1);
+      // Taxa de progresso nesta iteração
+      final progressRate = successCount / binds.length;
+
+      // Se houve progresso significativo (>50%), permite mais tentativas
+      // Caso contrário, reduz drasticamente
+      final adjustedMaxAttempts = progressRate > 0.5 ? maxAttempts - 1 : max(1, (maxAttempts * 0.5).ceil());
+
+      if (debugLog) {
+        iLog('🔄 _recursiveRegisterBinds: Recursão com ${failedBinds.length} binds pendentes (taxa progresso: ${(progressRate * 100).toStringAsFixed(1)}%, novo maxAttempts: $adjustedMaxAttempts)', name: 'BIND_REGISTER');
+      }
+
+      _recursiveRegisterBindsInternal(failedBinds, adjustedMaxAttempts);
     } else if (failedBinds.isNotEmpty) {
+      // Nenhum progresso foi feito - todos falharam
       for (var bind in failedBinds) {
         final stackTrace = bind.stackTrace.toString();
         final normalizedStack = _normalizeStackTrace(stackTrace);
