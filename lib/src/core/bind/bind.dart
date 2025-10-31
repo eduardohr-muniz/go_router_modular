@@ -91,6 +91,16 @@ class Bind<T extends Object> {
       final contextualInjector = InjectionManager.instance.getContextualInjector();
       return contextualInjector.get<T>(key: key);
     } catch (e) {
+      // ✅ FALLBACK: Try AppModule if not found in current module
+      try {
+        final appModuleInjector = InjectionManager.instance.getAppModuleInjector();
+        if (appModuleInjector != null) {
+          return appModuleInjector.get<T>(key: key);
+        }
+      } catch (e2) {
+        // If AppModule also doesn't have it, re-throw original error
+      }
+
       // Re-throw o erro com a mensagem detalhada do BindResolver
       throw GoRouterModularException(e.toString());
     }

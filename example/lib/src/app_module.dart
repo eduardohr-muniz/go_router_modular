@@ -8,8 +8,7 @@ import 'package:example/src/modules/shell_example/shell_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 // Exportar tipos para uso em outros módulos
-export 'package:example/src/modules/imports_bug/imports_bug_module.dart'
-    show IClient, IAuthApi, ClientDioSimulated, AuthApiSimulated, AuthPhoneService;
+export 'package:example/src/modules/imports_bug/imports_bug_module.dart' show IClient, IAuthApi, ClientDioSimulated, AuthApiSimulated, AuthPhoneService;
 
 /// AppModule que demonstra o problema de imports()
 ///
@@ -27,9 +26,16 @@ class AppModule extends Module {
   }
 
   @override
-  void binds(Injector i) {
+  FutureBinds binds(Injector i) async {
+    print('   ⏳ Simulando SharedPreferences.getInstance()...');
+    await Future.delayed(Duration(seconds: 3));
+    final sharedPrefs = FakeSharedPreferences();
+    print('   ✅ SharedPreferences inicializado');
+
+    i.addSingleton<ISharedPreferences>(() => sharedPrefs);
+
     print('   ┌─ AppModule.binds() INICIADO');
-    
+
     // Registrar binds básicos (simulando IClient e IAuthApi)
     print('   │  Registrando IClient...');
     i.addSingleton<IClient>(
@@ -43,12 +49,12 @@ class AppModule extends Module {
       () => AuthApiSimulated(client: i.get<IClient>()),
     );
     print('   │  ✅ IAuthApi registrado');
-    
+
     // Manter o bind antigo para não quebrar outros exemplos
     print('   │  Registrando DioFake...');
     i.addSingleton(() => DioFake(baseUrl: 'https://padrao.com'));
     print('   │  ✅ DioFake registrado');
-    
+
     print('   └─ AppModule.binds() CONCLUÍDO');
   }
 

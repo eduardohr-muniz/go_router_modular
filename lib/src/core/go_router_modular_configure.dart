@@ -159,6 +159,11 @@ class GoRouterModular {
       delayDisposeMilliseconds > 500,
       '❌ delayDisposeMilliseconds must be at least 500ms - Check `go_router_modular main.dart`.',
     );
+    
+    // ✅ CRITICAL: Register AppModule BEFORE creating the router
+    // This ensures all async binds in AppModule are completed before navigation starts
+    await InjectionManager.instance.registerAppModule(appModule);
+    
     modularNavigatorKey = navigatorKey ?? GlobalKey<NavigatorState>();
     _router = GoRouter(
       routes: appModule.configureRoutes(topLevel: true),

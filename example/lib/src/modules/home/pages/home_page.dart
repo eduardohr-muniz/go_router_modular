@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print, deprecated_member_use
 
+import 'package:example/src/modules/async_binds/async_binds_module.dart';
 import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:example/src/modules/shared/shared_service.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
@@ -225,6 +226,18 @@ class _HomePageState extends State<HomePage> {
     setState(() {}); // Atualizar UI
   }
 
+  void _testAyncBinds() {
+    try {
+      final sharedPreferences = Modular.get<ISharedPreferences>();
+      _showSnackBar('🎉 Async Binds foram corretamente econtrados', Colors.green);
+    } catch (e) {
+      _showSnackBar('❌ Erro ao testar Async Binds: $e', Colors.red);
+      print('❌ Erro ao testar Async Binds: $e');
+    }
+
+    setState(() {}); // Atualizar UI
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = TestController.instance;
@@ -348,6 +361,15 @@ class _HomePageState extends State<HomePage> {
                           label: const Text('🐛 Imports Bug Demo'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red.shade700,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isLoading ? null : _testAyncBinds,
+                          icon: const Icon(Icons.sync),
+                          label: const Text('🔄 Async Binds Teste HOme'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
                             foregroundColor: Colors.white,
                           ),
                         ),

@@ -26,7 +26,9 @@ abstract class Module {
 
   List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
     List<RouteBase> result = [];
-    InjectionManager.instance.registerAppModule(this);
+    // ✅ AppModule is registered in Modular.configure() BEFORE creating routes
+    // ✅ Other modules are registered in _buildRedirectAndInjectBinds() during navigation
+    // DO NOT register modules here!
 
     result.addAll(_createChildRoutes(topLevel: topLevel));
     result.addAll(_createModuleRoutes(modulePath: modulePath, topLevel: topLevel));
