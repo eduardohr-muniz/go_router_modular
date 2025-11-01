@@ -15,7 +15,8 @@ class InjectionManager {
   InjectionManager._();
   static InjectionManager get instance => _instance ??= InjectionManager._();
 
-  final Map<BindIdentifier, int> _bindReferences = {};
+  // Contexto de módulos por bind: quais módulos estão usando cada bind
+  final Map<BindIdentifier, Set<Module>> _bindModuleContext = {};
   Module? _appModule;
 
   final Injector _injector = Injector();
@@ -92,8 +93,9 @@ class InjectionManager {
   }
 
   bool _isBindForAppModule(BindIdentifier bindId) {
-    final isForAppModule = _moduleBindTypes[_appModule]?.contains(bindId) ?? false;
-    return isForAppModule;
+    if (_appModule == null) return false;
+    final modules = _bindModuleContext[bindId] ?? {};
+    return modules.contains(_appModule);
   }
 
   Future<void> registerAppModule(Module module) async {
@@ -132,7 +134,17 @@ class InjectionManager {
 
   Future<void> _registerBindsModuleInternal(Module module) async {
     if (_moduleBindTypes.containsKey(module)) {
+      if (debugLog) {
+        iLog('⏭️ REGISTER_MODULE: Módulo ${module.runtimeType} já está registrado, ignorando', name: 'MODULE_REGISTER');
+      }
       return;
+    }
+
+    // IMPORTANTE: Se o módulo já foi registrado antes e depois desregistrado,
+    // pode haver binds antigos no mapa com cache de instâncias dispostas.
+    // Antes de registrar novamente, precisamos garantir que os binds antigos sejam limpos.
+    if (debugLog) {
+      iLog('🔄 REGISTER_MODULE: Registrando módulo ${module.runtimeType}', name: 'MODULE_REGISTER');
     }
 
     final moduleBinds = await module.binds();
@@ -141,13 +153,20 @@ class InjectionManager {
 
     List<Bind<Object>> allBinds = [...moduleBinds, ...importedBinds];
 
+    // IMPORTANTE: Quando registra novamente após dispose, os binds antigos podem ter cache
+    // O Bind.register já trata isso limpando cache de binds existentes, mas vamos garantir
     _recursiveRegisterBinds(allBinds);
     // Usa tipos descobertos ou tenta criar instância para descobrir tipo
     _moduleBindTypes[module] = allBinds.map((e) {
       try {
         final instance = e.factoryFunction(_injector);
         final type = instance.runtimeType;
-        return BindIdentifier(type, e.key ?? type.toString());
+        final bindId = BindIdentifier(type, e.key ?? type.toString());
+        
+        // Adiciona o módulo ao contexto do bind
+        _addModuleToBindContext(bindId, module);
+        
+        return bindId;
       } catch (_) {
         // Se não conseguir criar instância, usa Object como fallback
         return BindIdentifier(Object, e.key ?? 'Object');
@@ -333,9 +352,9 @@ class InjectionManager {
           // Nota: Não podemos acessar _bindsMap diretamente pois é privado em Bind
           // O Bind.register já trata isso internamente
 
-          final key = bind.key ?? discoveredType.toString();
-          final bindId = BindIdentifier(discoveredType, key);
-          _incrementBindReference(bindId);
+          // Nota: O contexto do módulo será adicionado depois em _registerBindsModuleInternal
+          // quando o módulo completo for registrado, não aqui durante o registro recursivo
+          
           DependencyAnalyzer.recordSearchAttempt(discoveredType, true);
           successCount++;
         } catch (e) {
@@ -397,15 +416,15 @@ class InjectionManager {
 
     List<BindIdentifier> disposedBinds = [];
 
-    // Decrementar referências para cada bind único
+    // Remove o módulo do contexto de cada bind
     for (var bindId in bindsToDispose) {
       try {
-        // Decrementar a referência para cada bind do módulo
-        final disposed = _decrementBindReference(bindId);
+        // Remove o módulo do contexto do bind
+        final shouldDispose = _removeModuleFromBindContext(bindId, module);
 
-        if (disposed) {
+        if (shouldDispose) {
           disposedBinds.add(bindId);
-          // Só fazer dispose quando não há mais referências
+          // Só fazer dispose quando não há mais módulos usando o bind
           final isForAppModule = _isBindForAppModule(bindId);
 
           if (!isForAppModule) {
@@ -431,23 +450,43 @@ class InjectionManager {
     bindsToDispose.clear();
   }
 
-  void _incrementBindReference(BindIdentifier bindId) {
-    if (_bindReferences.containsKey(bindId)) {
-      _bindReferences[bindId] = (_bindReferences[bindId] ?? 0) + 1;
-    } else {
-      _bindReferences[bindId] = 1;
+  /// Adiciona um módulo ao contexto de um bind
+  /// Retorna true se o bind foi adicionado ao contexto pela primeira vez
+  void _addModuleToBindContext(BindIdentifier bindId, Module module) {
+    _bindModuleContext.putIfAbsent(bindId, () => <Module>{}).add(module);
+    
+    if (debugLog) {
+      final modules = _bindModuleContext[bindId] ?? {};
+      iLog('➕ CONTEXT: Adicionando módulo ${module.runtimeType} ao contexto de ${bindId.type} - módulos: ${modules.map((m) => m.runtimeType).join(", ")}', name: 'BIND_CONTEXT');
     }
   }
 
-  bool _decrementBindReference(BindIdentifier bindId) {
-    if (_bindReferences.containsKey(bindId)) {
-      _bindReferences[bindId] = (_bindReferences[bindId] ?? 1) - 1;
-
-      if (_bindReferences[bindId] == 0) {
-        _bindReferences.remove(bindId);
-        return true;
+  /// Remove um módulo do contexto de um bind
+  /// Retorna true se o bind deve ser disposto (não há mais módulos usando)
+  bool _removeModuleFromBindContext(BindIdentifier bindId, Module module) {
+    final modules = _bindModuleContext[bindId];
+    if (modules == null || modules.isEmpty) {
+      if (debugLog) {
+        iLog('⚠️ CONTEXT: Tentando remover módulo ${module.runtimeType} de ${bindId.type} mas não há contexto', name: 'BIND_CONTEXT');
       }
+      return false;
     }
+
+    modules.remove(module);
+    
+    if (debugLog) {
+      iLog('➖ CONTEXT: Removendo módulo ${module.runtimeType} do contexto de ${bindId.type} - módulos restantes: ${modules.map((m) => m.runtimeType).join(", ")}', name: 'BIND_CONTEXT');
+    }
+
+    // Se não há mais módulos usando o bind, pode fazer dispose
+    if (modules.isEmpty) {
+      _bindModuleContext.remove(bindId);
+      if (debugLog) {
+        iLog('🗑️ CONTEXT: Nenhum módulo restante para ${bindId.type} - pode fazer dispose', name: 'BIND_CONTEXT');
+      }
+      return true;
+    }
+
     return false;
   }
 
