@@ -11,8 +11,6 @@ export 'src/di/injector.dart';
 
 // Routing exports
 export 'src/routing/route_model.dart';
-export 'src/routing/transition.dart';
-export 'src/routing/page_transition_enum.dart';
 export 'src/routing/child_route.dart';
 export 'src/routing/i_modular_route.dart';
 export 'src/routing/module_route.dart';
@@ -35,3 +33,4 @@ export 'src/events/event_module.dart' show EventModule, ModularEvent;
 // External packages
 export 'package:go_router/go_router.dart' hide GoRouter, ShellRoute;
 export 'package:event_bus/event_bus.dart';
+export 'package:go_transitions/go_transitions.dart';

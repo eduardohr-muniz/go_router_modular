@@ -6,6 +6,7 @@ import 'package:example/src/modules/home/home_module.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_transitions/go_transitions.dart';
 
 class AutoResolveModule extends Module {
   @override
@@ -20,7 +21,11 @@ class AutoResolveModule extends Module {
 
   @override
   List<ModularRoute> get routes => [
-        ChildRoute('/', child: (context, args) => const AutoResolveModuleWidget()),
+        ChildRoute(
+          '/',
+          child: (context, args) => const AutoResolveModuleWidget(),
+          transition: GoTransitions.rotate.withScale.withFade, // Transição maluca: rotação + escala + fade
+        ),
       ];
 
   @override

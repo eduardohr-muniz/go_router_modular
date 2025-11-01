@@ -37,6 +37,45 @@ abstract class Module {
   }
 
   GoRoute _createChild({required ChildRoute childRoute, required bool topLevel}) {
+    // Se tem pageBuilder customizado, usa ele
+    if (childRoute.pageBuilder != null) {
+      return GoRoute(
+        path: _normalizePath(path: childRoute.path, topLevel: topLevel),
+        name: childRoute.name,
+        pageBuilder: childRoute.pageBuilder,
+        parentNavigatorKey: childRoute.parentNavigatorKey,
+        redirect: childRoute.redirect,
+      );
+    }
+
+    // Se tem transition, usa GoTransitions
+    if (childRoute.transition != null) {
+      return _buildGoRouteWithTransition(
+        path: childRoute.path,
+        name: childRoute.name,
+        transition: childRoute.transition!,
+        builder: (context, state) => _buildRouteChild(context, state: state, route: childRoute),
+        parentNavigatorKey: childRoute.parentNavigatorKey,
+        redirect: childRoute.redirect,
+        topLevel: topLevel,
+      );
+    }
+
+    // Se tem default transition configurado, usa ele
+    final defaultTransition = Modular.getDefaultTransition;
+    if (defaultTransition != null) {
+      return _buildGoRouteWithTransition(
+        path: childRoute.path,
+        name: childRoute.name,
+        transition: defaultTransition,
+        builder: (context, state) => _buildRouteChild(context, state: state, route: childRoute),
+        parentNavigatorKey: childRoute.parentNavigatorKey,
+        redirect: childRoute.redirect,
+        topLevel: topLevel,
+      );
+    }
+
+    // Sem transição customizada, usa builder padrão
     return GoRoute(
       path: _normalizePath(path: childRoute.path, topLevel: topLevel),
       name: childRoute.name,
@@ -45,15 +84,27 @@ abstract class Module {
         state: state,
         route: childRoute,
       ),
-      pageBuilder: childRoute.pageBuilder != null
-          ? (context, state) => childRoute.pageBuilder!(context, state)
-          : (context, state) => _buildCustomTransitionPage(
-                context,
-                state: state,
-                route: childRoute,
-              ),
       parentNavigatorKey: childRoute.parentNavigatorKey,
       redirect: childRoute.redirect,
+    );
+  }
+
+  /// Cria um GoRoute com transição usando GoTransitions
+  GoRoute _buildGoRouteWithTransition({
+    required String path,
+    String? name,
+    required GoTransition transition,
+    required Widget Function(BuildContext, GoRouterState) builder,
+    GlobalKey<NavigatorState>? parentNavigatorKey,
+    FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
+    required bool topLevel,
+  }) {
+    return GoRoute(
+      path: _normalizePath(path: path, topLevel: topLevel),
+      name: name,
+      pageBuilder: transition.build(builder: builder),
+      parentNavigatorKey: parentNavigatorKey,
+      redirect: redirect,
     );
   }
 
@@ -80,19 +131,52 @@ abstract class Module {
       );
     }
 
+    // Cria o builder com ParentWidgetObserver
+    // childRoute não é null aqui porque já foi validado acima
+    final nonNullChildRoute = childRoute!;
+    final moduleBuilder = (context, state) => ParentWidgetObserver(
+          onDispose: (module) => _disposeModule(module),
+          didChangeDependencies: (module) => _onDidChange(module),
+          module: module.module,
+          child: nonNullChildRoute.child(context, state),
+        );
+
+    final modulePath = module.path + nonNullChildRoute.path;
+    final moduleName = nonNullChildRoute.name ?? module.name;
+
+    // Se o childRoute tem transição, aplica no GoRoute do módulo
+    if (nonNullChildRoute.transition != null) {
+      return GoRoute(
+        path: _normalizePath(path: modulePath, topLevel: topLevel),
+        name: moduleName,
+        pageBuilder: nonNullChildRoute.transition!.build(builder: moduleBuilder),
+        routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
+        parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
+        redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: nonNullChildRoute.redirect, topLevel: topLevel),
+      );
+    }
+
+    // Se tem default transition configurado, usa ele
+    final defaultTransition = Modular.getDefaultTransition;
+    if (defaultTransition != null) {
+      return GoRoute(
+        path: _normalizePath(path: modulePath, topLevel: topLevel),
+        name: moduleName,
+        pageBuilder: defaultTransition.build(builder: moduleBuilder),
+        routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
+        parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
+        redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: nonNullChildRoute.redirect, topLevel: topLevel),
+      );
+    }
+
+    // Sem transição, usa builder padrão
     return GoRoute(
-      path: _normalizePath(path: module.path + (childRoute?.path ?? ""), topLevel: topLevel),
-      name: childRoute?.name ?? module.name,
-      builder: (context, state) => ParentWidgetObserver(
-        // initState: (module) async {},
-        onDispose: (module) => _disposeModule(module),
-        didChangeDependencies: (module) => _onDidChange(module),
-        module: module.module,
-        child: childRoute!.child(context, state),
-      ),
+      path: _normalizePath(path: modulePath, topLevel: topLevel),
+      name: moduleName,
+      builder: moduleBuilder,
       routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
-      parentNavigatorKey: childRoute?.parentNavigatorKey,
-      redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: childRoute?.redirect, topLevel: topLevel),
+      parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
+      redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: nonNullChildRoute.redirect, topLevel: topLevel),
     );
   }
 
@@ -189,17 +273,6 @@ abstract class Module {
     // Executa registro com prioridade (fire and forget - não bloqueia UI)
 
     return route.child(context, state);
-  }
-
-  Page<void> _buildCustomTransitionPage(BuildContext context, {required GoRouterState state, required ChildRoute route}) {
-    return CustomTransitionPage(
-      key: state.pageKey,
-      child: route.child(context, state),
-      transitionsBuilder: Transition.builder(
-        configRouteManager: () {},
-        pageTransition: route.pageTransition ?? Modular.getDefaultPageTransition,
-      ),
-    );
   }
 
   Future<void> _registerModule(Module module) async {

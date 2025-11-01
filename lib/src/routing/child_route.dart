@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_transitions/go_transitions.dart';
 
 class ChildRoute extends ModularRoute {
   final String path;
@@ -10,7 +11,7 @@ class ChildRoute extends ModularRoute {
   final GlobalKey<NavigatorState>? parentNavigatorKey;
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
   final FutureOr<bool> Function(BuildContext context, GoRouterState state)? onExit;
-  final PageTransition? pageTransition;
+  final GoTransition? transition;
 
   ChildRoute(
     this.path, {
@@ -20,6 +21,6 @@ class ChildRoute extends ModularRoute {
     this.parentNavigatorKey,
     this.redirect,
     this.onExit,
-    this.pageTransition,
+    this.transition,
   });
 }

@@ -119,7 +119,7 @@ class InjectionManager {
 
     final imports = await module.imports();
 
-    await Future.forEach(imports, (importedModule) async {
+    await Future.forEach(imports, (Module importedModule) async {
       // Usa o novo formato binds(Injector i) através do Injector
       _injector.startRegistering();
       await importedModule.binds(_injector);

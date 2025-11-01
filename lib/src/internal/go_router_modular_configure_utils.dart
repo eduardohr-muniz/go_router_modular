@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/core/bind.dart';
 import 'package:go_router_modular/src/core/module.dart';
-import 'package:go_router_modular/src/routing/page_transition_enum.dart';
+import 'package:go_transitions/go_transitions.dart';
 
 /// Alias to simplify the use of GoRouterModular.
 typedef Modular = GoRouterModular;
@@ -34,11 +34,10 @@ class GoRouterModular {
 
   /// Default page transition configuration.
   ///
-  /// Returns the type of transition configured in [configure].
-  /// Throws an exception if [configure] has not been called yet.
-  static PageTransition get getDefaultPageTransition {
-    assert(_pageTansition != null, 'Add GoRouterModular.configure in main.dart');
-    return _pageTansition!;
+  /// Returns the transition configured in [configure].
+  /// Returns null if [configure] has not been called yet or no default transition was set.
+  static GoTransition? get getDefaultTransition {
+    return _defaultTransition;
   }
 
   /// Private router instance.
@@ -47,8 +46,8 @@ class GoRouterModular {
   /// Flag for enabling diagnostic logs.
   static bool? _debugLogDiagnostics;
 
-  /// Default page transition type.
-  static PageTransition? _pageTansition;
+  /// Default page transition.
+  static GoTransition? _defaultTransition;
 
   /// Retrieves a registered dependency from the injection container.
   ///
@@ -132,11 +131,11 @@ class GoRouterModular {
     GlobalKey<NavigatorState>? navigatorKey,
     String? restorationScopeId,
     bool requestFocus = true,
-    PageTransition pageTransition = PageTransition.fade,
+    GoTransition? defaultTransition,
     int delayDisposeMilliseconds = 1000,
   }) async {
     if (_router != null) return _router!;
-    _pageTansition = pageTransition;
+    _defaultTransition = defaultTransition;
     _debugLogDiagnostics = debugLogDiagnostics;
     GoRouter.optionURLReflectsImperativeAPIs = true;
 

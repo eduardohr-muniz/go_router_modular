@@ -103,6 +103,14 @@ packages:
       relative: true
     source: path
     version: "4.2.3"
+  go_transitions:
+    dependency: transitive
+    description:
+      name: go_transitions
+      sha256: b6fdcca517b985197cedb6b91d86101a14f3af2717d52fca83cd56d6daeaa8f9
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.2"
   leak_tracker:
     dependency: transitive
     description:

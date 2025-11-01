@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_transitions/go_transitions.dart';
 import 'pages/shell_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/settings_page.dart';
@@ -49,6 +50,7 @@ class ProfileModule extends Module {
         ChildRoute(
           '/',
           child: (context, state) => const ProfilePage(),
+          transition: GoTransitions.fade, // Fade simples para profile
         ),
       ];
 
@@ -76,6 +78,7 @@ class SettingsModule extends Module {
         ChildRoute(
           '/',
           child: (context, state) => const SettingsPage(),
+          transition: GoTransitions.slide.toBottom.withFade, // Slide de baixo para cima com fade
         ),
       ];
 

@@ -1,5 +1,4 @@
-import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/routing/page_transition_enum.dart';
+import 'package:go_transitions/go_transitions.dart';
 
 class RouteModularModel {
   String moduleR;
@@ -7,14 +6,14 @@ class RouteModularModel {
   String route;
   String name;
   List<String>? params;
-  PageTransition pageTransition;
+  GoTransition? transition;
   RouteModularModel({
     required this.moduleR,
     required this.childR,
     required this.route,
     this.name = '',
     this.params,
-    this.pageTransition = PageTransition.fade,
+    this.transition,
   });
 
   @override
