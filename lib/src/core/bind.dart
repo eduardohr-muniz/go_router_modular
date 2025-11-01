@@ -929,6 +929,11 @@ class Bind<T> {
     return bind;
   }
 
+  static Bind<T> lazySingleton<T>(T Function(Injector i) builder, {String? key}) {
+    final bind = Bind<T>(builder, isSingleton: true, isLazy: true, key: key);
+    return bind;
+  }
+
   @Deprecated('Use Bind.add instead')
   static Bind<T> factory<T>(T Function(Injector i) builder, {String? key}) {
     final bind = Bind<T>(builder, isSingleton: false, isLazy: false, key: key);
