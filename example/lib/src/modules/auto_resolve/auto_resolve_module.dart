@@ -11,12 +11,12 @@ class AutoResolveModule extends Module {
   @override
   FutureOr<List<Bind<Object>>> binds() {
     return [
-      Bind.singleton((i) => HomeService()),
-      Bind.singleton((i) => A(i.get())),
-      Bind.factory((i) => B(i.get())),
-      Bind.factory((i) => Z(i.get())),
-      Bind.singleton((i) => C(i.get())),
-      Bind.singleton((i) => D(i.get())),
+      Bind.singleton<HomeService>((i) => HomeService()),
+      Bind.singleton<A>((i) => A(i.get<Z>())),
+      Bind.factory<B>((i) => B(i.get<A>())),
+      Bind.factory<Z>((i) => Z(i.get<HomeService>())),
+      Bind.singleton<C>((i) => C(i.get<B>())),
+      Bind.singleton<D>((i) => D(i.get<A>())),
     ];
   }
 
@@ -44,36 +44,82 @@ class AutoResolveModuleWidget extends StatefulWidget {
 }
 
 class _AutoResolveModuleWidgetState extends State<AutoResolveModuleWidget> {
-  late Z? z;
+  Z? z;
   String? errorMessage;
   bool _hasShownInitialMessage = false;
 
   @override
   void initState() {
     super.initState();
-    _loadDependencies();
+    // Não carregar dependências aqui - aguardar didChangeDependencies
+    // para garantir que o módulo está completamente registrado
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Carregar dependências apenas após o módulo estar completamente registrado
+    // Garantir que só executa uma vez usando _hasShownInitialMessage
     if (!_hasShownInitialMessage) {
       _hasShownInitialMessage = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (errorMessage == null && z != null) {
-          _showSnackBar('🧪 AutoResolve Module carregado - Pronto para testes!', Colors.green);
+      // Aguardar um pouco para garantir que o módulo está registrado
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          // Verificar se o bind está registrado antes de tentar buscar
+          int attempts = 0;
+          const maxAttempts = 5; // Reduzido para evitar loops
+          const delayMs = 100;
+
+          void tryLoad() {
+            if (!mounted || attempts >= maxAttempts) {
+              if (mounted && z == null && errorMessage == null) {
+                setState(() {
+                  errorMessage = 'Não foi possível carregar dependências após $maxAttempts tentativas';
+                });
+              }
+              return;
+            }
+
+            attempts++;
+            // Tentar buscar usando tryGet que não lança exceção
+            final zInstance = Modular.tryGet<Z>();
+            if (zInstance != null) {
+              setState(() {
+                z = zInstance;
+                errorMessage = null;
+              });
+              if (mounted && context.mounted) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && context.mounted) {
+                    _showSnackBar('🧪 AutoResolve Module carregado - Pronto para testes!', Colors.green);
+                  }
+                });
+              }
+            } else {
+              // Se não está registrado, tentar novamente após delay
+              Future.delayed(Duration(milliseconds: delayMs), tryLoad);
+            }
+          }
+
+          tryLoad();
         }
       });
     }
   }
 
   void _loadDependencies() {
+    // Este método agora é usado apenas pelo botão "Tentar Novamente"
     try {
-      z = Modular.get<Z>();
-      errorMessage = null;
+      final zInstance = Modular.get<Z>();
+      setState(() {
+        z = zInstance;
+        errorMessage = null;
+      });
     } catch (e) {
-      z = null;
-      errorMessage = 'Erro ao carregar dependências: $e';
+      setState(() {
+        z = null;
+        errorMessage = 'Erro ao carregar dependências: $e';
+      });
     }
   }
 

@@ -55,6 +55,31 @@ class GoRouterModular {
   ///   ```
   static T get<T>({String? key}) => Bind.get<T>(key: key);
 
+  /// Tries to retrieve a registered dependency without throwing an exception.
+  ///
+  /// - [T]: The type of the dependency to return.
+  /// - **Returns**: The dependency instance if found, `null` otherwise.
+  /// - **Example**:
+  ///   ```dart
+  ///   final myService = GoRouterModular.tryGet<MyService>();
+  ///   if (myService != null) {
+  ///     // Use myService
+  ///   }
+  ///   ```
+  static T? tryGet<T>({String? key}) => Bind.tryGet<T>(key: key);
+
+  /// Checks if a dependency is registered without throwing an exception.
+  ///
+  /// - [T]: The type of the dependency to check.
+  /// - **Returns**: `true` if the dependency is registered, `false` otherwise.
+  /// - **Example**:
+  ///   ```dart
+  ///   if (GoRouterModular.isRegistered<MyService>()) {
+  ///     final myService = GoRouterModular.get<MyService>();
+  ///   }
+  ///   ```
+  static bool isRegistered<T>({String? key}) => Bind.isRegistered<T>(key: key);
+
   /// Returns the current route path based on the [BuildContext].
   ///
   /// - **Parameters**:

@@ -142,7 +142,17 @@ class InjectionManager {
     List<Bind<Object>> allBinds = [...moduleBinds, ...importedBinds];
 
     _recursiveRegisterBinds(allBinds);
-    _moduleBindTypes[module] = allBinds.map((e) => BindIdentifier(e.instance.runtimeType, e.key ?? e.instance.runtimeType.toString())).toSet();
+    // Usa tipos descobertos ou tenta criar instância para descobrir tipo
+    _moduleBindTypes[module] = allBinds.map((e) {
+      try {
+        final instance = e.factoryFunction(_injector);
+        final type = instance.runtimeType;
+        return BindIdentifier(type, e.key ?? type.toString());
+      } catch (_) {
+        // Se não conseguir criar instância, usa Object como fallback
+        return BindIdentifier(Object, e.key ?? 'Object');
+      }
+    }).toSet();
 
     module.initState(_injector);
 
@@ -150,8 +160,13 @@ class InjectionManager {
       log(
           '💉 INJECTED 🧩 MODULE: ${module.runtimeType} \nBINDS: { \n${allBinds.isEmpty ? '😴 EMPTY' : ''}${allBinds.map(
                 (e) {
-                  final type = e.instance.runtimeType.toString();
-                  return '♻️ $type(${e.key != null ? (e.key == type ? '' : 'key: ${e.key}') : ''})';
+                  try {
+                    final instance = e.factoryFunction(_injector);
+                    final type = instance.runtimeType.toString();
+                    return '♻️ $type(${e.key != null ? (e.key == type ? '' : 'key: ${e.key}') : ''})';
+                  } catch (_) {
+                    return '♻️ Object(${e.key != null ? 'key: ${e.key}' : ''})';
+                  }
                 },
               ).toList().join('\n')} \n}',
           name: "GO_ROUTER_MODULAR");
@@ -177,11 +192,9 @@ class InjectionManager {
       for (Bind<Object> bind in moduleBinds) {
         Type? bindType;
         try {
-          // Primeiro, pegar o tipo sem criar instância
-          bindType = bind.instance.runtimeType;
-
-          // FORÇAR criação de nova instância para validar dependências
+          // Tenta criar instância para descobrir tipo
           var newInstance = bind.factoryFunction(_injector);
+          bindType = newInstance.runtimeType;
 
           // Adicionar à lista temporária para limpeza posterior
           tempInstances.add(newInstance);
@@ -306,22 +319,35 @@ class InjectionManager {
 
     for (var bind in binds) {
       try {
-        // Captura erro ao acessar instance
-        final type = bind.instance.runtimeType;
-        final key = bind.key ?? type.toString();
-        final bindId = BindIdentifier(type, key);
-        _incrementBindReference(bindId);
+        // Registra o bind sem tentar criar instância primeiro
         Bind.register(bind);
-        DependencyAnalyzer.recordSearchAttempt(type, true);
-        successCount++;
+
+        // Após registrar, tenta descobrir o tipo real criando a instância
+        // Se falhar (dependências não disponíveis), continua e tenta depois
+        Type? discoveredType;
+        try {
+          final instance = bind.factoryFunction(_injector);
+          discoveredType = instance.runtimeType;
+
+          // Se descobriu um tipo diferente de Object, atualiza o registro
+          // Nota: Não podemos acessar _bindsMap diretamente pois é privado em Bind
+          // O Bind.register já trata isso internamente
+
+          final key = bind.key ?? discoveredType.toString();
+          final bindId = BindIdentifier(discoveredType, key);
+          _incrementBindReference(bindId);
+          DependencyAnalyzer.recordSearchAttempt(discoveredType, true);
+          successCount++;
+        } catch (e) {
+          // Se não conseguir criar instância agora, ainda considera sucesso
+          // porque o bind foi registrado. O tipo será descoberto quando necessário
+          iLog('⚠️ Não foi possível criar instância após registro: $e. Tipo será descoberto quando necessário.', name: 'BIND_REGISTER');
+          DependencyAnalyzer.recordSearchAttempt(Object, true); // Registra tentativa como sucesso genérico
+          successCount++;
+        }
       } catch (e) {
         failedBinds.add(bind);
-        try {
-          final type = bind.instance.runtimeType;
-          DependencyAnalyzer.recordSearchAttempt(type, false);
-        } catch (_) {
-          // Ignorar se não conseguir obter o tipo
-        }
+        DependencyAnalyzer.recordSearchAttempt(Object, false);
       }
     }
 
@@ -348,8 +374,16 @@ class InjectionManager {
       for (var bind in failedBinds) {
         final stackTrace = bind.stackTrace.toString();
         final normalizedStack = _normalizeStackTrace(stackTrace);
-        log('❌ ${bind.instance.runtimeType} FAILED:  \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
-        throw GoRouterModularException('❌ Bind not found for type ${bind.instance.runtimeType.toString()}');
+        try {
+          final instance = bind.factoryFunction(_injector);
+          final type = instance.runtimeType;
+          log('❌ $type FAILED:  \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
+          throw GoRouterModularException('❌ Bind not found for type ${type.toString()}');
+        } catch (e) {
+          if (e is GoRouterModularException) rethrow;
+          log('❌ Object FAILED:  \n🔎STACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
+          throw GoRouterModularException('❌ Bind not found for type Object');
+        }
       }
     }
   }
@@ -376,6 +410,8 @@ class InjectionManager {
 
           if (!isForAppModule) {
             Bind.disposeByType(bindId.type);
+            // Limpar estado de busca para prevenir loops infinitos quando módulo é re-registrado
+            Bind.cleanSearchAttemptsForType(bindId.type);
           }
         }
       } catch (_) {}

@@ -233,17 +233,15 @@ class DependencyAnalyzer {
   static bool shouldAllowRetry(Type type, int currentAttempt) {
     final probability = calculateSuccessProbability(type);
     
-    // Se probabilidade é muito baixa (< 0.1), não permite mais tentativas
-    if (probability < 0.1) {
+    // Limite máximo rigoroso: máximo 3 tentativas baseado em probabilidade
+    const maxAttemptsByProbability = 3;
+    
+    // Se probabilidade é muito baixa (< 0.2), não permite mais tentativas após primeira
+    if (probability < 0.2 && currentAttempt > 1) {
       return false;
     }
-
-    // Limite máximo baseado em análise estatística
-    // Usa distribuição binomial: P(X > n) onde n é número de tentativas
-    // Para probabilidade p, limite prático é aproximadamente 1/p
-    final maxAttemptsByProbability = (1.0 / probability).ceil();
     
-    return currentAttempt < maxAttemptsByProbability;
+    return currentAttempt <= maxAttemptsByProbability;
   }
 }
 
