@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/exceptions/exception.dart';
@@ -145,19 +143,50 @@ class Bind<T> {
     // Verifica se já existe um bind deste tipo antes de substituir
     final existingBind = _bindsMap[registrationType];
     if (existingBind != null) {
-      iLog('⚠️ REGISTER: JÁ EXISTE bind para tipo $registrationType! Substituindo...', name: 'BIND_REGISTER');
+      // REGRA: Bind com key só pode ser chamado com key
+      // Bind sem key só pode ser chamado sem key
+      // Se o bind existente tem key diferente do novo, não substitui
+      // Se ambos têm key ou ambos não têm key, substitui
+      if (existingBind.key != bind.key) {
+        // Se um tem key e outro não, não substitui - mantém ambos
+        // O bind com key fica apenas no _bindsMapByKey
+        // O bind sem key fica no _bindsMap
+        if (bind.key != null) {
+          // Novo bind tem key, existente não tem - mantém existente no _bindsMap
+          iLog('🔑 REGISTER: Bind com key registrado, mantendo bind sem key no _bindsMap', name: 'BIND_REGISTER');
+          _bindsMapByKey[bind.key!] = bind;
+          iLog('✅ REGISTER: Bind registrado com sucesso por key: ${bind.key}', name: 'BIND_REGISTER');
+          return;
+        } else {
+          // Novo bind não tem key, existente tem - REMOVE o existente do _bindsMap e coloca o sem key
+          iLog('🔑 REGISTER: Bind sem key registrado, removendo bind com key do _bindsMap', name: 'BIND_REGISTER');
+          // Remove o bind com key do _bindsMap (mas mantém no _bindsMapByKey)
+          _bindsMap.remove(registrationType);
+          // Registra o bind sem key no _bindsMap
+          _bindsMap[registrationType] = bind;
+          iLog('✅ REGISTER: Bind sem key registrado com sucesso para tipo: $registrationType', name: 'BIND_REGISTER');
+          return;
+        }
+      }
+
+      // Se chegar aqui, ambos têm a mesma key (ou ambos não têm key)
+      iLog('⚠️ REGISTER: JÁ EXISTE bind para tipo $registrationType com mesma key! Substituindo...', name: 'BIND_REGISTER');
       iLog('📋 REGISTER: Bind antigo tem cache: ${existingBind._cachedInstance != null ? existingBind._cachedInstance.runtimeType : "null"}', name: 'BIND_REGISTER');
       // Limpa o cache do bind antigo antes de substituir
       existingBind.clearCache();
     }
 
-    _bindsMap[registrationType] = bind;
-    iLog('✅ REGISTER: Bind registrado com sucesso para tipo: $registrationType (isSingleton: ${bind.isSingleton})', name: 'BIND_REGISTER');
-
-    // Registrar por key se fornecida
-    if (bind.key != null) {
+    // Só registra no _bindsMap se não tem key
+    // Se tem key, será registrado apenas no _bindsMapByKey
+    if (bind.key == null) {
+      _bindsMap[registrationType] = bind;
+      iLog('✅ REGISTER: Bind sem key registrado com sucesso para tipo: $registrationType (isSingleton: ${bind.isSingleton})', name: 'BIND_REGISTER');
+    } else {
+      // Bind com key: só registra no _bindsMapByKey, NÃO no _bindsMap
+      // Isso garante que get<T>() sem key não pegue binds com key
       _bindsMapByKey[bind.key!] = bind;
-      iLog('🔑 REGISTER: Bind também registrado por key: ${bind.key}', name: 'BIND_REGISTER');
+      iLog('✅ REGISTER: Bind com key registrado com sucesso para tipo: $registrationType (key: ${bind.key}, isSingleton: ${bind.isSingleton})', name: 'BIND_REGISTER');
+      iLog('🔑 REGISTER: Bind registrado apenas em _bindsMapByKey, não em _bindsMap', name: 'BIND_REGISTER');
     }
   }
 
@@ -172,11 +201,36 @@ class Bind<T> {
           return;
         }
       }
-      _bindsMap[T] = bind;
-      iLog('✅ REGISTER: Bind registrado com sucesso para tipo: $T', name: 'BIND_REGISTER');
-      if (bind.key != null) {
+
+      // Verifica se já existe um bind deste tipo
+      final existingBind = _bindsMap[T];
+      if (existingBind != null) {
+        // REGRA: Bind com key só pode ser chamado com key
+        // Bind sem key só pode ser chamado sem key
+        if (existingBind.key != bind.key) {
+          if (bind.key != null) {
+            // Novo bind tem key, existente não tem - mantém existente no _bindsMap
+            _bindsMapByKey[bind.key!] = bind;
+            iLog('✅ REGISTER: Bind com key registrado apenas em _bindsMapByKey para tipo: $T', name: 'BIND_REGISTER');
+            return;
+          } else {
+            // Novo bind não tem key, existente tem - REMOVE o existente do _bindsMap
+            _bindsMap.remove(T);
+            _bindsMap[T] = bind;
+            iLog('✅ REGISTER: Bind sem key registrado, removendo bind com key do _bindsMap para tipo: $T', name: 'BIND_REGISTER');
+            return;
+          }
+        }
+      }
+
+      // Só registra no _bindsMap se não tem key
+      if (bind.key == null) {
+        _bindsMap[T] = bind;
+        iLog('✅ REGISTER: Bind sem key registrado com sucesso para tipo: $T', name: 'BIND_REGISTER');
+      } else {
+        // Bind com key: só registra no _bindsMapByKey, NÃO no _bindsMap
         _bindsMapByKey[bind.key!] = bind;
-        iLog('🔑 REGISTER: Bind também registrado por key: ${bind.key}', name: 'BIND_REGISTER');
+        iLog('✅ REGISTER: Bind com key registrado apenas em _bindsMapByKey para tipo: $T (key: ${bind.key})', name: 'BIND_REGISTER');
       }
     } else {
       // Se T é Object, usa o método não genérico
@@ -471,7 +525,23 @@ class Bind<T> {
       // Se não encontrou por key ou não foi fornecida, busca por tipo
       if (bind == null) {
         iLog('🔍 _FIND: Buscando por tipo direto: $type', name: 'BIND_FIND');
-        bind = _bindsMap[type];
+
+        // REGRA: Se key é null, busca apenas binds que não têm key
+        // Isso garante que get<T>() sem key não pegue binds com key
+        if (key == null) {
+          bind = _bindsMap[type];
+          // Verifica se o bind encontrado realmente não tem key
+          if (bind != null && bind.key != null) {
+            // Bind encontrado tem key, mas estamos buscando sem key
+            // Não pode retornar este bind
+            bind = null;
+            iLog('⚠️ _FIND: Bind encontrado tem key, mas busca foi sem key - ignorando', name: 'BIND_FIND');
+          }
+        } else {
+          // Se key não é null, busca normalmente (mas já foi feito acima)
+          bind = _bindsMap[type];
+        }
+
         if (bind != null) {
           iLog('✅ _FIND: Bind encontrado por tipo direto: $type', name: 'BIND_FIND');
           final cacheInfo = bind._cachedInstance != null ? bind._cachedInstance.runtimeType : "null";
@@ -528,7 +598,13 @@ class Bind<T> {
                 if (objectBinds.length == 1) {
                   _bindsMap.remove(Object);
                 }
-                _bindsMap[realType] = testBind;
+                // REGRA: Só registra no _bindsMap se não tem key
+                if (testBind.key == null) {
+                  _bindsMap[realType] = testBind;
+                } else {
+                  // Bind com key: só registra no _bindsMapByKey
+                  _bindsMapByKey[testBind.key!] = testBind;
+                }
                 iLog('✅ _FIND: Tipo real descoberto: $realType (era Object), atualizando registro', name: 'BIND_FIND');
 
                 if (!testBind.isSingleton) {
@@ -578,7 +654,13 @@ class Bind<T> {
 
               // Se o tipo real é compatível com T, registra e retorna
               if (instance is T) {
-                _bindsMap[realType] = pendingBind;
+                // REGRA: Só registra no _bindsMap se não tem key
+                if (pendingBind.key == null) {
+                  _bindsMap[realType] = pendingBind;
+                } else {
+                  // Bind com key: só registra no _bindsMapByKey
+                  _bindsMapByKey[pendingBind.key!] = pendingBind;
+                }
                 pendingToRemove.add(pendingBind);
                 iLog('✅ _FIND: Tipo real descoberto de bind pendente: $realType, registrando', name: 'BIND_FIND');
 
