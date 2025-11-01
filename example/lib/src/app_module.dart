@@ -9,10 +9,8 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton((i) => DioFake(baseUrl: 'https://padrao.com')),
-    ];
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<DioFake>((i) => DioFake(baseUrl: 'https://padrao.com'));
   }
 
   @override

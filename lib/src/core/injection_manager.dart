@@ -119,10 +119,13 @@ class InjectionManager {
 
     final imports = await module.imports();
 
-    await Future.forEach(imports, (module) async {
-      final binds = await module.binds();
-      allImportedBinds.addAll(binds);
-      allImportedBinds.addAll(await _getAllImportedBindsRecursively(module, visited));
+    await Future.forEach(imports, (importedModule) async {
+      // Usa o novo formato binds(Injector i) através do Injector
+      _injector.startRegistering();
+      await importedModule.binds(_injector);
+      final importedBinds = _injector.finishRegistering();
+      allImportedBinds.addAll(importedBinds);
+      allImportedBinds.addAll(await _getAllImportedBindsRecursively(importedModule, visited));
     });
 
     return allImportedBinds.toList();
@@ -147,7 +150,10 @@ class InjectionManager {
       iLog('🔄 REGISTER_MODULE: Registrando módulo ${module.runtimeType}', name: 'MODULE_REGISTER');
     }
 
-    final moduleBinds = await module.binds();
+    // Usa o novo formato binds(Injector i) através do Injector
+    _injector.startRegistering();
+    await module.binds(_injector);
+    final moduleBinds = _injector.finishRegistering();
 
     final importedBinds = await _getAllImportedBindsRecursively(module);
 

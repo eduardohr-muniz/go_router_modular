@@ -9,15 +9,13 @@ import 'package:go_router_modular/go_router_modular.dart';
 
 class AutoResolveModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton<HomeService>((i) => HomeService()),
-      Bind.singleton<A>((i) => A(i.get<Z>())),
-      Bind.factory<B>((i) => B(i.get<A>())),
-      Bind.factory<Z>((i) => Z(i.get<HomeService>())),
-      Bind.singleton<C>((i) => C(i.get<B>())),
-      Bind.singleton<D>((i) => D(i.get<A>())),
-    ];
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<HomeService>((i) => HomeService());
+    i.addSingleton<A>((i) => A(i.get<Z>()));
+    i.addFactory<B>((i) => B(i.get<A>()));
+    i.addFactory<Z>((i) => Z(i.get<HomeService>()));
+    i.addSingleton<C>((i) => C(i.get<B>()));
+    i.addSingleton<D>((i) => D(i.get<A>()));
   }
 
   @override

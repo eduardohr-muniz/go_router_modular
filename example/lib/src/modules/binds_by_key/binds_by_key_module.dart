@@ -13,13 +13,11 @@ class BindsByKeyModule extends Module {
   }
 
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton((i) => BindSingleton()),
-      Bind.singleton((i) => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local'),
-      Bind.factory((i) => DioFake(baseUrl: 'http://api.remote.com'), key: 'dio_remote'),
-      Bind.factory((i) => ApiFake(dio: i.get(key: 'dio_remote'))),
-    ];
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<BindSingleton>((i) => BindSingleton());
+    i.addSingleton<DioFake>((i) => DioFake(baseUrl: 'http://localhost:8080'), key: 'dio_local');
+    i.addFactory<DioFake>((i) => DioFake(baseUrl: 'http://api.remote.com'), key: 'dio_remote');
+    i.addFactory<ApiFake>((i) => ApiFake(dio: i.get<IDioFake>(key: 'dio_remote')));
   }
 
   @override
@@ -35,10 +33,8 @@ class BindsByKeyModule extends Module {
 
 class BindsByKeyImportTest extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.factory((i) => DioFake(baseUrl: 'https://google.com'), key: 'dio_google'),
-    ];
+  FutureOr<void> binds(Injector i) {
+    i.addFactory<DioFake>((i) => DioFake(baseUrl: 'https://google.com'), key: 'dio_google');
   }
 }
 

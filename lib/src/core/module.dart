@@ -6,11 +6,13 @@ import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
 import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
 
-abstract class Module {
-  FutureOr<List<Module>> imports() => [];
-  FutureOr<List<Bind<Object>>> binds() => [];
-  List<ModularRoute> get routes => const [];
+typedef FutureBinds = FutureOr<void>;
+typedef FutureModules = FutureOr<List<Module>>;
 
+abstract class Module {
+  FutureModules imports() => [];
+  FutureBinds binds(Injector i) {}
+  List<ModularRoute> get routes => const [];
   void initState(Injector i) {}
   void dispose() {}
 

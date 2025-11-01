@@ -14,10 +14,8 @@ class HomeModule extends Module {
   }
 
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton((i) => HomeService()),
-    ];
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<HomeService>((i) => HomeService());
   }
 
   @override

@@ -10,10 +10,8 @@ import 'pages/settings_page.dart';
 
 class ShellModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton((i) => ShellService()),
-    ];
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<ShellService>((i) => ShellService());
   }
 
   @override
@@ -42,10 +40,8 @@ class ShellModule extends Module {
 
 class ProfileModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton<ProfileService>((i) => ProfileService()),
-    ];
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<ProfileService>((i) => ProfileService());
   }
 
   @override
@@ -71,10 +67,8 @@ class ProfileModule extends Module {
 
 class SettingsModule extends Module {
   @override
-  FutureOr<List<Bind<Object>>> binds() {
-    return [
-      Bind.singleton<SettingsService>((i) => SettingsService()),
-    ];
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<SettingsService>((i) => SettingsService());
   }
 
   @override
