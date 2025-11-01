@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
 import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
-import 'package:go_transitions/go_transitions.dart';
 
 typedef FutureBinds = FutureOr<void>;
 typedef FutureModules = FutureOr<List<Module>>;

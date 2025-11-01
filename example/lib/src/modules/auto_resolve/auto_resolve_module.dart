@@ -6,7 +6,6 @@ import 'package:example/src/modules/home/home_module.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_transitions/go_transitions.dart';
 
 class AutoResolveModule extends Module {
   @override

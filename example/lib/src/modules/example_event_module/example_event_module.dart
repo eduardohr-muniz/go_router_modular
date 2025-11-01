@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_transitions/go_transitions.dart';
 import 'pages/example_event_page.dart';
 
 class ExampleEventModule extends EventModule {

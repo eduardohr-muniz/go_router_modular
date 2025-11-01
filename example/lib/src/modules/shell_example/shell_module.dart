@@ -4,7 +4,6 @@ import 'dart:async';
 
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_transitions/go_transitions.dart';
 import 'pages/shell_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/settings_page.dart';

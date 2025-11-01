@@ -1,10 +1,8 @@
 import 'dart:async';
-
 import 'package:example/src/modules/binds_by_key/binds_by_key_module.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
 import 'package:example/src/modules/shared/shared_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_transitions/go_transitions.dart';
 import 'pages/home_page.dart';
 import 'pages/demo_page.dart';
 

@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/src/core/bind.dart';
 
@@ -51,7 +53,7 @@ void main() {
         // Primeira chamada explícita
         final instance1 = Bind.get<TestService>();
         final currentCount = addCallCount;
-        
+
         // Segunda chamada - deve criar nova instância
         final instance2 = Bind.get<TestService>();
         expect(addCallCount, greaterThan(currentCount)); // Deve ter incrementado
