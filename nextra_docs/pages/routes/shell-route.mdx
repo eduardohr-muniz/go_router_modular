@@ -1,0 +1,74 @@
+# Shell Route
+
+> Use a shell route to provide a shared layout (navigation rail, bottom bar, tabs) that wraps child routes.
+
+## Concept
+- A shell route renders a parent UI and injects the matched child page into a slot (e.g., `child`).
+- It should NOT define `ChildRoute('/')` as an entry; children define concrete paths (e.g., `/dashboard`).
+
+
+## Nested modules under shell
+
+```dart
+class ShellModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ShellModularRoute(
+      builder: (context, state, child) => ShellLayout(child: child),
+      routes: [
+        ModuleRoute('/home', module: HomeModule()),
+        ModuleRoute('/settings', module: SettingsModule()),
+      ],
+    ),
+  ];
+}
+
+class HomeModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (context, state) => const HomePage()),
+  ];
+}
+```
+
+## ShellLayout example
+
+```dart
+class ShellLayout extends StatelessWidget {
+  final Widget child;
+  const ShellLayout({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('My App')),
+      body: Row(
+        children: [
+          Expanded(child: child) // 👋 your child routes will render here
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+        ],
+        onTap: (index) {
+          if (index == 0) context.go('/home');
+          if (index == 1) context.go('/settings');
+        },
+      ),
+    );
+  }
+}
+```
+
+## Best practices
+- Do not place `ChildRoute('/')` inside a shell route (use concrete paths like `/dashboard`).
+- Keep shell minimal: layout + navigation; push business logic to child modules/pages.
+- Prefer `ModuleRoute` under shell to keep features isolated and testable.
+- For redirects/guards, handle at child routes or globally.
+
+## Common pitfalls
+- Adding `ChildRoute('/')` inside `ShellModularRoute` (incorrect entry point).
+- Mixing heavy business logic in the shell builder.
+- Forgetting to render `child` in the layout (child page will not show up).

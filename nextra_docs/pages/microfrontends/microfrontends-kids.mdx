@@ -8,8 +8,8 @@ Think of microfrontends as **different neighborhoods** in your app-city:
 
 - 🏪 **Shopping District** - where people buy things
 - 🏥 **Health District** - where they take care of health  
-- 🎮 **Gaming District** - where they have fun
-- 🏦 **Banking District** - where they handle money
+- 🎮 **Games District** - where they have fun
+- 🏦 **Banking District** - where they manage money
 - 📚 **School District** - where they learn things
 
 ```
@@ -27,32 +27,32 @@ Think of microfrontends as **different neighborhoods** in your app-city:
 
 Imagine if each neighborhood was an **isolated island**:
 
-### 😰 Without EventModule (Sad Islands):
+### 😰 Without EventModule (Sad Island):
 ```
 🏪 Shopping Island     🏥 Health Island     🎮 Games Island
-     "Help!"              "Hello? Hello?"      "Anyone there?"
+    "Help!"              "Hello? Hello?"       "Anyone there?"
        |                     |                    |
-   💔 Alone             💔 Alone            💔 Alone
+   💔 Alone              💔 Alone            💔 Alone
 ```
 
-**Island Problems:**
-- 🚫 **Can't talk** to each other
+**Problems with Islands:**
+- 🚫 **Don't talk** to each other
 - 😵 **Total confusion** when they need to work together
-- 🐌 **Very slow** to do teamwork
-- 💸 **Wasteful** - everyone does the same thing
+- 🐌 **Very slow** to do team things
+- 💸 **Waste** - each one does the same thing
 
 ### 🎉 With EventModule (Connected City):
 ```
-🏪 Shopping ←→ 📞 MAGICAL ←→ 🏥 Health
+🏪 Shopping ←→ 📞 CENTRAL ←→ 🏥 Health
                TELEPHONE
-🎮 Games   ←→   CENTRAL  ←→ 🏦 Banking
+🎮 Games   ←→    MAGIC   ←→ 🏦 Banking
 ```
 
-**Connected City Benefits:**
-- 📞 **Everyone talks** through the magical central
-- ⚡ **Super fast** coordination
-- 🤝 **Perfect teamwork**
-- 🎯 **Everyone does their specialty**
+**Benefits of Connected City:**
+- 📞 **Everyone talks** through the magic central
+- ⚡ **Super fast** to coordinate
+- 🤝 **Work as a team** perfectly
+- 🎯 **Each one does their specialty**
 
 ## 🎭 How Does the Magic Work?
 
@@ -67,14 +67,14 @@ Let's see how the city works when John wants to buy a game:
    ↓ 📢 (shouts to the whole city)
    💬 "PurchaseEvent: John bought Minecraft for $30!"
    ↓
-📞 EventModule Telephone Central spreads the news:
+📞 Central Telephone EventModule spreads the news:
    ↓                    ↓                    ↓
 🏦 Banking App:      🎮 Games App:       📱 Chat App:
-"Charging $30       "Unlocking          "John bought
- from John's account" Minecraft"          a game!"
+"Charging $30        "Unlocking         "John bought
+ from John's account"  Minecraft"          a game!"
 ```
 
-### 🎊 The Magical Result:
+### 🎊 The Magic Result:
 
 1. **🏪 Shopping**: "Sale completed! ✅"
 2. **🏦 Banking**: "Money debited! 💳"  
@@ -98,16 +98,16 @@ ModularEvent.fire(BirthdayEvent(
 
 **What happens in the city:**
 
-- 🎮 **Games App**: "🎁 Unlocks special birthday skin!"
+- 🎮 **Games App**: "🎁 Unlock special birthday skin!"
 - 💰 **Banking App**: "🎈 $10 bonus gift!"
 - 📱 **Chat App**: "🎂 Tell all friends!"
 - 🏪 **Shopping App**: "🛍️ Special discount today!"
-- 📚 **School App**: "📖 Homework-free day!"
+- 📚 **School App**: "📖 Free day from homework!"
 
 ### 🏆 Game Achievement
 
 ```dart
-// 🎮 John leveled up!
+// 🎮 John passed the level!
 ModularEvent.fire(AchievementEvent(
   player: 'John',
   achievement: 'First Boss Defeated',
@@ -122,7 +122,7 @@ ModularEvent.fire(AchievementEvent(
 - 📱 **Chat App**: "📢 Tell all friends!"
 - 🎪 **Rewards App**: "🎁 New trophy available!"
 
-## 🌟 Microfrontends Super Powers
+## 🌟 Super Powers of Microfrontends
 
 ### 1. 🚀 **Rocket Speed**
 ```
@@ -139,7 +139,7 @@ ModularEvent.fire(AchievementEvent(
 ```
 🏪 Shopping Team:
 👨‍💻 Peter (Sales expert)
-👩‍💻 Anna (Product expert)
+👩‍💻 Ana (Product expert)
 
 🎮 Games Team:  
 👨‍💻 Carlos (Games expert)
@@ -150,13 +150,13 @@ ModularEvent.fire(AchievementEvent(
 👩‍💻 Sara (Security expert)
 ```
 
-**Each team is a specialist in their neighborhood!** 🎯
+**Each team is an expert in their neighborhood!** 🎯
 
 ### 3. 🔧 **Easy Maintenance**
 ```
 🔨 Shopping renovation:
 ┌─────────────────────┐
-│ 🏪 Shopping App     │ ← Only change here!
+│ 🏪 Shopping App     │ ← Only touch here!
 │    (under construction) │
 └─────────────────────┘
 │
@@ -166,11 +166,11 @@ ModularEvent.fire(AchievementEvent(
 
 **If one neighborhood breaks, others keep working!** 💪
 
-### 4. 🌍 **Global Scale**
+### 4. 🌍 **Worldwide Scale**
 ```
-🌎 Brazil Server:       🌍 USA Server:        🌏 Japan Server:
-🏪 Shopping Brazil      🎮 Games Global       🎌 Anime Store
-🏦 Banking Brazil       📱 Chat Global        🍱 Food Delivery
+🌎 Brazil Server:     🌍 USA Server:      🌏 Japan Server:
+🏪 Shopping Brazil    🎮 Games Global     🎌 Anime Store
+🏦 Banking Brazil     📱 Chat Global      🍱 Food Delivery
 ```
 
 **Each neighborhood can be in a different country!** 🛫
@@ -180,7 +180,7 @@ ModularEvent.fire(AchievementEvent(
 ### 🏗️ Step 1: Define the Neighborhoods
 
 ```dart
-// 🏪 Shopping District
+// 🏪 Shopping Neighborhood
 class ShoppingModule extends EventModule {
   @override
   void listen() {
@@ -196,7 +196,7 @@ class ShoppingModule extends EventModule {
   }
 }
 
-// 🎮 Gaming District  
+// 🎮 Games Neighborhood  
 class GamesModule extends EventModule {
   @override
   void listen() {
@@ -231,10 +231,10 @@ class CityApp extends StatelessWidget {
 class CityModule extends Module {
   @override
   List<Module> get imports => [
-    ShoppingModule(),    // 🏪 Shopping District
-    GamesModule(),       // 🎮 Gaming District
-    BankingModule(),     // 🏦 Banking District
-    ChatModule(),        // 📱 Chat District
+    ShoppingModule(),    // 🏪 Shopping Neighborhood
+    GamesModule(),       // 🎮 Games Neighborhood
+    BankingModule(),     // 🏦 Banking Neighborhood
+    ChatModule(),        // 📱 Chat Neighborhood
   ];
 
   @override
@@ -250,7 +250,7 @@ class CityModule extends Module {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 🎭 Activating the magical telephone central!
+  // 🎭 Activating the magic telephone central!
   await GoRouterModular.configure(
     appModule: CityModule(),
     initialRoute: '/',
@@ -323,12 +323,12 @@ class CheckoutEvent {
 }
 ```
 
-## 🌈 Magical Benefits
+## 🌈 Magic Benefits
 
 ### 🚀 **For Kids (Users)**
-- ⚡ **Super fast apps** - loads only what you need
+- ⚡ **Super fast apps** - loads only what's needed
 - 🎯 **Personalized experience** - each neighborhood is specialized
-- 🔄 **Updates without interruption** - change one neighborhood, others continue
+- 🔄 **Updates without interruption** - touch one neighborhood, others continue
 - 🎮 **More fun** - neighborhoods work together to create amazing experiences
 
 ### 👨‍💻 **For Developers (Builders)**
@@ -337,20 +337,20 @@ class CheckoutEvent {
 - 📈 **Simple scaling** - add new neighborhoods whenever you want
 - 🎨 **Different technologies** - each neighborhood can use different tools
 
-### 🏢 **For Companies (Mayor)**
-- 💰 **Save money** - small teams are more efficient
-- 📊 **Precise data** - each neighborhood reports its metrics
-- 🚀 **Quick launch** - one ready neighborhood can already work
+### 🏢 **For Company (Mayor)**
+- 💰 **Money savings** - small teams are more efficient
+- 📊 **Accurate data** - each neighborhood reports its metrics
+- 🚀 **Fast launch** - one ready neighborhood can already work
 - 🌍 **Global expansion** - neighborhoods can be anywhere
 
 ## 🎯 Conclusion: Your Digital City
 
 With EventModule and microfrontends, you build an **amazing digital city** where:
 
-- 🏘️ **Each neighborhood is an expert** at what it does
-- 📞 **Everyone talks** through the magical central
+- 🏘️ **Each neighborhood is an expert** in what it does
+- 📞 **Everyone talks** through the magic central
 - ⚡ **Everything works super fast** and efficient
-- 🎪 **Magical experiences** happen when they work together
+- 🎪 **Magic experiences** happen when they work together
 - 🛠️ **Easy to build and maintain** 
 
 **Now you can be the architect of your own app city!** 🏗️✨

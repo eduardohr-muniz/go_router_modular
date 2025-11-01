@@ -163,7 +163,7 @@ class ECommerceModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // Shared dependencies for all e-commerce modules
     i.addSingleton<ECommerceService>(ECommerceService.new);
     i.addSingleton<PaymentService>(PaymentService.new);
@@ -180,7 +180,7 @@ class ProductModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // Product-specific dependencies
     i.addSingleton<ProductRepository>(ProductRepository.new);
     i.addFactory<ProductBloc>(ProductBloc.new);
@@ -646,7 +646,7 @@ class AppModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // App-wide dependencies
     i.addSingleton<ApiService>(ApiService.new);
     i.addSingleton<AuthService>(AuthService.new);
@@ -664,7 +664,7 @@ class AdminModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // Admin-specific dependencies
     i.addSingleton<AdminService>(AdminService.new);
     i.addFactory<AdminRepository>(AdminRepository.new);
@@ -725,7 +725,7 @@ class ShopModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // Shared shopping dependencies
     i.addSingleton<ShoppingCartService>(ShoppingCartService.new);
     i.addSingleton<ProductService>(ProductService.new);
@@ -740,7 +740,7 @@ class CartModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // Cart-specific dependencies that can access shopping services
     i.addFactory<CartBloc>(() => CartBloc(
       cartService: i.get<ShoppingCartService>(), // From parent module
@@ -897,7 +897,7 @@ class BadUserModule extends Module {
 // ✅ GOOD: Proper dependency scoping
 class UserModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // User-specific dependencies
     i.addSingleton<UserRepository>(UserRepository.new);
     i.addFactory<UserBloc>(UserBloc.new);
@@ -907,7 +907,7 @@ class UserModule extends Module {
 
 class AppModule extends Module {
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // App-wide dependencies
     i.addSingleton<ApiService>(ApiService.new);
     i.addSingleton<AuthService>(AuthService.new);
@@ -962,7 +962,7 @@ class ECommerceApp extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     // Core app services
     i.addSingleton<ApiService>(ApiService.new);
     i.addSingleton<AuthService>(AuthService.new);
@@ -1000,7 +1000,7 @@ class ProductModule extends Module {
   ];
 
   @override
-  void binds(Injector i) {
+  FutureBinds (Injector i) {
     i.addSingleton<ProductRepository>(ProductRepository.new);
     i.addFactory<ProductBloc>(ProductBloc.new);
     i.addLazySingleton<ProductCache>(ProductCache.new);

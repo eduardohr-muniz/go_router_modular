@@ -1,0 +1,76 @@
+# Redirects
+
+> GoRouter Modular delegates redirects to GoRouter. You can define global redirects (in configure) and per-route redirects (in ChildRoute/ModuleRoute), exactly like in GoRouter.
+
+## Global redirect (in configure)
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Modular.configure(
+    appModule: AppModule(),
+    initialRoute: '/',
+    // Global GoRouter redirect: decide destination dynamically
+    redirect: (context, state) {
+      final loggedIn = auth.isLoggedIn; // your app state
+      if (!loggedIn) return '/login';
+
+      return null; // no redirect
+    },
+  );
+  runApp(AppWidget());
+}
+```
+
+- Runs on every navigation.
+- Return `null` to proceed normally, or a string path to redirect.
+
+## Per-route redirect (ChildRoute)
+
+```dart
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute(
+      '/',
+      child: (context, state) => const HomePage(),
+    ),
+    ChildRoute(
+      '/login',
+      child: (context, state) => const LoginPage(),
+      // route-level redirect: uses the same GoRouter API
+      redirect: (context, state) {
+        final loggedIn = auth.isLoggedIn;
+        return loggedIn ? '/' : null;
+      },
+    ),
+  ];
+}
+```
+
+- The `redirect` in `ChildRoute` runs before the page builder.
+- Useful for simple guards (e.g., login).
+
+## Redirect with path parameters
+
+```dart
+ChildRoute(
+  '/users/:id',
+  child: (context, state) => UserPage(id: state.pathParameters['id']!),
+  redirect: (context, state) {
+    final id = state.pathParameters['id'];
+    if (id == null || id.isEmpty) return '/users';
+    return null;
+  },
+)
+```
+
+## Best practices
+- Prefer a global `redirect` for cross-cutting rules (auth, onboarding).
+- Prefer per-route `redirect` for local validations.
+- Avoid loops: ensure the redirect target does not redirect back.
+- Redirect to full paths (e.g., `/login`, not relative paths).
+
+For more details, see the official GoRouter `redirect` documentation.
+
+

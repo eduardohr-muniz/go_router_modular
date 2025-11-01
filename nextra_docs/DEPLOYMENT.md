@@ -69,7 +69,7 @@ firebase deploy
 
 - **Produção**: `https://go-router-modular-docs.vercel.app`
 - **Staging**: `https://go-router-modular-docs-staging.vercel.app`
-- **GitHub Pages**: `https://flutterando.github.io/go_router_modular`
+- **GitHub Pages**: `https://eduardohr-muniz.github.io/go_router_modular`
 
 ## ⚙️ Configurações de Ambiente
 
