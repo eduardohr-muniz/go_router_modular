@@ -15,7 +15,6 @@ Future<void> main() async {
     debugLogEventBus: kDebugMode,
     defaultTransition: GoTransitions.fadeUpwards, // Transição padrão
     defaultTransitionDuration: Duration(milliseconds: 600),
-    defaultTransitionCurve: Curves.easeInOutCubic,
   );
 
   runApp(const AppWidget());

@@ -19,7 +19,7 @@ class Bind<T> {
 
   T get instance {
     iLog('🔍 INSTANCE: Acessando instance para tipo: ${T}', name: 'BIND_INSTANCE');
-    
+
     if (_cachedInstance == null || !isSingleton) {
       iLog('🆕 INSTANCE: Criando nova instância (cache null ou não singleton)', name: 'BIND_INSTANCE');
       _cachedInstance = factoryFunction(Injector());
@@ -27,7 +27,7 @@ class Bind<T> {
     } else {
       iLog('📦 INSTANCE: Usando instância cacheada: ${_cachedInstance.runtimeType}', name: 'BIND_INSTANCE');
     }
-    
+
     // Verifica se a instância foi disposta (para ChangeNotifier e similares)
     if (_cachedInstance != null) {
       try {
@@ -62,11 +62,11 @@ class Bind<T> {
         // Se falhar ao verificar, assume que está válido
       }
     }
-    
+
     iLog('✅ INSTANCE: Retornando instância: ${_cachedInstance.runtimeType}', name: 'BIND_INSTANCE');
     return _cachedInstance!;
   }
-  
+
   /// Limpa a instância cacheada (usado quando o bind é disposto)
   void clearCache() {
     iLog('🧹 CLEAR_CACHE: Limpando cache para tipo: ${_cachedInstance?.runtimeType ?? "null"}', name: 'BIND_CLEAR_CACHE');
@@ -194,7 +194,7 @@ class Bind<T> {
     if (bind != null) {
       iLog('📋 DISPOSE: Bind encontrado no mapa para tipo: $T', name: 'BIND_DISPOSE');
       iLog('🔍 DISPOSE: Tentando acessar instance para dispor...', name: 'BIND_DISPOSE');
-      
+
       try {
         final instance = bind.instance;
         iLog('✅ DISPOSE: Instance acessada: ${instance.runtimeType}', name: 'BIND_DISPOSE');
@@ -203,7 +203,7 @@ class Bind<T> {
       } catch (e) {
         iLog('⚠️ DISPOSE: Erro ao acessar/dispor instance: $e', name: 'BIND_DISPOSE');
       }
-      
+
       // Limpa o cache para evitar retornar instância disposta
       bind.clearCache();
 
@@ -268,7 +268,7 @@ class Bind<T> {
     if (bind != null) {
       iLog('📋 DISPOSE_BY_TYPE: Bind encontrado no mapa para tipo: $type', name: 'BIND_DISPOSE');
       iLog('🔍 DISPOSE_BY_TYPE: Tentando acessar instance para dispor...', name: 'BIND_DISPOSE');
-      
+
       try {
         final instance = bind.instance;
         iLog('✅ DISPOSE_BY_TYPE: Instance acessada: ${instance.runtimeType}', name: 'BIND_DISPOSE');
@@ -277,7 +277,7 @@ class Bind<T> {
       } catch (e) {
         iLog('⚠️ DISPOSE_BY_TYPE: Erro ao acessar/dispor instance: $e', name: 'BIND_DISPOSE');
       }
-      
+
       // Limpa o cache para evitar retornar instância disposta
       bind.clearCache();
       iLog('✅ DISPOSE_BY_TYPE: Cache limpo', name: 'BIND_DISPOSE');
@@ -680,16 +680,16 @@ class Bind<T> {
         // Log detalhado com informações sobre binds disponíveis (apenas na primeira tentativa para evitar spam)
         // E apenas se não houver binds pendentes (indicando que realmente não existe)
         if (attemptCount == 1 && _pendingObjectBinds.isEmpty) {
-          log('[GO_ROUTER_MODULAR] ❌ Bind not found for type: "${type.toString()}"');
+          iLog('[GO_ROUTER_MODULAR] ❌ Bind not found for type: "${type.toString()}"', name: 'BIND_FIND');
           // Log reduzido: apenas mostra se há binds disponíveis, não lista todos
           if (_bindsMap.isNotEmpty) {
-            log('[GO_ROUTER_MODULAR] 📊 ${_bindsMap.length} bind(s) disponível(is)');
+            iLog('[GO_ROUTER_MODULAR] 📊 ${_bindsMap.length} bind(s) disponível(is)');
           }
         }
 
         // Se não há binds pendentes e já tentamos algumas vezes, falha imediatamente
         if (_pendingObjectBinds.isEmpty && attemptCount >= 2) {
-          log('[GO_ROUTER_MODULAR] ⚠️ Nenhum bind pendente encontrado após $attemptCount tentativas - falhando imediatamente');
+          iLog('[GO_ROUTER_MODULAR] ⚠️ Nenhum bind pendente encontrado após $attemptCount tentativas - falhando imediatamente');
           final errorMessage = '❌ Bind not found for type "${type.toString()}". No pending binds available after $attemptCount attempts.';
           throw GoRouterModularException(errorMessage);
         }
@@ -703,7 +703,7 @@ class Bind<T> {
       iLog('📋 _FIND: Bind - isSingleton: ${bind.isSingleton}, cache: ${bind._cachedInstance != null ? bind._cachedInstance.runtimeType : "null"}', name: 'BIND_FIND');
       final instance = bind.instance as T;
       iLog('📋 _FIND: Instância obtida: ${instance.runtimeType} (ChangeNotifier: ${instance is ChangeNotifier})', name: 'BIND_FIND');
-      
+
       if (instance is ChangeNotifier) {
         try {
           final testListener = () {};

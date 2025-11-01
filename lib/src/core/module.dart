@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
 import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
+import 'package:go_transitions/go_transitions.dart';
 
 typedef FutureBinds = FutureOr<void>;
 typedef FutureModules = FutureOr<List<Module>>;
@@ -58,6 +59,7 @@ abstract class Module {
         parentNavigatorKey: childRoute.parentNavigatorKey,
         redirect: childRoute.redirect,
         topLevel: topLevel,
+        transitionDuration: childRoute.transitionDuration,
       );
     }
 
@@ -72,6 +74,7 @@ abstract class Module {
         parentNavigatorKey: childRoute.parentNavigatorKey,
         redirect: childRoute.redirect,
         topLevel: topLevel,
+        transitionDuration: childRoute.transitionDuration,
       );
     }
 
@@ -98,7 +101,56 @@ abstract class Module {
     GlobalKey<NavigatorState>? parentNavigatorKey,
     FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
     required bool topLevel,
+    Duration? transitionDuration,
   }) {
+    // Se tem duration customizado, cria um CustomTransitionPage diretamente
+    if (transitionDuration != null) {
+      final customDuration = transitionDuration;
+
+      final pageBuilder = (BuildContext context, GoRouterState state) {
+        final widget = builder(context, state);
+
+        // Cria uma página temporária para extrair o transitionsBuilder
+        final originalDuration = GoTransition.defaultDuration;
+        GoTransition.defaultDuration = customDuration;
+
+        try {
+          final tempPage = transition.build(builder: (_, __) => widget)(context, state);
+
+          // Se a página retornada é uma CustomTransitionPage, podemos copiar o transitionsBuilder
+          // e criar uma nova com a duração customizada
+          if (tempPage is CustomTransitionPage) {
+            return CustomTransitionPage<void>(
+              key: state.pageKey,
+              child: widget,
+              transitionsBuilder: tempPage.transitionsBuilder,
+              transitionDuration: customDuration,
+              reverseTransitionDuration: customDuration,
+              opaque: tempPage.opaque,
+              barrierDismissible: tempPage.barrierDismissible,
+              barrierColor: tempPage.barrierColor,
+              barrierLabel: tempPage.barrierLabel,
+              maintainState: tempPage.maintainState,
+            );
+          }
+
+          // Se não é CustomTransitionPage, retorna como está
+          return tempPage;
+        } finally {
+          GoTransition.defaultDuration = originalDuration;
+        }
+      };
+
+      return GoRoute(
+        path: _normalizePath(path: path, topLevel: topLevel),
+        name: name,
+        pageBuilder: pageBuilder,
+        parentNavigatorKey: parentNavigatorKey,
+        redirect: redirect,
+      );
+    }
+
+    // Sem duration customizado, usa o padrão
     return GoRoute(
       path: _normalizePath(path: path, topLevel: topLevel),
       name: name,
@@ -144,40 +196,70 @@ abstract class Module {
     final modulePath = module.path + nonNullChildRoute.path;
     final moduleName = nonNullChildRoute.name ?? module.name;
 
-    // Se o childRoute tem transição, aplica no GoRoute do módulo
-    if (nonNullChildRoute.transition != null) {
-      return GoRoute(
-        path: _normalizePath(path: modulePath, topLevel: topLevel),
-        name: moduleName,
-        pageBuilder: nonNullChildRoute.transition!.build(builder: moduleBuilder),
-        routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
-        parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
-        redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: nonNullChildRoute.redirect, topLevel: topLevel),
-      );
-    }
+    // Verifica se há rotas filhas no módulo
+    final childRoutes = module.module.configureRoutes(modulePath: module.path, topLevel: false);
+    final hasChildRoutes = childRoutes.isNotEmpty;
 
-    // Se tem default transition configurado, usa ele
-    final defaultTransition = Modular.getDefaultTransition;
-    if (defaultTransition != null) {
-      return GoRoute(
-        path: _normalizePath(path: modulePath, topLevel: topLevel),
+    // Determina qual transição usar (prioridade: transition customizado > default transition)
+    final transition = nonNullChildRoute.transition ?? Modular.getDefaultTransition;
+
+    // Se tem transição (customizada ou default), aplica no GoRoute do módulo
+    if (transition != null) {
+      final route = _buildGoRouteWithTransition(
+        path: modulePath,
         name: moduleName,
-        pageBuilder: defaultTransition.build(builder: moduleBuilder),
-        routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
+        transition: transition,
+        builder: moduleBuilder,
         parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
         redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: nonNullChildRoute.redirect, topLevel: topLevel),
+        topLevel: topLevel,
+        transitionDuration: nonNullChildRoute.transitionDuration,
+      );
+
+      // Se tem rotas filhas, adiciona diretamente ao GoRoute
+      if (hasChildRoutes) {
+        return GoRoute(
+          path: route.path,
+          name: route.name,
+          pageBuilder: route.pageBuilder,
+          parentNavigatorKey: route.parentNavigatorKey,
+          redirect: route.redirect,
+          routes: childRoutes,
+        );
+      }
+
+      // Sem rotas filhas, retorna apenas com pageBuilder
+      return GoRoute(
+        path: route.path,
+        name: route.name,
+        pageBuilder: route.pageBuilder,
+        parentNavigatorKey: route.parentNavigatorKey,
+        redirect: route.redirect,
       );
     }
 
     // Sem transição, usa builder padrão
-    return GoRoute(
+    final defaultRoute = GoRoute(
       path: _normalizePath(path: modulePath, topLevel: topLevel),
       name: moduleName,
       builder: moduleBuilder,
-      routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
       parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
       redirect: (context, state) => _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: nonNullChildRoute.redirect, topLevel: topLevel),
     );
+
+    // Adiciona rotas filhas se houver
+    if (hasChildRoutes) {
+      return GoRoute(
+        path: defaultRoute.path,
+        name: defaultRoute.name,
+        builder: defaultRoute.builder,
+        routes: childRoutes,
+        parentNavigatorKey: defaultRoute.parentNavigatorKey,
+        redirect: defaultRoute.redirect,
+      );
+    }
+
+    return defaultRoute;
   }
 
   FutureOr<String?> _buildRedirectAndInjectBinds(

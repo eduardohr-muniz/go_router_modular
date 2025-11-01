@@ -51,6 +51,7 @@ class ProfileModule extends Module {
           '/',
           child: (context, state) => const ProfilePage(),
           transition: GoTransitions.fade, // Fade simples para profile
+          transitionDuration: Duration(milliseconds: 400), // Média-rápida - 400ms
         ),
       ];
 
@@ -78,7 +79,8 @@ class SettingsModule extends Module {
         ChildRoute(
           '/',
           child: (context, state) => const SettingsPage(),
-          transition: GoTransitions.slide.toBottom.withFade, // Slide de baixo para cima com fade
+          transition: GoTransitions.rotate.withScale, // Slide de baixo para cima com fade
+          transitionDuration: Duration(milliseconds: 700), // Média - 700ms
         ),
       ];
 

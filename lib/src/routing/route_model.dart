@@ -7,6 +7,7 @@ class RouteModularModel {
   String name;
   List<String>? params;
   GoTransition? transition;
+  Duration? transitionDuration;
   RouteModularModel({
     required this.moduleR,
     required this.childR,

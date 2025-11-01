@@ -156,7 +156,6 @@ class GoRouterModular {
     bool requestFocus = true,
     GoTransition? defaultTransition,
     Duration? defaultTransitionDuration,
-    Curve? defaultTransitionCurve,
     int delayDisposeMilliseconds = 1000,
     bool debugLogEventBus = false,
     bool autoDisposeEventsBus = true,
@@ -167,9 +166,6 @@ class GoRouterModular {
     // Configura duration e curve para GoTransitions se fornecidos
     if (defaultTransitionDuration != null) {
       GoTransition.defaultDuration = defaultTransitionDuration;
-    }
-    if (defaultTransitionCurve != null) {
-      GoTransition.defaultCurve = defaultTransitionCurve;
     }
 
     GoRouter.optionURLReflectsImperativeAPIs = true;

@@ -28,6 +28,7 @@ class BindsByKeyModule extends Module {
         '/',
         child: (context, state) => const BindByKeyPage(),
         transition: GoTransitions.slide.toLeft.withFade, // Slide para esquerda com fade
+        transitionDuration: Duration(milliseconds: 500), // Média - 500ms
       ),
     ];
   }

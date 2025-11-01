@@ -26,11 +26,13 @@ class HomeModule extends Module {
         '/',
         child: (context, state) => const HomePage(),
         transition: GoTransitions.fadeUpwards, // Transição suave para home
+        transitionDuration: Duration(milliseconds: 300), // Rápida - 300ms
       ),
       ChildRoute(
         '/demo',
         child: (context, state) => const DemoPage(),
         transition: GoTransitions.slide.toRight.withFade, // Slide com fade
+        transitionDuration: Duration(milliseconds: 800), // Mais lenta - 800ms
       ),
     ];
   }

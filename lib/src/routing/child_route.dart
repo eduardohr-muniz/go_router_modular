@@ -12,6 +12,7 @@ class ChildRoute extends ModularRoute {
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
   final FutureOr<bool> Function(BuildContext context, GoRouterState state)? onExit;
   final GoTransition? transition;
+  final Duration? transitionDuration;
 
   ChildRoute(
     this.path, {
@@ -22,5 +23,6 @@ class ChildRoute extends ModularRoute {
     this.redirect,
     this.onExit,
     this.transition,
+    this.transitionDuration,
   });
 }

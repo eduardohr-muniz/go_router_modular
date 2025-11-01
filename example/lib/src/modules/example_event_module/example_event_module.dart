@@ -10,6 +10,7 @@ class ExampleEventModule extends EventModule {
           '/',
           child: (context, state) => const ExampleEventPage(),
           transition: GoTransitions.scale.withRotation, // Escala com rotação - bem maluca!
+          transitionDuration: Duration(milliseconds: 1000), // Duration customizada para esta rota
         ),
       ];
   @override

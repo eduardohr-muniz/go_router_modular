@@ -25,6 +25,7 @@ class AutoResolveModule extends Module {
           '/',
           child: (context, args) => const AutoResolveModuleWidget(),
           transition: GoTransitions.rotate.withScale.withFade, // Transição maluca: rotação + escala + fade
+          transitionDuration: Duration(milliseconds: 5000), // Bem lenta - 1200ms para ver a animação complexa
         ),
       ];
 
