@@ -15,6 +15,30 @@
   - Validates proper singleton behavior and factory patterns
   - Ensures correct key isolation and instance management
 
+* **Beautiful Page Transitions**: Comprehensive transition system for smooth page animations
+  - Built-in transitions: fade, slide, scale, rotate, and more
+  - Smart inheritance: child routes automatically inherit transitions from parent modules
+  - Easy customization with duration and curve parameters
+  - Platform-specific styles: Cupertino (iOS/macOS) and Material (Android)
+  - Combined effects: chain multiple transitions like `slide.toRight.withFade`
+  - Module-level transitions: set transitions for all routes in a module
+  - Route-level overrides: customize transitions for specific routes
+  - Example:
+    ```dart
+    // Module-level transition
+    ModuleRoute('/home', module: HomeModule(),
+      transition: GoTransitions.fadeUpwards,
+      duration: Duration(milliseconds: 300))
+    
+    // Child route inherits or overrides
+    ChildRoute('/details', child: (_, __) => DetailsPage(),
+      transition: GoTransitions.slide.toRight.withFade)
+    
+    // Platform-specific
+    ModuleRoute('/ios', module: IOSModule(),
+      transition: GoTransitions.cupertino)
+    ```
+
 ### Improved
 * **Test Coverage**: Expanded test suite for dependency injection system
   - Complete validation of factory vs singleton vs lazySingleton patterns
