@@ -26,7 +26,7 @@ class ShellModule extends Module {
       ];
 
   @override
-  void initState(Injector i) {
+  void initState(InjectorReader i) {
     TestController.instance.enterModule('ShellModule');
     print('🐚 ShellModule iniciado');
   }
@@ -53,7 +53,7 @@ class ProfileModule extends Module {
       ];
 
   @override
-  void initState(Injector i) {
+  void initState(InjectorReader i) {
     TestController.instance.enterModule('ProfileModule');
     print('👤 ProfileModule iniciado');
   }
@@ -80,7 +80,7 @@ class SettingsModule extends Module {
       ];
 
   @override
-  void initState(Injector i) {
+  void initState(InjectorReader i) {
     TestController.instance.enterModule('SettingsModule');
     print('⚙️ SettingsModule iniciado');
   }

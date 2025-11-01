@@ -13,7 +13,7 @@ abstract class Module {
   FutureModules imports() => [];
   FutureBinds binds(Injector i) {}
   List<ModularRoute> get routes => const [];
-  void initState(Injector i) {}
+  void initState(InjectorReader i) {}
   void dispose() {}
 
   List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {

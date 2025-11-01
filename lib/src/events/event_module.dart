@@ -483,7 +483,7 @@ abstract class EventModule extends Module {
   }
 
   @override
-  void initState(Injector i) {
+  void initState(InjectorReader i) {
     listen();
     super.initState(i);
   }

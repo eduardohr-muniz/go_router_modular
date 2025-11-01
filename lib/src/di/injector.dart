@@ -1,7 +1,14 @@
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/core/bind.dart';
 
-class Injector {
+/// Interface somente leitura para acesso a dependências
+/// Expõe apenas o método `get`, sem permitir registro de binds
+abstract interface class InjectorReader {
+  T get<T>({String? key});
+}
+
+class Injector implements InjectorReader {
+  @override
   T get<T>({String? key}) => Bind.get<T>(key: key);
 
   // Lista temporária para coletar binds durante o registro

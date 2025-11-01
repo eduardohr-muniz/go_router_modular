@@ -24,7 +24,7 @@ class AutoResolveModule extends Module {
       ];
 
   @override
-  void initState(Injector i) {
+  void initState(InjectorReader i) {
     TestController.instance.enterModule('AutoResolveModule');
   }
 
