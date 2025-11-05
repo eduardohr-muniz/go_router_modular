@@ -1,5 +1,5 @@
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/core/bind.dart';
+import 'package:go_router_modular/src/core/bind/bind.dart';
 
 /// Interface somente leitura para acesso a dependências
 /// Expõe apenas o método `get`, sem permitir registro de binds

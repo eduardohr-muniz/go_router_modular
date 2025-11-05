@@ -21,21 +21,16 @@ class CleanBind {
         } catch (e) {}
       }
 
-      // 3. Se tem método dispose() (detecta por reflection)
+      // 3. Se tem método dispose() (detecta por tentar chamar)
       try {
-        final disposeMethod = instance.runtimeType.toString();
-        if (disposeMethod.contains('dispose') || hasMethod(instance, 'dispose')) {
-          (instance as dynamic).dispose();
-          return true;
-        }
+        (instance as dynamic).dispose();
+        return true;
       } catch (e) {}
 
-      // 4. Se tem método close() (detecta por reflection)
+      // 4. Se tem método close() (detecta por tentar chamar)
       try {
-        if (hasMethod(instance, 'close')) {
-          (instance as dynamic).close();
-          return true;
-        }
+        (instance as dynamic).close();
+        return true;
       } catch (e) {}
 
       // 5. Se é StreamController ou similar
@@ -62,27 +57,58 @@ class CleanBind {
     }
   }
 
-  /// Verifica se uma instância tem um método específico
+  /// Verifica se uma instância tem um método específico SEM executá-lo
+  /// IMPORTANTE: Este método NÃO executa o método, apenas verifica a existência
   @visibleForTesting
   static bool hasMethod(dynamic instance, String methodName) {
     try {
-      // Tenta chamar o método diretamente usando dynamic
+      // Cria uma cópia temporária para tentar chamar o método
+      // Se der erro NoSuchMethodError, o método não existe
+      // Se der qualquer outro erro ou sucesso, o método existe
       final dynamic dynamicInstance = instance;
+      
+      // Usa um try-catch para verificar se o método existe
+      // sem de fato executá-lo em produção
       switch (methodName) {
         case 'dispose':
-          dynamicInstance.dispose();
-          return true;
+          // Verifica se o tipo tem o método dispose
+          return dynamicInstance.runtimeType.toString().toLowerCase().contains('dispos') ||
+                 _tryHasMethod(dynamicInstance, 'dispose');
         case 'close':
-          dynamicInstance.close();
-          return true;
+          // Verifica se o tipo tem o método close
+          return _tryHasMethod(dynamicInstance, 'close');
         case 'cancel':
-          dynamicInstance.cancel();
-          return true;
+          // Verifica se o tipo tem o método cancel
+          return _tryHasMethod(dynamicInstance, 'cancel');
         default:
           return false;
       }
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Helper interno para verificar método sem executá-lo
+  static bool _tryHasMethod(dynamic instance, String methodName) {
+    try {
+      // Tenta acessar o método como uma propriedade
+      // Se não existir, lança NoSuchMethodError
+      switch (methodName) {
+        case 'dispose':
+          instance.dispose;
+          return true;
+        case 'close':
+          instance.close;
+          return true;
+        case 'cancel':
+          instance.cancel;
+          return true;
+        default:
+          return false;
+      }
+    } catch (e) {
+      // Se lançar NoSuchMethodError, o método não existe
+      return e.toString().contains('NoSuchMethod') ? false : true;
     }
   }
 }

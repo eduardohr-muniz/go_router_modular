@@ -1,10 +1,10 @@
 library go_router_modular;
 
 // Core exports
-export 'src/core/bind.dart';
-export 'src/core/go_router_modular_configure.dart';
-export 'src/core/module.dart';
-export 'src/core/injection_manager.dart';
+export 'src/core/bind/bind.dart';
+export 'src/core/config/go_router_modular_configure.dart';
+export 'src/core/module/module.dart';
+export 'src/core/manager/injection_manager.dart';
 
 // Dependency Injection exports
 export 'src/di/injector.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind.dart';
+import 'package:go_router_modular/src/core/bind/bind.dart';
 import 'package:go_router_modular/src/di/injector.dart';
 
 // 50 classes diferentes para teste de performance

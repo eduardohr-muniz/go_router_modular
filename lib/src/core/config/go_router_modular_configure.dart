@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/src/core/bind.dart';
+import 'package:go_router_modular/src/core/bind/bind.dart';
 import 'package:go_router_modular/src/internal/asserts/go_router_modular_configure_assert.dart';
 import 'package:go_router_modular/src/internal/setup.dart';
-import 'package:go_router_modular/src/core/module.dart';
+import 'package:go_router_modular/src/core/module/module.dart';
 import 'package:go_transitions/go_transitions.dart';
 
 /// Alias to simplify the use of GoRouterModular.

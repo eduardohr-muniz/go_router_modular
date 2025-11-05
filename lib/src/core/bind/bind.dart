@@ -2,8 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/exceptions/exception.dart';
 import 'package:go_router_modular/src/di/injector.dart';
-import 'package:go_router_modular/src/internal/internal_logs.dart';
-import 'package:go_router_modular/src/core/dependency_analyzer.dart';
+import 'package:go_router_modular/src/core/dependency_analyzer/dependency_analyzer.dart';
 
 class Bind<T> {
   final T Function(Injector i) factoryFunction;
@@ -16,14 +15,8 @@ class Bind<T> {
   Bind(this.factoryFunction, {this.isSingleton = true, this.isLazy = false, this.key}) : stackTrace = StackTrace.current;
 
   T get instance {
-    iLog('🔍 INSTANCE: Acessando instance para tipo: ${T}', name: 'BIND_INSTANCE');
-
     if (_cachedInstance == null || !isSingleton) {
-      iLog('🆕 INSTANCE: Criando nova instância (cache null ou não singleton)', name: 'BIND_INSTANCE');
       _cachedInstance = factoryFunction(Injector());
-      iLog('✅ INSTANCE: Nova instância criada: ${_cachedInstance.runtimeType}', name: 'BIND_INSTANCE');
-    } else {
-      iLog('📦 INSTANCE: Usando instância cacheada: ${_cachedInstance.runtimeType}', name: 'BIND_INSTANCE');
     }
 
     // Verifica se a instância foi disposta (para ChangeNotifier e similares)
@@ -32,7 +25,6 @@ class Bind<T> {
         // Tenta verificar se é um ChangeNotifier disposto
         if (_cachedInstance is ChangeNotifier) {
           final notifier = _cachedInstance as ChangeNotifier;
-          iLog('🔍 INSTANCE: Verificando se ChangeNotifier está disposto...', name: 'BIND_INSTANCE');
           // Tenta usar um método que lança exceção se disposto
           // Apenas testa se o objeto ainda está válido sem acessar propriedades protegidas
           try {
@@ -41,35 +33,27 @@ class Bind<T> {
             final testListener = () {};
             notifier.addListener(testListener);
             notifier.removeListener(testListener);
-            iLog('✅ INSTANCE: ChangeNotifier está válido', name: 'BIND_INSTANCE');
           } catch (e) {
             // Se lançar exceção, o objeto foi disposto - cria nova instância
-            iLog('⚠️ INSTANCE: ChangeNotifier foi DISPOSTO! Criando nova instância. Erro: $e', name: 'BIND_INSTANCE');
             if (isSingleton) {
               _cachedInstance = factoryFunction(Injector());
-              iLog('✅ INSTANCE: Nova instância singleton criada após dispose: ${_cachedInstance.runtimeType}', name: 'BIND_INSTANCE');
             } else {
               final newInstance = factoryFunction(Injector());
-              iLog('✅ INSTANCE: Nova instância factory criada após dispose: ${newInstance.runtimeType}', name: 'BIND_INSTANCE');
               return newInstance;
             }
           }
         }
       } catch (e) {
-        iLog('⚠️ INSTANCE: Erro ao verificar dispose: $e', name: 'BIND_INSTANCE');
         // Se falhar ao verificar, assume que está válido
       }
     }
 
-    iLog('✅ INSTANCE: Retornando instância: ${_cachedInstance.runtimeType}', name: 'BIND_INSTANCE');
     return _cachedInstance!;
   }
 
   /// Limpa a instância cacheada (usado quando o bind é disposto)
   void clearCache() {
-    iLog('🧹 CLEAR_CACHE: Limpando cache para tipo: ${_cachedInstance?.runtimeType ?? "null"}', name: 'BIND_CLEAR_CACHE');
     _cachedInstance = null;
-    iLog('✅ CLEAR_CACHE: Cache limpo', name: 'BIND_CLEAR_CACHE');
   }
 
   static final Map<Type, Bind> _bindsMap = {};
@@ -85,8 +69,6 @@ class Bind<T> {
     }
 
     Type registrationType = Object;
-
-    iLog('📝 REGISTER: Tentando registrar bind - bind.runtimeType=${bind.runtimeType}', name: 'BIND_REGISTER');
 
     // Primeiro, tenta descobrir o tipo através da análise da função factory
     // Analisa a string da função para encontrar o tipo de retorno
@@ -117,25 +99,31 @@ class Bind<T> {
     // Se encontrou um tipo potencial, tenta criar instância para confirmar
     // Se não encontrou ou falhou, tenta criar instância diretamente
     try {
-      iLog('🔍 REGISTER: Tentando criar instância para descobrir tipo real...', name: 'BIND_REGISTER');
       final instance = bind.factoryFunction(Injector());
       registrationType = instance.runtimeType;
-      iLog('✅ REGISTER: Tipo real descoberto via instância: $registrationType', name: 'BIND_REGISTER');
-      iLog('📦 REGISTER: Instância criada: ${instance.runtimeType} (ChangeNotifier: ${instance is ChangeNotifier})', name: 'BIND_REGISTER');
+      
+      // Se for singleton, armazena a instância criada no cache
+      // para evitar instâncias órfãs
+      if (bind.isSingleton && bind._cachedInstance == null) {
+        bind._cachedInstance = instance;
+      } else if (!bind.isSingleton) {
+        // Para factory, dispõe a instância temporária criada
+        try {
+          CleanBind.fromInstance(instance);
+        } catch (_) {
+          // Ignora erros ao dispor instância temporária
+        }
+      }
     } catch (e) {
       // Se falhar ao criar instância, registra como Object temporariamente
       // Mas adiciona à lista de pending para descoberta posterior
       registrationType = Object;
       _pendingObjectBinds.add(bind);
-      iLog('⚠️ REGISTER: Não foi possível criar instância (dependências não disponíveis). Registrando como Object temporariamente. Erro: $e', name: 'BIND_REGISTER');
-      iLog('📋 REGISTER: Bind adicionado à lista de pending (total: ${_pendingObjectBinds.length})', name: 'BIND_REGISTER');
     }
 
     if (bind.isSingleton) {
       final singleton = _bindsMap[registrationType];
       if (singleton != null && singleton.key == bind.key) {
-        iLog('⏭️ REGISTER: Bind já existe para tipo $registrationType com mesma key, ignorando', name: 'BIND_REGISTER');
-        iLog('📋 REGISTER: Bind existente tem cache: ${singleton._cachedInstance != null ? singleton._cachedInstance.runtimeType : "null"}', name: 'BIND_REGISTER');
         return;
       }
     }
@@ -153,25 +141,19 @@ class Bind<T> {
         // O bind sem key fica no _bindsMap
         if (bind.key != null) {
           // Novo bind tem key, existente não tem - mantém existente no _bindsMap
-          iLog('🔑 REGISTER: Bind com key registrado, mantendo bind sem key no _bindsMap', name: 'BIND_REGISTER');
           _bindsMapByKey[bind.key!] = bind;
-          iLog('✅ REGISTER: Bind registrado com sucesso por key: ${bind.key}', name: 'BIND_REGISTER');
           return;
         } else {
           // Novo bind não tem key, existente tem - REMOVE o existente do _bindsMap e coloca o sem key
-          iLog('🔑 REGISTER: Bind sem key registrado, removendo bind com key do _bindsMap', name: 'BIND_REGISTER');
           // Remove o bind com key do _bindsMap (mas mantém no _bindsMapByKey)
           _bindsMap.remove(registrationType);
           // Registra o bind sem key no _bindsMap
           _bindsMap[registrationType] = bind;
-          iLog('✅ REGISTER: Bind sem key registrado com sucesso para tipo: $registrationType', name: 'BIND_REGISTER');
           return;
         }
       }
 
       // Se chegar aqui, ambos têm a mesma key (ou ambos não têm key)
-      iLog('⚠️ REGISTER: JÁ EXISTE bind para tipo $registrationType com mesma key! Substituindo...', name: 'BIND_REGISTER');
-      iLog('📋 REGISTER: Bind antigo tem cache: ${existingBind._cachedInstance != null ? existingBind._cachedInstance.runtimeType : "null"}', name: 'BIND_REGISTER');
       // Limpa o cache do bind antigo antes de substituir
       existingBind.clearCache();
     }
@@ -180,13 +162,10 @@ class Bind<T> {
     // Se tem key, será registrado apenas no _bindsMapByKey
     if (bind.key == null) {
       _bindsMap[registrationType] = bind;
-      iLog('✅ REGISTER: Bind sem key registrado com sucesso para tipo: $registrationType (isSingleton: ${bind.isSingleton})', name: 'BIND_REGISTER');
     } else {
       // Bind com key: só registra no _bindsMapByKey, NÃO no _bindsMap
       // Isso garante que get<T>() sem key não pegue binds com key
       _bindsMapByKey[bind.key!] = bind;
-      iLog('✅ REGISTER: Bind com key registrado com sucesso para tipo: $registrationType (key: ${bind.key}, isSingleton: ${bind.isSingleton})', name: 'BIND_REGISTER');
-      iLog('🔑 REGISTER: Bind registrado apenas em _bindsMapByKey, não em _bindsMap', name: 'BIND_REGISTER');
     }
   }
 
@@ -197,7 +176,6 @@ class Bind<T> {
       if (bind.isSingleton) {
         final singleton = _bindsMap[T];
         if (singleton != null && singleton.key == bind.key) {
-          iLog('⏭️ REGISTER: Bind já existe para tipo $T com mesma key, ignorando', name: 'BIND_REGISTER');
           return;
         }
       }
@@ -211,13 +189,11 @@ class Bind<T> {
           if (bind.key != null) {
             // Novo bind tem key, existente não tem - mantém existente no _bindsMap
             _bindsMapByKey[bind.key!] = bind;
-            iLog('✅ REGISTER: Bind com key registrado apenas em _bindsMapByKey para tipo: $T', name: 'BIND_REGISTER');
             return;
           } else {
             // Novo bind não tem key, existente tem - REMOVE o existente do _bindsMap
             _bindsMap.remove(T);
             _bindsMap[T] = bind;
-            iLog('✅ REGISTER: Bind sem key registrado, removendo bind com key do _bindsMap para tipo: $T', name: 'BIND_REGISTER');
             return;
           }
         }
@@ -226,11 +202,9 @@ class Bind<T> {
       // Só registra no _bindsMap se não tem key
       if (bind.key == null) {
         _bindsMap[T] = bind;
-        iLog('✅ REGISTER: Bind sem key registrado com sucesso para tipo: $T', name: 'BIND_REGISTER');
       } else {
         // Bind com key: só registra no _bindsMapByKey, NÃO no _bindsMap
         _bindsMapByKey[bind.key!] = bind;
-        iLog('✅ REGISTER: Bind com key registrado apenas em _bindsMapByKey para tipo: $T (key: ${bind.key})', name: 'BIND_REGISTER');
       }
     } else {
       // Se T é Object, usa o método não genérico
@@ -243,19 +217,16 @@ class Bind<T> {
       return;
     }
 
-    iLog('🗑️ DISPOSE: Tentando dispor bind para tipo: $T', name: 'BIND_DISPOSE');
     final bind = _bindsMap[T];
     if (bind != null) {
-      iLog('📋 DISPOSE: Bind encontrado no mapa para tipo: $T', name: 'BIND_DISPOSE');
-      iLog('🔍 DISPOSE: Tentando acessar instance para dispor...', name: 'BIND_DISPOSE');
-
       try {
-        final instance = bind.instance;
-        iLog('✅ DISPOSE: Instance acessada: ${instance.runtimeType}', name: 'BIND_DISPOSE');
-        CleanBind.fromInstance(instance);
-        iLog('✅ DISPOSE: CleanBind.fromInstance executado', name: 'BIND_DISPOSE');
+        // Só dispõe se houver instância cacheada
+        // Não cria nova instância durante dispose
+        if (bind._cachedInstance != null) {
+          CleanBind.fromInstance(bind._cachedInstance!);
+        }
       } catch (e) {
-        iLog('⚠️ DISPOSE: Erro ao acessar/dispor instance: $e', name: 'BIND_DISPOSE');
+        // Ignora erros ao acessar/dispor instance
       }
 
       // Limpa o cache para evitar retornar instância disposta
@@ -263,84 +234,80 @@ class Bind<T> {
 
       // Remove do _bindsMap
       _bindsMap.remove(T);
-      iLog('🗑️ DISPOSE: Bind removido do _bindsMap para tipo: $T', name: 'BIND_DISPOSE');
 
       // Remove do _bindsMapByKey se tiver key
       if (bind.key != null) {
         _bindsMapByKey.remove(bind.key);
-        iLog('🗑️ DISPOSE: Bind removido do _bindsMapByKey para key: ${bind.key}', name: 'BIND_DISPOSE');
       }
-    } else {
-      iLog('⚠️ DISPOSE: Bind não encontrado no _bindsMap para tipo: $T', name: 'BIND_DISPOSE');
     }
 
-    // Limpar estado de busca usando análise probabilística
-    final searchProbability = DependencyAnalyzer.calculateSuccessProbability(T);
-    final wasSearching = _currentlySearching.contains(T);
-    final hadAttempts = _searchAttempts.containsKey(T);
-    final shouldCleanState = searchProbability < 0.5 || wasSearching || hadAttempts;
+    // Também procura no _bindsMapByKey por binds deste tipo
+    final keysToRemove = <String>[];
+    for (var entry in _bindsMapByKey.entries) {
+      try {
+        if (entry.value._cachedInstance is T) {
+          keysToRemove.add(entry.key);
+          if (entry.value._cachedInstance != null) {
+            CleanBind.fromInstance(entry.value._cachedInstance!);
+          }
+          entry.value.clearCache();
+        }
+      } catch (_) {
+        // Ignora erros
+      }
+    }
 
+    for (var key in keysToRemove) {
+      _bindsMapByKey.remove(key);
+    }
+
+    // Limpar estado de busca
     _currentlySearching.remove(T);
     _searchAttempts.remove(T);
     DependencyAnalyzer.clearTypeHistory(T);
-
-    if (shouldCleanState) {
-      iLog('🧹 DISPOSE: Estado de busca limpo para tipo: $T (probabilidade: ${(searchProbability * 100).toStringAsFixed(1)}%)', name: 'BIND_DISPOSE');
-    }
   }
 
   static void disposeByKey(String key) {
     final bind = _bindsMapByKey[key];
     if (bind != null) {
-      CleanBind.fromInstance(bind.instance);
-    }
-
-    final removed = _bindsMapByKey.remove(key);
-    if (removed != null) {
-      final type = removed.instance.runtimeType;
-      _bindsMap.remove(type);
-
-      // Limpar estado de busca usando análise probabilística
-      final searchProbability = DependencyAnalyzer.calculateSuccessProbability(type);
-      final shouldCleanState = searchProbability < 0.5 || _currentlySearching.contains(type) || _searchAttempts.containsKey(type);
-
-      _currentlySearching.remove(type);
-      _searchAttempts.remove(type);
-      DependencyAnalyzer.clearTypeHistory(type);
-
-      if (shouldCleanState) {
-        iLog('🧹 DISPOSE_BY_KEY: Estado limpo para tipo: $type (probabilidade: ${(searchProbability * 100).toStringAsFixed(1)}%)', name: 'BIND_DISPOSE');
+      // Só dispõe se houver instância cacheada
+      if (bind._cachedInstance != null) {
+        CleanBind.fromInstance(bind._cachedInstance!);
+        
+        // Obtém o tipo do cache para não criar nova instância
+        final type = bind._cachedInstance!.runtimeType;
+        _bindsMap.remove(type);
+        
+        // Limpar estado de busca
+        _currentlySearching.remove(type);
+        _searchAttempts.remove(type);
+        DependencyAnalyzer.clearTypeHistory(type);
       }
+      
+      bind.clearCache();
     }
+
+    _bindsMapByKey.remove(key);
   }
 
   static void disposeByType(Type type) {
-    iLog('🗑️ DISPOSE_BY_TYPE: Tentando dispor bind para tipo: $type', name: 'BIND_DISPOSE');
-
     // Remove por tipo - chama CleanBind para a instância principal
     final bind = _bindsMap[type];
     if (bind != null) {
-      iLog('📋 DISPOSE_BY_TYPE: Bind encontrado no mapa para tipo: $type', name: 'BIND_DISPOSE');
-      iLog('🔍 DISPOSE_BY_TYPE: Tentando acessar instance para dispor...', name: 'BIND_DISPOSE');
-
       try {
-        final instance = bind.instance;
-        iLog('✅ DISPOSE_BY_TYPE: Instance acessada: ${instance.runtimeType}', name: 'BIND_DISPOSE');
-        CleanBind.fromInstance(instance);
-        iLog('✅ DISPOSE_BY_TYPE: CleanBind.fromInstance executado', name: 'BIND_DISPOSE');
+        // Só dispõe se houver instância cacheada
+        if (bind._cachedInstance != null) {
+          CleanBind.fromInstance(bind._cachedInstance!);
+        }
       } catch (e) {
-        iLog('⚠️ DISPOSE_BY_TYPE: Erro ao acessar/dispor instance: $e', name: 'BIND_DISPOSE');
+        // Ignora erros ao acessar/dispor instance
       }
 
       // Limpa o cache para evitar retornar instância disposta
       bind.clearCache();
-      iLog('✅ DISPOSE_BY_TYPE: Cache limpo', name: 'BIND_DISPOSE');
-    } else {
-      iLog('⚠️ DISPOSE_BY_TYPE: Bind não encontrado no mapa para tipo: $type', name: 'BIND_DISPOSE');
     }
 
     _bindsMap.remove(type);
-    iLog('🗑️ DISPOSE_BY_TYPE: Tipo removido do _bindsMap: $type', name: 'BIND_DISPOSE');
 
     // Remove todas as keys associadas a este tipo
     final keysToRemove = <String>[];
@@ -348,17 +315,18 @@ class Bind<T> {
       // Verifica se o tipo é compatível (pode ser o mesmo tipo ou um subtipo)
       final bindValue = entry.value;
       try {
-        final instance = bindValue.instance;
+        // Só verifica se houver instância cacheada
+        if (bindValue._cachedInstance != null) {
+          // Verifica se é o mesmo tipo
+          bool isCompatible = bindValue._cachedInstance!.runtimeType == type;
 
-        // Verifica se é o mesmo tipo
-        bool isCompatible = instance.runtimeType == type;
-
-        if (isCompatible) {
-          keysToRemove.add(entry.key);
-          // Chama CleanBind para cada instância que será removida
-          CleanBind.fromInstance(instance);
-          // Limpa o cache para evitar retornar instância disposta
-          bindValue.clearCache();
+          if (isCompatible) {
+            keysToRemove.add(entry.key);
+            // Chama CleanBind para cada instância que será removida
+            CleanBind.fromInstance(bindValue._cachedInstance!);
+            // Limpa o cache para evitar retornar instância disposta
+            bindValue.clearCache();
+          }
         }
       } catch (_) {
         // Se falhar ao acessar instance, continua
@@ -368,7 +336,6 @@ class Bind<T> {
     // Remove as keys marcadas
     for (var key in keysToRemove) {
       _bindsMapByKey.remove(key);
-      iLog('🗑️ DISPOSE_BY_TYPE: Key removida: $key', name: 'BIND_DISPOSE');
     }
 
     // Remove também os binds do mapa por tipo que são compatíveis com o tipo base
@@ -376,14 +343,15 @@ class Bind<T> {
     for (var entry in _bindsMap.entries) {
       try {
         final bindValue = entry.value;
-        final instance = bindValue.instance;
-
-        if (instance.runtimeType == type) {
-          typesToRemove.add(entry.key);
-          // Chama CleanBind para cada instância que será removida
-          CleanBind.fromInstance(instance);
-          // Limpa o cache para evitar retornar instância disposta
-          bindValue.clearCache();
+        // Só verifica se houver instância cacheada
+        if (bindValue._cachedInstance != null) {
+          if (bindValue._cachedInstance!.runtimeType == type) {
+            typesToRemove.add(entry.key);
+            // Chama CleanBind para cada instância que será removida
+            CleanBind.fromInstance(bindValue._cachedInstance!);
+            // Limpa o cache para evitar retornar instância disposta
+            bindValue.clearCache();
+          }
         }
       } catch (_) {
         // Se falhar ao acessar instance, continua
@@ -392,28 +360,17 @@ class Bind<T> {
 
     for (var typeToRemove in typesToRemove) {
       _bindsMap.remove(typeToRemove);
-      iLog('🗑️ DISPOSE_BY_TYPE: Tipo compatível removido: $typeToRemove', name: 'BIND_DISPOSE');
     }
 
-    // Limpar estado de busca usando análise probabilística
-    final searchProbability = DependencyAnalyzer.calculateSuccessProbability(type);
-    final wasSearching = _currentlySearching.contains(type);
-    final hadAttempts = _searchAttempts.containsKey(type);
-    final shouldCleanState = searchProbability < 0.5 || wasSearching || hadAttempts;
-
+    // Limpar estado de busca
     _currentlySearching.remove(type);
     _searchAttempts.remove(type);
     DependencyAnalyzer.clearTypeHistory(type);
-
-    if (shouldCleanState) {
-      iLog('🧹 DISPOSE_BY_TYPE: Estado de busca limpo para tipo: $type (probabilidade: ${(searchProbability * 100).toStringAsFixed(1)}%)', name: 'BIND_DISPOSE');
-    }
 
     // Limpar também os tipos relacionados que foram removidos
     for (var typeToRemove in typesToRemove) {
       _currentlySearching.remove(typeToRemove);
       _searchAttempts.remove(typeToRemove);
-      iLog('🧹 DISPOSE_BY_TYPE: Estado limpo para tipo relacionado: $typeToRemove', name: 'BIND_DISPOSE');
     }
   }
 
@@ -432,12 +389,10 @@ class Bind<T> {
     _searchAttempts.remove(type);
     _currentlySearching.remove(type);
     DependencyAnalyzer.clearTypeHistory(type);
-    iLog('🧹 CLEAN_SEARCH: Estado de busca limpo para tipo: $type', name: 'BIND_CLEAN');
   }
 
   static T _find<T>({String? key}) {
     final type = T;
-    iLog('🔍 _FIND: Iniciando busca para tipo: $type, key: $key', name: 'BIND_FIND');
 
     // Verifica limite ANTES de qualquer coisa para evitar loops infinitos
     final currentAttempts = _searchAttempts[type] ?? 0;
@@ -449,13 +404,11 @@ class Bind<T> {
       _currentlySearching.remove(type);
       DependencyAnalyzer.recordSearchAttempt(type, false);
       DependencyAnalyzer.endSearch(type);
-      iLog('❌ _FIND: Limite máximo de tentativas ($maxAbsoluteAttempts) já atingido para tipo: $type - BLOQUEANDO nova tentativa', name: 'BIND_FIND');
       throw GoRouterModularException('❌ Too many search attempts ($currentAttempts) for type "${type.toString()}". Possible infinite loop detected. Please ensure the bind is registered before use.');
     }
 
     // Proteção contra múltiplas buscas simultâneas do mesmo tipo
     if (_currentlySearching.contains(type)) {
-      iLog('❌ _FIND: Tipo $type já está sendo buscado simultaneamente - BLOQUEANDO para evitar loop infinito', name: 'BIND_FIND');
       throw GoRouterModularException('❌ Type "${type.toString()}" is already being searched. Possible infinite loop detected. Please ensure the bind is registered before use.');
     }
 
@@ -466,57 +419,45 @@ class Bind<T> {
     // Adiciona ao _currentlySearching APENAS APÓS incrementar tentativas
     _currentlySearching.add(type);
     DependencyAnalyzer.startSearch(type);
-    iLog('🔢 _FIND: Tentativa #$attemptCount/$maxAbsoluteAttempts para tipo: $type', name: 'BIND_FIND');
 
     try {
       Bind? bind;
 
       // Se uma key foi fornecida, busca primeiro por key
       if (key != null) {
-        iLog('🔑 _FIND: Buscando por key: $key', name: 'BIND_FIND');
         bind = _bindsMapByKey[key];
         if (bind != null) {
-          iLog('✅ _FIND: Bind encontrado por key: $key', name: 'BIND_FIND');
           // Verifica se o bind encontrado é compatível com o tipo solicitado
           if (bind.instance is T) {
             // Para factory, executa a função a cada chamada
             if (!bind.isSingleton) {
-              iLog('🏭 _FIND: Criando nova instância factory para tipo: $type', name: 'BIND_FIND');
               final instance = bind.factoryFunction(Injector()) as T;
               _searchAttempts.remove(type);
               DependencyAnalyzer.recordSearchAttempt(type, true);
               DependencyAnalyzer.endSearch(type);
-              iLog('✅ _FIND: Retornando instância factory para tipo: $type - runtimeType: ${instance.runtimeType}', name: 'BIND_FIND');
               return instance;
             } else {
               // Para singleton, usa a instância já criada
-              iLog('📦 _FIND: Acessando instância singleton para tipo: $type', name: 'BIND_FIND');
-              iLog('📋 _FIND: Cache antes de acessar: ${bind._cachedInstance != null ? bind._cachedInstance.runtimeType : "null"}', name: 'BIND_FIND');
               final instance = bind.instance as T;
-              iLog('📋 _FIND: Instância obtida: ${instance.runtimeType} (ChangeNotifier: ${instance is ChangeNotifier})', name: 'BIND_FIND');
               if (instance is ChangeNotifier) {
                 try {
                   final testListener = () {};
                   instance.addListener(testListener);
                   instance.removeListener(testListener);
-                  iLog('✅ _FIND: Instância ChangeNotifier está válida', name: 'BIND_FIND');
                 } catch (e) {
-                  iLog('❌ _FIND: Instância ChangeNotifier está DISPOSTA! Erro: $e', name: 'BIND_FIND');
+                  // ChangeNotifier disposto
                 }
               }
               _searchAttempts.remove(type);
               DependencyAnalyzer.recordSearchAttempt(type, true);
               DependencyAnalyzer.endSearch(type);
-              iLog('✅ _FIND: Retornando instância singleton para tipo: $type', name: 'BIND_FIND');
               return instance;
             }
           } else {
-            iLog('⚠️ _FIND: Bind encontrado por key mas não é compatível com tipo $type', name: 'BIND_FIND');
             bind = null;
           }
         } else {
           // Se uma key foi fornecida mas não encontrada, falha imediatamente
-          iLog('❌ _FIND: Bind não encontrado por key: $key', name: 'BIND_FIND');
           final errorMessage = '❌ Bind not found for type "${type.toString()}" with key: $key';
           throw GoRouterModularException(errorMessage);
         }
@@ -524,8 +465,6 @@ class Bind<T> {
 
       // Se não encontrou por key ou não foi fornecida, busca por tipo
       if (bind == null) {
-        iLog('🔍 _FIND: Buscando por tipo direto: $type', name: 'BIND_FIND');
-
         // REGRA: Se key é null, busca apenas binds que não têm key
         // Isso garante que get<T>() sem key não pegue binds com key
         if (key == null) {
@@ -535,7 +474,6 @@ class Bind<T> {
             // Bind encontrado tem key, mas estamos buscando sem key
             // Não pode retornar este bind
             bind = null;
-            iLog('⚠️ _FIND: Bind encontrado tem key, mas busca foi sem key - ignorando', name: 'BIND_FIND');
           }
         } else {
           // Se key não é null, busca normalmente (mas já foi feito acima)
@@ -543,37 +481,27 @@ class Bind<T> {
         }
 
         if (bind != null) {
-          iLog('✅ _FIND: Bind encontrado por tipo direto: $type', name: 'BIND_FIND');
-          final cacheInfo = bind._cachedInstance != null ? bind._cachedInstance.runtimeType : "null";
-          iLog('📋 _FIND: Bind encontrado - isSingleton: ${bind.isSingleton}, cache: $cacheInfo', name: 'BIND_FIND');
           // Para factory, executa a função a cada chamada
           if (!bind.isSingleton) {
-            iLog('🏭 _FIND: Criando nova instância factory para tipo: $type', name: 'BIND_FIND');
             final instance = bind.factoryFunction(Injector()) as T;
             _searchAttempts.remove(type);
-            iLog('✅ _FIND: Retornando instância factory para tipo: $type - runtimeType: ${instance.runtimeType}', name: 'BIND_FIND');
             return instance;
           } else {
             // Para singleton, usa a instância já criada
-            iLog('📦 _FIND: Acessando instância singleton para tipo: $type', name: 'BIND_FIND');
             final instance = bind.instance as T;
-            iLog('📋 _FIND: Instância obtida: ${instance.runtimeType} (ChangeNotifier: ${instance is ChangeNotifier})', name: 'BIND_FIND');
             if (instance is ChangeNotifier) {
               try {
                 final testListener = () {};
                 instance.addListener(testListener);
                 instance.removeListener(testListener);
-                iLog('✅ _FIND: Instância ChangeNotifier está válida', name: 'BIND_FIND');
               } catch (e) {
-                iLog('❌ _FIND: Instância ChangeNotifier está DISPOSTA! Erro: $e', name: 'BIND_FIND');
+                // ChangeNotifier disposto
               }
             }
             _searchAttempts.remove(type);
-            iLog('✅ _FIND: Retornando instância singleton para tipo: $type', name: 'BIND_FIND');
             return instance;
           }
         } else {
-          iLog('🔍 _FIND: Não encontrado por tipo direto, buscando por compatibilidade...', name: 'BIND_FIND');
           // Se não foi fornecida uma key, busca por binds que possam ser compatíveis
           // Primeiro tenta criar instância de binds registrados como Object para descobrir tipo real
           final objectBinds = <MapEntry<Type, Bind>>[];
@@ -590,8 +518,6 @@ class Bind<T> {
               final instance = testBind.factoryFunction(Injector());
               final realType = instance.runtimeType;
 
-              iLog('🔍 _FIND: Tipo real descoberto de Object bind: $realType, buscando $type', name: 'BIND_FIND');
-
               // Se o tipo real é compatível com T, atualiza o registro e retorna
               if (instance is T) {
                 // Remove Object e adiciona com tipo real
@@ -605,14 +531,12 @@ class Bind<T> {
                   // Bind com key: só registra no _bindsMapByKey
                   _bindsMapByKey[testBind.key!] = testBind;
                 }
-                iLog('✅ _FIND: Tipo real descoberto: $realType (era Object), atualizando registro', name: 'BIND_FIND');
 
                 if (!testBind.isSingleton) {
                   final instance = testBind.factoryFunction(Injector()) as T;
                   _searchAttempts.remove(type);
                   DependencyAnalyzer.recordSearchAttempt(type, true);
                   DependencyAnalyzer.endSearch(type);
-                  iLog('✅ _FIND: Retornando instância factory descoberta para tipo: $type', name: 'BIND_FIND');
                   return instance;
                 } else {
                   // Para singleton, tentar acessar instance com proteção contra Stack Overflow
@@ -621,25 +545,19 @@ class Bind<T> {
                     _searchAttempts.remove(type);
                     DependencyAnalyzer.recordSearchAttempt(type, true);
                     DependencyAnalyzer.endSearch(type);
-                    iLog('✅ _FIND: Retornando instância singleton descoberta para tipo: $type', name: 'BIND_FIND');
                     return instance;
                   } catch (e) {
                     // Se falhar ao acessar instance (possível Stack Overflow), tentar criar nova instância
-                    iLog('⚠️ _FIND: Erro ao acessar instance singleton, tentando criar nova: $e', name: 'BIND_FIND');
                     final instance = testBind.factoryFunction(Injector()) as T;
                     _searchAttempts.remove(type);
                     DependencyAnalyzer.recordSearchAttempt(type, true);
                     DependencyAnalyzer.endSearch(type);
-                    iLog('✅ _FIND: Retornando instância singleton criada para tipo: $type', name: 'BIND_FIND');
                     return instance;
                   }
                 }
-              } else {
-                iLog('⚠️ _FIND: Tipo real $realType não é compatível com $type', name: 'BIND_FIND');
               }
             } catch (e) {
               // Se falhar ao criar instância, continua procurando
-              iLog('⚠️ _FIND: Erro ao criar instância de Object bind: $e', name: 'BIND_FIND');
             }
           }
 
@@ -649,8 +567,6 @@ class Bind<T> {
             try {
               final instance = pendingBind.factoryFunction(Injector());
               final realType = instance.runtimeType;
-
-              iLog('🔍 _FIND: Tipo real descoberto de bind pendente: $realType, buscando $type', name: 'BIND_FIND');
 
               // Se o tipo real é compatível com T, registra e retorna
               if (instance is T) {
@@ -662,14 +578,12 @@ class Bind<T> {
                   _bindsMapByKey[pendingBind.key!] = pendingBind;
                 }
                 pendingToRemove.add(pendingBind);
-                iLog('✅ _FIND: Tipo real descoberto de bind pendente: $realType, registrando', name: 'BIND_FIND');
 
                 if (!pendingBind.isSingleton) {
                   final instance = pendingBind.factoryFunction(Injector()) as T;
                   _searchAttempts.remove(type);
                   DependencyAnalyzer.recordSearchAttempt(type, true);
                   DependencyAnalyzer.endSearch(type);
-                  iLog('✅ _FIND: Retornando instância factory de bind pendente para tipo: $type', name: 'BIND_FIND');
                   return instance;
                 } else {
                   // Para singleton, tentar acessar instance com proteção contra Stack Overflow
@@ -678,23 +592,19 @@ class Bind<T> {
                     _searchAttempts.remove(type);
                     DependencyAnalyzer.recordSearchAttempt(type, true);
                     DependencyAnalyzer.endSearch(type);
-                    iLog('✅ _FIND: Retornando instância singleton de bind pendente para tipo: $type', name: 'BIND_FIND');
                     return instance;
                   } catch (e) {
                     // Se falhar ao acessar instance (possível Stack Overflow), tentar criar nova instância
-                    iLog('⚠️ _FIND: Erro ao acessar instance singleton pendente, tentando criar nova: $e', name: 'BIND_FIND');
                     final instance = pendingBind.factoryFunction(Injector()) as T;
                     _searchAttempts.remove(type);
                     DependencyAnalyzer.recordSearchAttempt(type, true);
                     DependencyAnalyzer.endSearch(type);
-                    iLog('✅ _FIND: Retornando instância singleton criada de bind pendente para tipo: $type', name: 'BIND_FIND');
                     return instance;
                   }
                 }
               }
             } catch (e) {
               // Se falhar, mantém na lista pendente
-              iLog('⚠️ _FIND: Erro ao criar instância de bind pendente: $e', name: 'BIND_FIND');
             }
           }
 
@@ -713,7 +623,6 @@ class Bind<T> {
               try {
                 final testInstance = entry.value.factoryFunction(Injector());
                 if (testInstance is T) {
-                  iLog('✅ _FIND: Bind compatível encontrado: ${entry.key} -> $type', name: 'BIND_FIND');
                   bind = Bind<T>((injector) => entry.value.factoryFunction(injector) as T, isSingleton: entry.value.isSingleton, isLazy: entry.value.isLazy, key: entry.value.key);
                   _bindsMap[type] = bind;
 
@@ -723,20 +632,17 @@ class Bind<T> {
                     _searchAttempts.remove(type);
                     DependencyAnalyzer.recordSearchAttempt(type, true);
                     DependencyAnalyzer.endSearch(type);
-                    iLog('✅ _FIND: Retornando instância factory compatível para tipo: $type', name: 'BIND_FIND');
                     return instance;
                   } else {
                     final instance = bind.instance as T;
                     _searchAttempts.remove(type);
                     DependencyAnalyzer.recordSearchAttempt(type, true);
                     DependencyAnalyzer.endSearch(type);
-                    iLog('✅ _FIND: Retornando instância singleton compatível para tipo: $type', name: 'BIND_FIND');
                     return instance;
                   }
                 }
               } catch (e) {
                 // Se falhar ao criar instância, continua procurando
-                iLog('⚠️ _FIND: Erro ao verificar compatibilidade: $e', name: 'BIND_FIND');
               }
             }
           }
@@ -745,8 +651,6 @@ class Bind<T> {
 
       // Se chegou aqui e bind ainda é null, não encontrou
       if (bind == null) {
-        iLog('❌ _FIND: Bind não encontrado para tipo: $type (tentativa $attemptCount/$maxAbsoluteAttempts)', name: 'BIND_FIND');
-
         // Limpar estado ANTES de lançar exceção para evitar loop infinito
         _searchAttempts.remove(type);
         _currentlySearching.remove(type);
@@ -759,19 +663,8 @@ class Bind<T> {
           throw GoRouterModularException(errorMessage);
         }
 
-        // Log detalhado com informações sobre binds disponíveis (apenas na primeira tentativa para evitar spam)
-        // E apenas se não houver binds pendentes (indicando que realmente não existe)
-        if (attemptCount == 1 && _pendingObjectBinds.isEmpty) {
-          iLog('[GO_ROUTER_MODULAR] ❌ Bind not found for type: "${type.toString()}"', name: 'BIND_FIND');
-          // Log reduzido: apenas mostra se há binds disponíveis, não lista todos
-          if (_bindsMap.isNotEmpty) {
-            iLog('[GO_ROUTER_MODULAR] 📊 ${_bindsMap.length} bind(s) disponível(is)');
-          }
-        }
-
         // Se não há binds pendentes e já tentamos algumas vezes, falha imediatamente
         if (_pendingObjectBinds.isEmpty && attemptCount >= 2) {
-          iLog('[GO_ROUTER_MODULAR] ⚠️ Nenhum bind pendente encontrado após $attemptCount tentativas - falhando imediatamente');
           final errorMessage = '❌ Bind not found for type "${type.toString()}". No pending binds available after $attemptCount attempts.';
           throw GoRouterModularException(errorMessage);
         }
@@ -781,19 +674,15 @@ class Bind<T> {
       }
 
       // Se chegou aqui, bind não é null
-      iLog('📦 _FIND: Acessando instância final para tipo: $type', name: 'BIND_FIND');
-      iLog('📋 _FIND: Bind - isSingleton: ${bind.isSingleton}, cache: ${bind._cachedInstance != null ? bind._cachedInstance.runtimeType : "null"}', name: 'BIND_FIND');
       final instance = bind.instance as T;
-      iLog('📋 _FIND: Instância obtida: ${instance.runtimeType} (ChangeNotifier: ${instance is ChangeNotifier})', name: 'BIND_FIND');
 
       if (instance is ChangeNotifier) {
         try {
           final testListener = () {};
           instance.addListener(testListener);
           instance.removeListener(testListener);
-          iLog('✅ _FIND: Instância ChangeNotifier está válida', name: 'BIND_FIND');
         } catch (e) {
-          iLog('❌ _FIND: Instância ChangeNotifier está DISPOSTA! Erro: $e', name: 'BIND_FIND');
+          // ChangeNotifier disposto
         }
       }
 
@@ -801,7 +690,6 @@ class Bind<T> {
       _searchAttempts.remove(type);
       DependencyAnalyzer.recordSearchAttempt(type, true);
       DependencyAnalyzer.endSearch(type);
-      iLog('✅ _FIND: Sucesso! Retornando instância para tipo: $type', name: 'BIND_FIND');
 
       return instance;
     } catch (e) {
@@ -809,44 +697,31 @@ class Bind<T> {
       _searchAttempts.remove(type);
       DependencyAnalyzer.recordSearchAttempt(type, false);
       DependencyAnalyzer.endSearch(type);
-      iLog('❌ _FIND: Erro ao buscar tipo $type: $e', name: 'BIND_FIND');
       rethrow;
     } finally {
       // Sempre garantir que o tipo seja removido do _currentlySearching
       _currentlySearching.remove(type);
       DependencyAnalyzer.endSearch(type);
-      iLog('🧹 _FIND: Removendo tipo $type do _currentlySearching (finally)', name: 'BIND_FIND');
     }
   }
 
   static T get<T>({String? key}) {
-    iLog('📥 GET: Chamado para tipo: $T, key: $key', name: 'BIND_GET');
-    iLog('📋 GET: Bind existe no mapa? ${_bindsMap.containsKey(T)}', name: 'BIND_GET');
-    if (_bindsMap.containsKey(T)) {
-      final bind = _bindsMap[T];
-      final cacheInfo = bind?._cachedInstance != null ? bind!._cachedInstance.runtimeType : "null";
-      iLog('📋 GET: Bind encontrado - isSingleton: ${bind?.isSingleton}, cache: $cacheInfo', name: 'BIND_GET');
-    }
-
     // Se não foi passada uma key, busca por tipo (sem key)
     if (key == null) {
       final instance = _find<T>(key: null);
-      iLog('📤 GET: Retornando instância para tipo: $T (sem key) - runtimeType: ${instance.runtimeType}', name: 'BIND_GET');
       if (instance is ChangeNotifier) {
         try {
           final testListener = () {};
           instance.addListener(testListener);
           instance.removeListener(testListener);
-          iLog('✅ GET: Instância ChangeNotifier está válida', name: 'BIND_GET');
         } catch (e) {
-          iLog('❌ GET: Instância ChangeNotifier está DISPOSTA! Erro: $e', name: 'BIND_GET');
+          // ChangeNotifier disposto
         }
       }
       return instance;
     }
 
     final instance = _find<T>(key: key);
-    iLog('📤 GET: Retornando instância para tipo: $T (com key: $key) - runtimeType: ${instance.runtimeType}', name: 'BIND_GET');
     return instance;
   }
 
@@ -905,7 +780,10 @@ class Bind<T> {
     // Chama CleanBind para todas as instâncias depois de limpar os maps
     for (var bind in bindsToClean) {
       try {
-        CleanBind.fromInstance(bind.instance);
+        // Só dispõe se houver instância cacheada
+        if (bind._cachedInstance != null) {
+          CleanBind.fromInstance(bind._cachedInstance!);
+        }
         // Limpa o cache para evitar retornar instância disposta
         bind.clearCache();
       } catch (_) {
@@ -915,7 +793,10 @@ class Bind<T> {
 
     for (var bind in bindsByKeyToClean) {
       try {
-        CleanBind.fromInstance(bind.instance);
+        // Só dispõe se houver instância cacheada
+        if (bind._cachedInstance != null) {
+          CleanBind.fromInstance(bind._cachedInstance!);
+        }
         // Limpa o cache para evitar retornar instância disposta
         bind.clearCache();
       } catch (_) {
