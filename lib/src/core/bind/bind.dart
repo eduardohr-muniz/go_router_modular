@@ -15,7 +15,7 @@ class Bind<T> {
   final bool isLazy;
   final String? key;
   final StackTrace stackTrace;
-  
+
   // Exposto para permitir acesso controlado pelas classes especializadas
   T? _cachedInstance;
 
@@ -42,12 +42,11 @@ class Bind<T> {
             notifier.removeListener(testListener);
           } catch (e) {
             // Se lançar exceção, o objeto foi disposto - cria nova instância
-            if (isSingleton) {
-              _cachedInstance = factoryFunction(Injector());
-            } else {
+            if (!isSingleton) {
               final newInstance = factoryFunction(Injector());
               return newInstance;
             }
+            _cachedInstance = factoryFunction(Injector());
           }
         }
       } catch (e) {
@@ -60,7 +59,7 @@ class Bind<T> {
 
   /// Obtém a instância cacheada (sem criar nova)
   T? get cachedInstance => _cachedInstance;
-  
+
   /// Define a instância cacheada
   set cachedInstance(T? value) => _cachedInstance = value;
 
@@ -71,7 +70,7 @@ class Bind<T> {
 
   // ==================== DELEGAÇÃO PARA CLASSES ESPECIALIZADAS ====================
   // Cada classe tem UMA responsabilidade única
-  
+
   static final BindRegistry _registry = BindRegistry();
   static final BindDisposer _disposer = BindDisposer();
   static final BindLocator _locator = BindLocator();

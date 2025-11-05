@@ -29,25 +29,25 @@ class BindTypeSearcher {
 
   /// Cria instância do bind encontrado por tipo
   T createInstanceFromTypeBind<T>(Bind bind) {
+    // Para factory, executa a função a cada chamada
     if (!bind.isSingleton) {
-      // Para factory, executa a função a cada chamada
       return bind.factoryFunction(Injector()) as T;
-    } else {
-      // Para singleton, usa a instância já criada
-      final instance = bind.instance as T;
-
-      // Valida ChangeNotifier
-      if (instance is ChangeNotifier) {
-        try {
-          final testListener = () {};
-          instance.addListener(testListener);
-          instance.removeListener(testListener);
-        } catch (e) {
-          // ChangeNotifier disposto
-        }
-      }
-
-      return instance;
     }
+    
+    // Para singleton, usa a instância já criada
+    final instance = bind.instance as T;
+    
+    // Valida ChangeNotifier
+    if (instance is ChangeNotifier) {
+      try {
+        final testListener = () {};
+        instance.addListener(testListener);
+        instance.removeListener(testListener);
+      } catch (e) {
+        // ChangeNotifier disposto
+      }
+    }
+    
+    return instance;
   }
 }

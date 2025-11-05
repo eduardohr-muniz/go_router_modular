@@ -31,13 +31,13 @@ class BindTypeDiscoverer {
           }
 
           // REGRA: Só registra no _bindsMap se não tem key
-          if (testBind.key == null) {
-            _storage.bindsMap[realType] = testBind;
-          } else {
+          if (testBind.key != null) {
             // Bind com key: só registra no _bindsMapByKey
             _storage.bindsMapByKey[testBind.key!] = testBind;
+            return testBind;
           }
 
+          _storage.bindsMap[realType] = testBind;
           return testBind;
         }
       } catch (e) {
@@ -61,12 +61,14 @@ class BindTypeDiscoverer {
         // Se o tipo real é compatível com T, registra e retorna
         if (instance is T) {
           // REGRA: Só registra no _bindsMap se não tem key
-          if (pendingBind.key == null) {
-            _storage.bindsMap[realType] = pendingBind;
-          } else {
+          if (pendingBind.key != null) {
             // Bind com key: só registra no _bindsMapByKey
             _storage.bindsMapByKey[pendingBind.key!] = pendingBind;
+            pendingToRemove.add(pendingBind);
+            return pendingBind;
           }
+
+          _storage.bindsMap[realType] = pendingBind;
           pendingToRemove.add(pendingBind);
           return pendingBind;
         }
@@ -87,14 +89,14 @@ class BindTypeDiscoverer {
   T createInstanceFromDiscoveredBind<T>(Bind bind) {
     if (!bind.isSingleton) {
       return bind.factoryFunction(Injector()) as T;
-    } else {
-      // Para singleton, tentar acessar instance com proteção contra Stack Overflow
-      try {
-        return bind.instance as T;
-      } catch (e) {
-        // Se falhar ao acessar instance (possível Stack Overflow), tentar criar nova instância
-        return bind.factoryFunction(Injector()) as T;
-      }
+    }
+
+    // Para singleton, tentar acessar instance com proteção contra Stack Overflow
+    try {
+      return bind.instance as T;
+    } catch (e) {
+      // Se falhar ao acessar instance (possível Stack Overflow), tentar criar nova instância
+      return bind.factoryFunction(Injector()) as T;
     }
   }
 }

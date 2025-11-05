@@ -53,8 +53,10 @@ class BindRegistry {
       // para evitar instâncias órfãs
       if (bind.isSingleton && bind.cachedInstance == null) {
         bind.cachedInstance = instance;
-      } else if (!bind.isSingleton) {
-        // Para factory, dispõe a instância temporária criada
+      }
+      
+      // Para factory, dispõe a instância temporária criada
+      if (!bind.isSingleton) {
         try {
           CleanBind.fromInstance(instance);
         } catch (_) {
@@ -90,14 +92,14 @@ class BindRegistry {
           // Novo bind tem key, existente não tem - mantém existente no _bindsMap
           _storage.bindsMapByKey[bind.key!] = bind;
           return;
-        } else {
-          // Novo bind não tem key, existente tem - REMOVE o existente do _bindsMap e coloca o sem key
-          // Remove o bind com key do _bindsMap (mas mantém no _bindsMapByKey)
-          _storage.bindsMap.remove(registrationType);
-          // Registra o bind sem key no _bindsMap
-          _storage.bindsMap[registrationType] = bind;
-          return;
         }
+        
+        // Novo bind não tem key, existente tem - REMOVE o existente do _bindsMap e coloca o sem key
+        // Remove o bind com key do _bindsMap (mas mantém no _bindsMapByKey)
+        _storage.bindsMap.remove(registrationType);
+        // Registra o bind sem key no _bindsMap
+        _storage.bindsMap[registrationType] = bind;
+        return;
       }
 
       // Se chegar aqui, ambos têm a mesma key (ou ambos não têm key)
@@ -107,56 +109,59 @@ class BindRegistry {
 
     // Só registra no _bindsMap se não tem key
     // Se tem key, será registrado apenas no _bindsMapByKey
-    if (bind.key == null) {
-      _storage.bindsMap[registrationType] = bind;
-    } else {
+    if (bind.key != null) {
       // Bind com key: só registra no _bindsMapByKey, NÃO no _bindsMap
       // Isso garante que get<T>() sem key não pegue binds com key
       _storage.bindsMapByKey[bind.key!] = bind;
+      return;
     }
+    
+    _storage.bindsMap[registrationType] = bind;
   }
 
   /// Versão genérica para compatibilidade (usa o tipo genérico se fornecido)
   void registerTyped<T>(Bind<T> bind) {
-    if (T != Object) {
-      // Se T não é Object, usa T diretamente
-      if (bind.isSingleton) {
-        final singleton = _storage.bindsMap[T];
-        if (singleton != null && singleton.key == bind.key) {
+    // Se T é Object, usa o método não genérico
+    if (T == Object) {
+      register(bind);
+      return;
+    }
+    
+    // Se T não é Object, usa T diretamente
+    if (bind.isSingleton) {
+      final singleton = _storage.bindsMap[T];
+      if (singleton != null && singleton.key == bind.key) {
+        return;
+      }
+    }
+
+    // Verifica se já existe um bind deste tipo
+    final existingBind = _storage.bindsMap[T];
+    if (existingBind != null) {
+      // REGRA: Bind com key só pode ser chamado com key
+      // Bind sem key só pode ser chamado sem key
+      if (existingBind.key != bind.key) {
+        if (bind.key != null) {
+          // Novo bind tem key, existente não tem - mantém existente no _bindsMap
+          _storage.bindsMapByKey[bind.key!] = bind;
           return;
         }
-      }
-
-      // Verifica se já existe um bind deste tipo
-      final existingBind = _storage.bindsMap[T];
-      if (existingBind != null) {
-        // REGRA: Bind com key só pode ser chamado com key
-        // Bind sem key só pode ser chamado sem key
-        if (existingBind.key != bind.key) {
-          if (bind.key != null) {
-            // Novo bind tem key, existente não tem - mantém existente no _bindsMap
-            _storage.bindsMapByKey[bind.key!] = bind;
-            return;
-          } else {
-            // Novo bind não tem key, existente tem - REMOVE o existente do _bindsMap
-            _storage.bindsMap.remove(T);
-            _storage.bindsMap[T] = bind;
-            return;
-          }
-        }
-      }
-
-      // Só registra no _bindsMap se não tem key
-      if (bind.key == null) {
+        
+        // Novo bind não tem key, existente tem - REMOVE o existente do _bindsMap
+        _storage.bindsMap.remove(T);
         _storage.bindsMap[T] = bind;
-      } else {
-        // Bind com key: só registra no _bindsMapByKey, NÃO no _bindsMap
-        _storage.bindsMapByKey[bind.key!] = bind;
+        return;
       }
-    } else {
-      // Se T é Object, usa o método não genérico
-      register(bind);
     }
+
+    // Só registra no _bindsMap se não tem key
+    if (bind.key != null) {
+      // Bind com key: só registra no _bindsMapByKey, NÃO no _bindsMap
+      _storage.bindsMapByKey[bind.key!] = bind;
+      return;
+    }
+    
+    _storage.bindsMap[T] = bind;
   }
 }
 

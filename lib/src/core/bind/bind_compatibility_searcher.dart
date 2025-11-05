@@ -41,8 +41,8 @@ class BindCompatibilitySearcher {
   T createInstanceFromCompatibleBind<T>(Bind bind) {
     if (!bind.isSingleton) {
       return bind.factoryFunction(Injector()) as T;
-    } else {
-      return bind.instance as T;
     }
+    
+    return bind.instance as T;
   }
 }
