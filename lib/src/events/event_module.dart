@@ -1,5 +1,4 @@
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/events/modular_event.dart';
 
 /// Abstract module that adds event support via [EventListenerMixin].
 ///
