@@ -1,10 +1,10 @@
 # Transition Examples
 
-Real-world examples to get you started quickly.
+Complete code samples for common transition patterns.
 
-## Basic Examples
+## Basic Transitions
 
-### Fade Transition
+### Fade
 
 ```dart
 ModuleRoute('/home', module: HomeModule(),
@@ -12,7 +12,7 @@ ModuleRoute('/home', module: HomeModule(),
   duration: Duration(milliseconds: 300))
 ```
 
-### Slide Transition
+### Slide
 
 ```dart
 ModuleRoute('/products', module: ProductsModule(),
@@ -20,7 +20,7 @@ ModuleRoute('/products', module: ProductsModule(),
   duration: Duration(milliseconds: 400))
 ```
 
-### Scale Transition
+### Scale with Fade
 
 ```dart
 ModuleRoute('/profile', module: ProfileModule(),
@@ -49,39 +49,43 @@ ChildRoute('/settings', child: (_, __) => SettingsPage(),
 ### iOS Style
 
 ```dart
-ModuleRoute('/ios', module: IOSModule(),
+ModuleRoute('/settings', module: SettingsModule(),
   transition: GoTransitions.cupertino)
 ```
 
 ### Android Style
 
 ```dart
-ModuleRoute('/android', module: AndroidModule(),
+ModuleRoute('/home', module: HomeModule(),
   transition: GoTransitions.fadeUpwards)
 ```
 
-## Inheritance Examples
+## Inheritance in Practice
 
-### Parent Module
+Set a transition on the parent module and override selectively in child routes:
 
 ```dart
+// Parent module
 ModuleRoute('/shop', module: ShopModule(),
   transition: GoTransitions.fadeUpwards)
 ```
 
-### Child Routes
-
 ```dart
-// Inherits fadeUpwards
-ChildRoute('/', child: (_, __) => ShopHomePage())
+class ShopModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    // Inherits fadeUpwards
+    ChildRoute('/', child: (_, __) => ShopHomePage()),
 
-// Override with slide
-ChildRoute('/cart', child: (_, __) => CartPage(),
-  transition: GoTransitions.slide.toLeft)
+    // Override: slide left for cart
+    ChildRoute('/cart', child: (_, __) => CartPage(),
+      transition: GoTransitions.slide.toLeft),
 
-// Override with scale
-ChildRoute('/checkout', child: (_, __) => CheckoutPage(),
-  transition: GoTransitions.scale.withFade)
+    // Override: scale for checkout
+    ChildRoute('/checkout', child: (_, __) => CheckoutPage(),
+      transition: GoTransitions.scale.withFade),
+  ];
+}
 ```
 
 ## Complete App Example
@@ -92,10 +96,10 @@ class AppModule extends Module {
   List<ModularRoute> get routes => [
     ModuleRoute('/', module: HomeModule(),
       transition: GoTransitions.fadeUpwards),
-    
+
     ModuleRoute('/products', module: ProductsModule(),
       transition: GoTransitions.slide.toRight.withFade),
-    
+
     ModuleRoute('/profile', module: ProfileModule(),
       transition: GoTransitions.scale.withFade),
   ];
@@ -104,18 +108,6 @@ class AppModule extends Module {
 
 ## Performance Tips
 
-### Lightweight for Frequent Routes
-
-```dart
-ChildRoute('/home', child: (_, __) => HomePage(),
-  transition: GoTransitions.fade,
-  duration: Duration(milliseconds: 200))
-```
-
-### Special Occasions
-
-```dart
-ChildRoute('/celebration', child: (_, __) => CelebrationPage(),
-  transition: GoTransitions.rotate.withScale.withFade,
-  duration: Duration(milliseconds: 800))
-```
+- Use `fade` or `fadeUpwards` (200-300ms) for frequently visited routes.
+- Reserve complex transitions (`rotate.withScale.withFade`) for special screens.
+- Set `GoTransition.defaultDuration` once in your app to keep durations consistent.

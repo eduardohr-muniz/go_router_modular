@@ -1,20 +1,17 @@
-# Shell Route
+# Shell Routes
 
-> Use a shell route to provide a shared layout (navigation rail, bottom bar, tabs) that wraps child routes.
+Shell routes provide a shared layout (navigation bar, sidebar, tabs) that wraps child routes.
 
-## Concept
-- A shell route renders a parent UI and injects the matched child page into a slot (e.g., `child`).
-- It should NOT define `ChildRoute('/')` as an entry; children define concrete paths (e.g., `/dashboard`).
+## ShellModularRoute
 
-
-## Nested modules under shell
+The basic shell route wraps child routes with a persistent layout. All children share the same navigator.
 
 ```dart
-class ShellModule extends Module {
+class DashboardModule extends Module {
   @override
   List<ModularRoute> get routes => [
     ShellModularRoute(
-      builder: (context, state, child) => ShellLayout(child: child),
+      builder: (context, state, child) => DashboardLayout(child: child),
       routes: [
         ModuleRoute('/home', module: HomeModule()),
         ModuleRoute('/settings', module: SettingsModule()),
@@ -22,31 +19,22 @@ class ShellModule extends Module {
     ),
   ];
 }
-
-class HomeModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/', child: (context, state) => const HomePage()),
-  ];
-}
 ```
 
-## ShellLayout example
+> Do **not** place a `ChildRoute('/')` inside `ShellModularRoute`. Children must define concrete paths (e.g. `/home`, `/settings`).
+
+### Layout Example
 
 ```dart
-class ShellLayout extends StatelessWidget {
+class DashboardLayout extends StatelessWidget {
   final Widget child;
-  const ShellLayout({super.key, required this.child});
+  const DashboardLayout({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My App')),
-      body: Row(
-        children: [
-          Expanded(child: child) // 👋 your child routes will render here
-        ],
-      ),
+      appBar: AppBar(title: const Text('Dashboard')),
+      body: child,
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -62,13 +50,187 @@ class ShellLayout extends StatelessWidget {
 }
 ```
 
-## Best practices
-- Do not place `ChildRoute('/')` inside a shell route (use concrete paths like `/dashboard`).
-- Keep shell minimal: layout + navigation; push business logic to child modules/pages.
-- Prefer `ModuleRoute` under shell to keep features isolated and testable.
-- For redirects/guards, handle at child routes or globally.
+---
 
-## Common pitfalls
-- Adding `ChildRoute('/')` inside `ShellModularRoute` (incorrect entry point).
-- Mixing heavy business logic in the shell builder.
-- Forgetting to render `child` in the layout (child page will not show up).
+## StatefulShellModularRoute
+
+For **persistent state across tabs**. Each branch gets its own navigator backed by an `IndexedStack`, so switching tabs preserves scroll position, form state, and navigation history.
+
+This wraps GoRouter's `StatefulShellRoute.indexedStack`.
+
+### Basic Example
+
+```dart
+class TabsModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+    StatefulShellModularRoute(
+      builder: (context, state, navigationShell) => AppShell(
+        navigationShell: navigationShell,
+      ),
+      branches: [
+        ModularBranch(
+          routes: [
+            ChildRoute('/home', child: (_, __) => HomePage()),
+          ],
+        ),
+        ModularBranch(
+          routes: [
+            ChildRoute('/search', child: (_, __) => SearchPage()),
+          ],
+        ),
+        ModularBranch(
+          routes: [
+            ChildRoute('/profile', child: (_, __) => ProfilePage()),
+          ],
+        ),
+      ],
+    ),
+  ];
+}
+```
+
+> When using `StatefulShellModularRoute` inside a `ModuleRoute`, navigating to the module path (e.g. `/tabs`) automatically redirects to the first branch.
+
+### Branches with Modules
+
+Each branch can contain a full module with its own dependencies and routes. Branch module binds are registered **lazily** on first visit and disposed when the shell exits:
+
+```dart
+StatefulShellModularRoute(
+  builder: (context, state, navigationShell) => AppShell(
+    navigationShell: navigationShell,
+  ),
+  branches: [
+    // Branch with a full module (binds + routes)
+    ModularBranch(module: HomeBranchModule()),
+
+    // Branch with direct routes
+    ModularBranch(
+      routes: [
+        ChildRoute('/search', child: (_, __) => SearchPage()),
+      ],
+    ),
+
+    // Branch with a nested module route
+    ModularBranch(
+      routes: [
+        ModuleRoute('/settings', module: SettingsModule()),
+      ],
+    ),
+  ],
+)
+```
+
+```dart
+class HomeBranchModule extends Module {
+  @override
+  FutureBinds binds(Injector i) {
+    i.addSingleton<HomeController>((i) => HomeController());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/home', child: (_, __) => HomePage()),
+  ];
+}
+```
+
+### Dependency Injection Lifecycle
+
+| Event | What happens |
+|-------|-------------|
+| Shell enters navigation tree | Shell module binds are registered |
+| First visit to a branch | Branch module binds are registered (lazy) |
+| Switch between branches | Nothing — all branches stay alive in `IndexedStack` |
+| Shell exits navigation tree | All branch modules are disposed, then the shell module |
+
+> Because `IndexedStack` keeps all branches alive, branch modules are **not** disposed when switching tabs. This is by design — state persists across tab switches.
+
+### Layout with StatefulNavigationShell
+
+The builder receives a `StatefulNavigationShell` that manages tab switching:
+
+```dart
+class AppShell extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
+
+  const AppShell({super.key, required this.navigationShell});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: (index) {
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### ModularBranch Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `routes` | `List<ModularRoute>?` | Direct routes for this branch |
+| `module` | `Module?` | A module whose routes and binds will be used |
+| `navigatorKey` | `GlobalKey<NavigatorState>?` | Custom navigator key for this branch |
+| `initialLocation` | `String?` | Initial route when switching to this branch |
+| `restorationScopeId` | `String?` | Restoration scope for state restoration |
+| `observers` | `List<NavigatorObserver>?` | Navigation observers for this branch |
+
+> Each branch must have either `routes` or `module`, not both.
+
+### StatefulShellModularRoute Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `branches` | `List<ModularBranch>` | **Required.** The branches for the shell |
+| `builder` | `Widget Function(context, state, navigationShell)?` | Builds the shell layout |
+| `pageBuilder` | `Page Function(context, state, navigationShell)?` | Custom page builder |
+| `redirect` | `FutureOr<String?> Function(context, state)?` | Redirect logic |
+| `parentNavigatorKey` | `GlobalKey<NavigatorState>?` | Parent navigator key |
+| `restorationScopeId` | `String?` | Restoration scope |
+| `shellKey` | `GlobalKey<StatefulNavigationShellState>?` | Key to access shell state |
+
+---
+
+## When to Use Which
+
+| Feature | `ShellModularRoute` | `StatefulShellModularRoute` |
+|---------|---------------------|-----------------------------|
+| Shared layout | Yes | Yes |
+| Preserves tab state | No | Yes |
+| Own navigator per tab | No | Yes |
+| Back button per tab | No | Yes |
+| Branch-level DI | No | Yes |
+| Use case | Simple layouts, sidebars | Bottom navigation, tab bars |
+
+---
+
+## Best Practices
+
+- Do not place `ChildRoute('/')` inside a shell route. Use concrete paths like `/home`.
+- Keep the shell builder minimal: layout and navigation only. Push business logic into child modules.
+- Use `ModularBranch(module: ...)` to keep branch features isolated and testable.
+- Use `StatefulShellModularRoute` when you need state to persist across tab switches.
+- Navigate to the shell via `context.go()`, not `context.push()`. The `goBranch()` method uses `go()` internally, and mixing `push` + `go` causes unexpected behavior.
+
+## Common Pitfalls
+
+- Adding `ChildRoute('/')` inside `ShellModularRoute` (use concrete paths).
+- Using `context.push()` to navigate to a `StatefulShellModularRoute` (use `context.go()`).
+- Forgetting to render `child` / `navigationShell` in the layout builder.
+- Using `ShellModularRoute` when you need tab state preservation (use `StatefulShellModularRoute` instead).

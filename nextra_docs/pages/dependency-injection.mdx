@@ -1,50 +1,17 @@
 # Dependency Injection
 
-Manage your app's dependencies easily with built-in DI.
+Register dependencies in modules and let the framework provide them when needed. Dependencies are scoped to their module and automatically disposed when the module is removed from the navigation tree.
 
-## What Is Dependency Injection?
+## Registration
 
-Instead of creating objects directly, you register them and let the system provide them when needed.
-
-```dart
-// Instead of this
-final service = MyService();
-
-// Do this
-i.addSingleton<MyService>((i) => MyService());
-final service = Modular.get<MyService>();
-```
-
-## Quick Start
-
-### 1. Register Dependencies
+Register dependencies inside the `binds` method of a module:
 
 ```dart
 class HomeModule extends Module {
   @override
- FutureBinds binds(Injector i) {
-    i.addSingleton<HomeController>((i)=> HomeController());
-    i.add<ApiService>((i)=> ApiService());
-  }
-}
-```
-
-### 2. Use Dependencies
-
-```dart
-class HomePage extends StatefulWidget {
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  late final controller = context.read<HomeController>();
-  //or
-  final controller = Modular.get<HomeController>();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(/* ... */);
+  FutureBinds binds(Injector i) {
+    i.addSingleton<HomeController>((i) => HomeController());
+    i.add<ApiClient>((i) => ApiClient());
   }
 }
 ```
@@ -52,79 +19,105 @@ class _HomePageState extends State<HomePage> {
 ## Dependency Types
 
 ### Singleton
-One instance for the entire app:
+
+One instance shared across the entire module lifecycle:
 
 ```dart
 i.addSingleton<DatabaseService>((i) => DatabaseService());
 ```
 
 ### Factory
-New instance every time:
+
+A new instance is created every time it is requested:
 
 ```dart
 i.add<ApiClient>((i) => ApiClient());
 ```
 
 ### Lazy Singleton
-Created only when first used:
+
+Like singleton, but only created on first use:
 
 ```dart
-i.addLazySingleton<HeavyService>((i)=> HeavyService());
+i.addLazySingleton<HeavyService>((i) => HeavyService());
+```
+
+## Resolving Dependencies
+
+### Using `context.read`
+
+```dart
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.read<HomeController>();
+    return Scaffold(body: Text(controller.title));
+  }
+}
+```
+
+### Using `Modular.get`
+
+```dart
+final controller = Modular.get<HomeController>();
+```
+
+## Using Keys
+
+Register multiple instances of the same type by assigning unique keys:
+
+```dart
+@override
+FutureBinds binds(Injector i) {
+  i.addSingleton<ApiService>((i) => ApiService(baseUrl: 'https://main.api'), key: 'main');
+  i.addSingleton<ApiService>((i) => ApiService(baseUrl: 'https://backup.api'), key: 'backup');
+}
+
+// Resolve by key
+final mainApi = Modular.get<ApiService>(key: 'main');
+final backupApi = context.read<ApiService>(key: 'backup');
 ```
 
 ## Async Dependencies
 
-For dependencies that need async initialization:
+For dependencies that require async initialization:
 
 ```dart
 class DatabaseModule extends Module {
   @override
   FutureOr<void> binds(Injector i) async {
-    // Wait for database connection
-    await Future.delayed(Duration(seconds: 1));
-    
-    i.addSingleton<DatabaseService>((i)=> DatabaseService());
+    final db = await DatabaseHelper.open();
+    i.addSingleton<DatabaseHelper>((i) => db);
   }
 }
 ```
 
-## Using Keys
+The framework shows a loading indicator automatically while async binds are being resolved. See [Loader System](/routes/loader-system) for customization options.
 
-Register multiple instances of the same type:
+## Auto-Dispose
 
-```dart
-// Register with keys
-i.addSingleton<ApiService>((i) => ApiService(), key: 'main');
-i.addSingleton<ApiService>((i) => ApiService(), key: 'backup');
+Dependencies are automatically disposed when their module leaves the navigation tree:
 
-// Use with keys
-final mainApi = Modular.get<ApiService>(key: 'main');
-final backupApi = Modular.get<ApiService>(key: 'backup');
-```
+1. User navigates to `/products` — `ProductsModule` binds are registered.
+2. User navigates away — `ProductsModule.dispose()` is called and all binds are cleaned up.
 
-## Context Extension
+This prevents memory leaks without any manual cleanup.
 
-Use the convenient `context.read()` extension:
+> For `StatefulShellModularRoute`, branch module binds live as long as the shell is active and are disposed together when the shell exits. See [Shell Routes](/routes/shell-route) for details.
 
-```dart
-class MyWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final service = context.read<MyService>();
-    return Text(service.getData());
-  }
-}
-```
+## Dependency Resolution
 
-## Real Example
+Dependencies can reference other registered dependencies:
 
 ```dart
 class ProductsModule extends Module {
   @override
- FutureBinds binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addLazySingleton<ApiService>((i) => ApiService());
     i.add<ProductsRepository>((i) => ProductsRepository(api: i.get<ApiService>()));
-    i.addSingleton<ProductsController>((i) => ProductsController(repository: i.get<ProductsRepository>()));
+    i.addSingleton<ProductsController>((i) => ProductsController(
+      repository: i.get<ProductsRepository>(),
+    ));
   }
 
   @override
@@ -132,26 +125,12 @@ class ProductsModule extends Module {
     ChildRoute('/', child: (_, __) => ProductsPage()),
   ];
 }
-
-class ProductsPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final controller = context.read<ProductsController>();
-    return Scaffold(
-      body: ...,
-    );
-  }
-}
 ```
 
 ## Best Practices
 
-1. **Register in modules** - Keep dependencies organized
-2. **Use singletons for services** - Database, API clients
-3. **Use factories for data** - Models, DTOs
-4. **Use keys when needed** - Multiple instances of same type
-5. **Keep modules focused** - One module, one feature
-
----
-
-**Need more details?** Check out the [Key System](#key-system) section below.
+1. **Register in modules** — Keep dependencies close to the feature that uses them.
+2. **Use singletons for services** — Database clients, API services, controllers.
+3. **Use factories for short-lived objects** — DTOs, form validators.
+4. **Use keys sparingly** — Only when you need multiple instances of the same type.
+5. **Keep modules focused** — One module per feature.

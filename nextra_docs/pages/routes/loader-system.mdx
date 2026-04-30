@@ -1,61 +1,38 @@
 # Loader System
 
-Show loading indicators during module loading and async operations.
+GoRouter Modular shows a loading indicator automatically while module binds are being resolved. This is especially useful for modules with async dependencies.
 
 ## Automatic Loading
 
 The loader appears automatically during:
-- Module initialization
-- Dependency injection
-- Route transitions
 
-```dart
-class AppWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: Modular.routerConfig,
-      // Loader works automatically
-    );
-  }
-}
-```
+- Module bind registration (including async binds)
+- Route transitions that depend on `goAsync` / `pushAsync`
+
+No setup is required for the default behavior.
 
 ## Manual Control
 
-Show/hide loader manually:
+You can show or hide the loader programmatically:
 
 ```dart
-// Show loader
 ModularLoader.show();
 
-// Hide loader
+// Perform async work...
+
 ModularLoader.hide();
 ```
 
-## Custom Loader
+## Custom Loader Widget
 
-Create your own loader:
+Replace the default loader with your own widget using `ModularApp.router`:
 
 ```dart
-class CustomLoader extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black54,
-      child: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
-}
-
-// Use in app
 class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: Modular.routerConfig,
+    return ModularApp.router(
+      title: 'My App',
       builder: (context, child) => Stack(
         children: [
           child!,
@@ -67,36 +44,43 @@ class AppWidget extends StatelessWidget {
 }
 ```
 
-## Real Example
+You can also provide a fully custom overlay:
 
 ```dart
-class ProductsPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: FutureBuilder<List<Product>>(
-        future: _loadProducts(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            ModularLoader.show();
-            return Container();
-          }
-          
-          ModularLoader.hide();
-          return ListView.builder(
-            itemCount: snapshot.data?.length ?? 0,
-            itemBuilder: (context, index) => ProductTile(snapshot.data![index]),
+ModularApp.router(
+  title: 'My App',
+  builder: (context, child) => Stack(
+    children: [
+      child!,
+      ValueListenableBuilder<bool>(
+        valueListenable: ModularLoader.isLoading,
+        builder: (context, loading, _) {
+          if (!loading) return const SizedBox.shrink();
+          return Container(
+            color: Colors.black54,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
           );
         },
       ),
-    );
-  }
-}
+    ],
+  ),
+);
 ```
+
+## When the Loader Appears
+
+| Scenario | Loader shown? |
+|----------|---------------|
+| Navigating to a module with sync binds | Briefly (usually imperceptible) |
+| Navigating to a module with async binds | Yes, until all binds resolve |
+| Using `goAsync()` / `pushAsync()` | Yes, until `onComplete` fires |
+| Calling `ModularLoader.show()` manually | Yes, until `ModularLoader.hide()` |
 
 ## Best Practices
 
-1. **Let it work automatically** - Don't overuse manual control
-2. **Use for async operations** - API calls, file loading
-3. **Keep it simple** - Default loader works great
-4. **Test on slow devices** - Ensure good UX
+1. **Let it work automatically** — The default behavior covers most cases.
+2. **Use async binds for heavy initialization** — Database connections, API token refresh, etc.
+3. **Keep initialization fast** — Users should not wait more than a second or two.
+4. **Test on slow connections** — Simulate latency to verify the loader appears correctly.

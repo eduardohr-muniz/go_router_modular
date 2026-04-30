@@ -1,74 +1,92 @@
 # Navigation
 
-Navigate between pages and modules easily.
+GoRouter Modular uses GoRouter's navigation API. All standard methods are available.
 
 ## Basic Navigation
 
 ```dart
-// Go to a route (replaces current page)
-context.go('/profile');
+// Replace the current route stack
+context.go('/products');
 
-// Push new page
-context.push('/settings');
+// Push a new page onto the stack
+context.push('/products/123');
 
 // Go back
 context.pop();
 
-// Replace current page
+// Replace the current page
 context.replace('/dashboard');
+```
+
+## Async Navigation
+
+Wait for module binds to be resolved before navigating:
+
+```dart
+await context.goAsync('/products', onComplete: () {
+  print('Products module ready');
+});
+
+await context.pushAsync('/products/123', onComplete: () {
+  print('Product detail ready');
+});
 ```
 
 ## Named Routes
 
-Use names for cleaner navigation:
+Define a name on a route and navigate by name:
 
 ```dart
-// Define named route
+// Define
 ChildRoute(
   '/user/:id',
-  name: 'user',
+  name: 'user-detail',
   child: (_, state) => UserPage(id: state.pathParameters['id']!),
 )
 
-// Navigate by name
-context.goNamed('user', pathParameters: {'id': '123'});
+// Navigate
+context.goNamed('user-detail', pathParameters: {'id': '123'});
 ```
 
 ## Route Parameters
 
-Pass data through URLs:
+### Path Parameters
 
 ```dart
-// Define route with parameter
-ChildRoute('/product/:id', child: (_, state) => 
+// Define
+ChildRoute('/product/:id', child: (_, state) =>
   ProductPage(id: state.pathParameters['id']!))
 
-// Navigate with parameter
-context.go('/product/123');
+// Navigate
+context.go('/product/42');
 ```
 
-## Query Parameters
+### Query Parameters
 
 ```dart
-// Navigate with query
-context.go('/search?q=flutter&category=mobile');
+// Navigate
+context.go('/search?q=flutter&category=packages');
 
-// Access in route
+// Access
 final query = state.uri.queryParameters;
-final searchTerm = query['q'];
+final searchTerm = query['q'];       // 'flutter'
+final category = query['category'];  // 'packages'
 ```
 
 ## Web Support
 
-Works perfectly on web with browser navigation:
-- ✅ Back/forward buttons
-- ✅ URL changes
-- ✅ Deep linking
-- ✅ Bookmarking
+GoRouter Modular works on web with full support for:
+
+- Browser back/forward buttons
+- URL bar updates on navigation
+- Deep linking — users can bookmark or share URLs
+- Direct URL access — navigating to `/products/42` loads the correct page
+
+No additional configuration is required.
 
 ## Best Practices
 
-1. **Use descriptive routes** - `/products/123` not `/p/123`
-2. **Keep URLs clean** - Avoid complex parameters
-3. **Plan your structure** - Think about user flow
-4. **Test navigation** - Ensure all routes work
+1. **Use `go()` for top-level navigation** — Replaces the entire route stack.
+2. **Use `push()` for detail pages** — Adds to the stack so the user can go back.
+3. **Use descriptive paths** — `/products/123` is better than `/p/123`.
+4. **Use `goAsync()` when you need to wait** — Ensures module binds are ready before rendering.

@@ -1,6 +1,6 @@
-# Getting Started
+# Quick Start
 
-Build your first modular Flutter app in 3 steps.
+Set up a modular Flutter app in three steps.
 
 ## 1. Install
 
@@ -8,43 +8,49 @@ Build your first modular Flutter app in 3 steps.
 flutter pub add go_router_modular
 ```
 
+## 2. Configure
 
-## 2. Setup App
-
-```dart
+```dart filename="lib/main.dart"
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Modular.configure(
     appModule: AppModule(),
     initialRoute: '/',
-    debugLogDiagnostics: true,
-    debugLogDiagnosticsGoRouter: true,
-    debugLogEventBus: true,
+    debugLogDiagnostics: true,        // Log module injection events
+    debugLogDiagnosticsGoRouter: true, // Log GoRouter navigation events
+    debugLogEventBus: true,            // Log EventModule events
   );
   runApp(AppWidget());
 }
+```
 
+> Set all `debug*` flags to `false` in production builds.
+
+```dart filename="lib/src/app_widget.dart"
 class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ModularApp.router(
-      title: 'My App',
-    );
+    return ModularApp.router(title: 'My App');
   }
 }
+```
 
+## 3. Create Modules
+
+```dart filename="lib/src/app_module.dart"
 class AppModule extends Module {
   @override
   List<ModularRoute> get routes => [
     ModuleRoute('/', module: HomeModule()),
   ];
 }
+```
 
+```dart filename="lib/src/modules/home/home_module.dart"
 class HomeModule extends Module {
-
   @override
-  FutureBinds (Injector i) { // Opitional
-    i.addSingleton<HomeController>((i)=> HomeController());
+  FutureBinds binds(Injector i) { // Optional
+    i.addSingleton<HomeController>((i) => HomeController());
   }
 
   @override
@@ -54,11 +60,34 @@ class HomeModule extends Module {
 }
 ```
 
-That's it! Your modular app is ready.
+That's it. Your modular app is ready.
 
+## Project Structure
+
+A typical modular project looks like this:
+
+```
+lib/
+  main.dart
+  src/
+    app_module.dart
+    app_widget.dart
+    modules/
+      home/
+        home_module.dart
+        pages/
+          home_page.dart
+      products/
+        products_module.dart
+        pages/
+          products_page.dart
+```
+
+Each module is a self-contained unit with its own routes, dependencies, and pages.
 
 ## Next Steps
 
-- [Routes & Modules](/routes/routes-system) - Learn routing
-- [Dependency Injection](/dependency-injection) - Master DI
-- [Page Transitions](/routes/transitions) - Add animations
+- [Routes & Modules](/routes/routes-system) — Learn about route types and module nesting
+- [Dependency Injection](/dependency-injection) — Register and resolve dependencies
+- [Page Transitions](/routes/transitions) — Add animations between pages
+- [Shell Routes](/routes/shell-route) — Build tab-based layouts

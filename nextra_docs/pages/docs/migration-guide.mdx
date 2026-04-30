@@ -1,14 +1,10 @@
 # Migration Guide
 
-Migrate from the old `binds()` list to the new `binds(Injector i)` function.
+## Bind Registration (v4.x to v5.x)
 
-## What Changed?
+The bind registration system changed from returning a list to using an injector function.
 
-The bind registration system changed from returning a list to using a function with an injector.
-
-## Before vs After
-
-### ❌ Old Way
+### Before (v4.x)
 
 ```dart
 class MyModule extends Module {
@@ -20,68 +16,70 @@ class MyModule extends Module {
 }
 ```
 
-### ✅ New Way
+### After (v5.x)
 
 ```dart
 class MyModule extends Module {
   @override
- FutureBinds binds(Injector i) {
+  FutureBinds binds(Injector i) {
+    i.addSingleton<ApiService>((i) => ApiService());
     i.addSingleton<DatabaseService>((i) => DatabaseService());
   }
 }
 ```
 
-## Migration Steps
+## Step-by-Step Migration
 
-### 1. Change Method Signature
+### 1. Change the method signature
 
 ```dart
-// Old
+// Before
 @override
-FutureOr<List<Bind<Object>>> binds() => [
-  Bind.singleton<MyService>((i) => MyService()),
-];
+FutureOr<List<Bind<Object>>> binds() => [ ... ];
 
-// New
+// After
 @override
-FutureBinds (Injector i) {
-  i.addSingleton<MyService>((i)=> MyService());
+FutureBinds binds(Injector i) { ... }
+```
+
+### 2. Replace `Bind.*` calls with `i.add*` calls
+
+| Before | After |
+|--------|-------|
+| `Bind.singleton<T>((i) => ...)` | `i.addSingleton<T>((i) => ...)` |
+| `Bind.factory<T>((i) => ...)` | `i.add<T>((i) => ...)` |
+| `Bind.lazySingleton<T>((i) => ...)` | `i.addLazySingleton<T>((i) => ...)` |
+
+### 3. Use keys for multiple instances of the same type
+
+```dart
+@override
+FutureBinds binds(Injector i) {
+  i.addSingleton<ApiService>((i) => ApiService(baseUrl: 'https://main.api'), key: 'main');
+  i.addSingleton<ApiService>((i) => ApiService(baseUrl: 'https://backup.api'), key: 'backup');
 }
 ```
 
-### 2. Update Registration Syntax
+## Transition System (v4.x to v5.x)
+
+The custom `PageTransition` enum was replaced with the [go_transitions](https://pub.dev/packages/go_transitions) package.
 
 ```dart
-// Old
-Bind.singleton<ApiService>((i) => ApiService())
+// Before (v4.x)
+ChildRoute('/', child: (_, __) => HomePage(), transition: PageTransition.fade)
 
-
-i.addSingleton<ApiService>((i) => ApiService())
+// After (v5.x)
+ChildRoute('/', child: (_, __) => HomePage(), transition: GoTransitions.fade)
 ```
 
-### 3. Use Keys When Needed
-
-```dart
-@override
-FutureBinds (Injector i) {
-  i.addSingleton<ApiService>((i) => ApiService(), key: 'main');
-  i.addSingleton<ApiService>((i) => ApiService(), key: 'backup');
-}
-```
-
-## Benefits
-
-- ✅ **Cleaner syntax** - No more Bind wrapper
-- ✅ **Better performance** - Direct registration
-- ✅ **Easier to read** - More intuitive API
-- ✅ **Same functionality** - All features preserved
+See [Page Transitions](/routes/transitions) for the full list of available transitions.
 
 ## Complete Example
 
 ```dart
-class MyModule extends Module {
+class ProductsModule extends Module {
   @override
- FutureBinds binds(Injector i) {
+  FutureBinds binds(Injector i) {
     i.addSingleton<ApiService>((i) => ApiService(), key: 'main');
     i.addSingleton<DatabaseService>((i) => DatabaseService(api: i.get<ApiService>(key: 'main')));
     i.add<CacheService>((i) => CacheService());
@@ -89,21 +87,19 @@ class MyModule extends Module {
 
   @override
   List<ModularRoute> get routes => [
-    ChildRoute('/', child: (_, __) => MyPage()),
+    ChildRoute('/', child: (_, __) => ProductsPage()),
   ];
 }
 
-class MyPage extends StatelessWidget {
+class ProductsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final apiService = context.read<ApiService>(key: 'main');
-    final dbService = context.read<DatabaseService>();
+    final api = context.read<ApiService>(key: 'main');
+    final db = context.read<DatabaseService>();
     
     return Scaffold(
-      body: Text('Services loaded successfully!'),
+      body: Text('Services loaded: ${api.runtimeType}, ${db.runtimeType}'),
     );
   }
 }
 ```
-
-That's it! Your migration is complete.

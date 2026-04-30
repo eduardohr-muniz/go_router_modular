@@ -1,20 +1,22 @@
 {
-    "index": "🏠 Home",
-    "docs": "🚀 Get Started",
-    "routes": "🛣️ Routes / Modules",
-    "dependency-injection": "💉 Dependency Injection",
-    "event-module": "🎭 Event Module",
-    "microfrontends": "🏢 Micro Front Ends",
+    "index": "Home",
+    "docs": "Getting Started",
+    "routes": "Routes & Modules",
+    "dependency-injection": "Dependency Injection",
+    "event-module": "Event Module",
+    "microfrontends": "Micro Frontends",
+    "testing": "Testing",
+    "changelog": "Changelog",
     "---": {
         "type": "separator"
     },
     "github": {
-        "title": "GitHub ↗",
-        "href": "https://pub.dev/packages/go_router_modular",
+        "title": "GitHub",
+        "href": "https://github.com/eduardohr-muniz/go_router_modular",
         "newWindow": true
     },
     "pub": {
-        "title": "pub.dev ↗",
+        "title": "pub.dev",
         "href": "https://pub.dev/packages/go_router_modular",
         "newWindow": true
     }

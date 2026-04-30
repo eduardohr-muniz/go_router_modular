@@ -1,8 +1,8 @@
 {
-    "routes-system": "🛣️ Routes System",
-    "transitions": "✨ Page Transitions",
-    "navigation": "🧭 Navigation",
-    "loader-system": "⏳ Loader System",
-    "redirects": "↪️ Redirects",
-    "shell-route": "🧩 Shell Route"
+    "routes-system": "Routes & Modules",
+    "shell-route": "Shell Routes",
+    "navigation": "Navigation",
+    "transitions": "Page Transitions",
+    "loader-system": "Loader System",
+    "redirects": "Redirects"
 }

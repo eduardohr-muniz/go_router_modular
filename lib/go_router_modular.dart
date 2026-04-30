@@ -15,6 +15,7 @@ export 'src/routing/child_route.dart';
 export 'src/routing/i_modular_route.dart';
 export 'src/routing/module_route.dart';
 export 'src/routing/shell_modular_route.dart';
+export 'src/routing/stateful_shell_modular_route.dart';
 
 // Extensions exports
 export 'src/extensions/context_extension.dart';
@@ -28,9 +29,12 @@ export 'src/widgets/material_app_router.dart';
 export 'src/widgets/modular_loader.dart';
 
 // Event System exports
-export 'src/events/event_module.dart' show EventModule, ModularEvent;
+export 'src/events/modular_event.dart' show ModularEvent, EventListenerMixin, clearEventModuleState, defaultModularEventBus;
+export 'src/events/event_module.dart' show EventModule;
+export 'src/events/modular_event_listener.dart' show ModularEventListener;
 
 // External packages
 export 'package:go_router/go_router.dart' hide GoRouter, ShellRoute;
 export 'package:event_bus/event_bus.dart';
 export 'package:go_transitions/go_transitions.dart';
+export 'src/events/modular_event_mixin.dart' show ModularEventMixin;

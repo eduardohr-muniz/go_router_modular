@@ -2,25 +2,23 @@
 
 <div style={{textAlign: 'center', margin: '2rem 0'}}>
   <img 
-    src="https://raw.githubusercontent.com/eduardohr-muniz/go_router_modular/master/nextra_docs/public/assets/go-router-modular-banner.png" 
+    src="/assets/go-router-modular-banner.png" 
     alt="GoRouter Modular Banner" 
     style={{maxWidth: '100%', height: 'auto', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
   />
 </div>
 
-**Modular architecture for Flutter apps 🧩**
+**Modular architecture for Flutter apps.** Build scalable applications with clean modules, built-in dependency injection, and powerful routing — all on top of [go_router](https://pub.dev/packages/go_router).
 
-Build scalable apps with clean modules and powerful routing.
-
-## Quick Start
+## Install
 
 ```bash
 flutter pub add go_router_modular
 ```
 
-```dart
-//== lib/main.dart ===================
+## Minimal Example
 
+```dart filename="lib/main.dart"
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Modular.configure(
@@ -29,32 +27,30 @@ void main() async {
   );
   runApp(AppWidget());
 }
+```
 
-//== lib/src/app_widget.dart ===================
-
+```dart filename="lib/src/app_widget.dart"
 class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ModularApp.router(
-      title: 'My App',
-    );
+    return ModularApp.router(title: 'My App');
   }
 }
+```
 
-//== lib/src/app_module.dart ===================
-
+```dart filename="lib/src/app_module.dart"
 class AppModule extends Module {
   @override
   List<ModularRoute> get routes => [
     ModuleRoute('/', module: HomeModule()),
   ];
 }
+```
 
-//== lib/src/modules/home/home_module.dart ===================
-
+```dart filename="lib/src/modules/home/home_module.dart"
 class HomeModule extends Module {
   @override
-  FutureBinds (Injector i) { // Optional
+  FutureBinds binds(Injector i) {
     i.addSingleton<HomeController>((i) => HomeController());
   }
 
@@ -65,24 +61,27 @@ class HomeModule extends Module {
 }
 ```
 
-## What You Get
+## Features
 
-- 🧩 **Modules** - Independent app pieces
-- 💉 **Dependency Injection** - Built-in DI
-- 🛣️ **Smart Routing** - Enhanced navigation
-- ✨ **Page Transitions** - Beautiful animations
+| Feature | Description |
+|---------|-------------|
+| **Modules** | Encapsulate routes, dependencies, and logic into self-contained units |
+| **Dependency Injection** | Singleton, factory, and lazy singleton registration with auto-dispose |
+| **Smart Routing** | ChildRoute, ModuleRoute, ShellRoute, and StatefulShellRoute |
+| **Page Transitions** | Built-in animations via [go_transitions](https://pub.dev/packages/go_transitions) |
+| **Event System** | Decoupled cross-module communication |
+| **Shell Routes** | Shared layouts with persistent tab state (IndexedStack) |
 
-## Learn More
+## Next Steps
 
-- [🚀 Get Started](/docs/getting-started) - Build your first module
-- [🛣️ Routes & Modules](/routes/routes-system) - Master routing
-- [💉 Dependency Injection](/dependency-injection) - Manage dependencies
-- [✨ Page Transitions](/routes/transitions) - Add animations
-
----
+- [Quick Start](/docs/quick-start) — Set up your first modular app
+- [Routes & Modules](/routes/routes-system) — Understand the routing system
+- [Dependency Injection](/dependency-injection) — Manage dependencies
+- [Shell Routes](/routes/shell-route) — Build tab-based layouts
+- [Page Transitions](/routes/transitions) — Add animations
 
 <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-  <a href="/docs/getting-started" style={{ 
+  <a href="/docs/quick-start" style={{ 
     display: 'inline-block', 
     padding: '12px 24px', 
     backgroundColor: '#0070f3', 
@@ -91,6 +90,6 @@ class HomeModule extends Module {
     borderRadius: '6px',
     fontWeight: 'bold'
   }}>
-    Start Building →
+    Get Started
   </a>
 </div>

@@ -1,140 +1,85 @@
 # Routes & Modules
 
-Build organized, scalable Flutter apps with modular routing.
+Modules are the building blocks of a GoRouter Modular app. Each module encapsulates its own routes, dependencies, and business logic.
 
-## What Are Modules?
+## Module Structure
 
-Modules are independent pieces of your app that contain:
-- **Routes** - Pages and navigation
-- **Dependencies** - Services and data
-- **Business Logic** - App functionality
+```dart
+class ProductsModule extends Module {
+  @override
+  FutureBinds binds(Injector i) {
+    i.addSingleton<ProductsController>((i) => ProductsController());
+  }
 
-Think of them as mini-apps that work together.
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => ProductsPage()),
+    ChildRoute('/details/:id', child: (_, state) =>
+      ProductDetailPage(id: state.pathParameters['id']!)),
+  ];
+}
+```
 
 ## Route Types
 
-### ChildRoute - Simple Pages
+### ChildRoute
 
-For individual pages:
+Defines a single page within a module:
 
 ```dart
-ChildRoute('/', child: (_, __) => HomePage())
-ChildRoute('/profile', child: (_, __) => ProfilePage())
+ChildRoute('/', child: (context, state) => HomePage())
+ChildRoute('/profile', child: (context, state) => ProfilePage())
+ChildRoute('/user/:id', child: (context, state) =>
+  UserPage(id: state.pathParameters['id']!))
 ```
 
-### ModuleRoute - Full Modules
+### ModuleRoute
 
-For complete features:
+Delegates a path to a separate module:
 
 ```dart
 ModuleRoute('/products', module: ProductsModule())
 ModuleRoute('/auth', module: AuthModule())
 ```
 
-### ShellModularRoute - Shared Layouts
+### ShellModularRoute
 
-For layouts with navigation:
+Wraps child routes with a shared layout (e.g. a navigation rail). All children share the same navigator:
 
 ```dart
 ShellModularRoute(
   builder: (context, state, child) => MainLayout(child: child),
   routes: [
     ModuleRoute('/home', module: HomeModule()),
-    ModuleRoute('/profile', module: ProfileModule()),
-  ]
+    ModuleRoute('/settings', module: SettingsModule()),
+  ],
 )
 ```
 
-## Quick Example
+### StatefulShellModularRoute
+
+For bottom navigation bars and tabs that preserve state across branches. Each branch gets its own navigator backed by an `IndexedStack`:
 
 ```dart
-class AppModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    // Home page
-    ChildRoute('/', child: (_, __) => HomePage()),
-    
-    // Products feature
-    ModuleRoute('/products', module: ProductsModule()),
-    
-    // Auth feature  
-    ModuleRoute('/auth', module: AuthModule()),
-  ];
-}
+StatefulShellModularRoute(
+  builder: (context, state, navigationShell) => AppShell(
+    navigationShell: navigationShell,
+  ),
+  branches: [
+    ModularBranch(module: HomeModule()),
+    ModularBranch(module: SearchModule()),
+    ModularBranch(routes: [
+      ChildRoute('/profile', child: (_, __) => ProfilePage()),
+    ]),
+  ],
+)
 ```
 
-## Navigation
-
-```dart
-// Navigate to route
-context.go('/products');
-
-// Push new page
-context.push('/product/123');
-
-// Go back
-context.pop();
-```
-
-## Route Parameters
-
-```dart
-// Define route with parameter
-ChildRoute('/user/:id', child: (_, state) => 
-  UserPage(id: state.pathParameters['id']!))
-
-// Navigate with parameter
-context.go('/user/123');
-```
+See [Shell Routes](/routes/shell-route) for detailed documentation.
 
 ## Module Nesting
 
-Modules can contain other modules:
-
-```dart
-class ProductsModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/', child: (_, __) => ProductsListPage()),
-    ModuleRoute('/details', module: ProductDetailsModule()),
-  ];
-}
-```
-
-## Page Transitions
-
-Add beautiful animations:
-
-```dart
-ModuleRoute('/home', module: HomeModule(),
-  transition: GoTransitions.fadeUpwards,
-  duration: Duration(milliseconds: 300))
-```
-
-[Learn more about transitions →](/routes/transitions)
-
-## Best Practices
-
-1. **One module per feature** - Keep related functionality together
-2. **Use descriptive names** - Make routes easy to understand
-3. **Keep modules small** - Easier to maintain and test
-4. **Plan your structure** - Think about your app's navigation flow
-
-## Common Patterns
-
-### Feature Modules
-
-```dart
-class AuthModule extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    ChildRoute('/login', child: (_, __) => LoginPage()),
-    ChildRoute('/register', child: (_, __) => RegisterPage()),
-  ];
-}
-```
-
-### Nested Navigation
+Modules can contain other modules for hierarchical navigation:
 
 ```dart
 class ShopModule extends Module {
@@ -147,6 +92,77 @@ class ShopModule extends Module {
 }
 ```
 
----
+The resulting paths are:
+- `/shop` — ShopHomePage
+- `/shop/products` — ProductsModule entry point
+- `/shop/cart` — CartModule entry point
 
-**Need more details?** Check out the [Navigation](/routes/navigation) and [Loader System](/routes/loader-system) guides.
+## Route Parameters
+
+```dart
+// Path parameters
+ChildRoute('/user/:id', child: (_, state) =>
+  UserPage(id: state.pathParameters['id']!))
+
+// Navigate
+context.go('/user/123');
+```
+
+## Page Transitions
+
+Attach transitions at the module or route level:
+
+```dart
+ModuleRoute('/home', module: HomeModule(),
+  transition: GoTransitions.fadeUpwards,
+  duration: Duration(milliseconds: 300))
+```
+
+See [Page Transitions](/routes/transitions) for all available transitions.
+
+## Common Patterns
+
+### Feature Module
+
+```dart
+class AuthModule extends Module {
+  @override
+  FutureBinds binds(Injector i) {
+    i.addSingleton<AuthController>((i) => AuthController());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/login', child: (_, __) => LoginPage()),
+    ChildRoute('/register', child: (_, __) => RegisterPage()),
+    ChildRoute('/forgot-password', child: (_, __) => ForgotPasswordPage()),
+  ];
+}
+```
+
+### App Module
+
+```dart
+class AppModule extends Module {
+  @override
+  FutureBinds binds(Injector i) {
+    i.addSingleton<AppConfig>((i) => AppConfig());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+    ModuleRoute('/', module: HomeModule()),
+    ModuleRoute('/products', module: ProductsModule()),
+    ModuleRoute('/auth', module: AuthModule()),
+    ModuleRoute('/settings', module: SettingsModule()),
+  ];
+}
+```
+
+## Best Practices
+
+1. **One module per feature** — Keep related routes and dependencies together.
+2. **Use `ModuleRoute` for features** — Isolate each feature in its own module.
+3. **Use `ChildRoute` for pages** — Individual pages within a module.
+4. **Keep modules small** — Easier to maintain and test.
+5. **Plan your route hierarchy** — Think about your app's navigation flow before coding.

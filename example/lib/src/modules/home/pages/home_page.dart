@@ -132,6 +132,24 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _navigateToStatefulShell() async {
+    setState(() => isLoading = true);
+    _showSnackBar('🔄 Navegando para Stateful Shell...', Colors.cyan);
+
+    try {
+      // Usar go() em vez de push() porque StatefulShellRoute usa go() internamente
+      // via goBranch(). Misturar push + go causa dispose/re-inject indesejado.
+      await context.goAsync('/stateful-shell', onComplete: () {
+        print('✅ Navegação para StatefulShell completada');
+      });
+    } catch (e) {
+      print('❌ Erro na navegação: $e');
+      _showSnackBar('❌ Erro na navegação: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   Future<void> _navigateToEvent() async {
     setState(() => isLoading = true);
     _showSnackBar('🐚 Navegando para Event...', Colors.green);
@@ -280,6 +298,15 @@ class _HomePageState extends State<HomePage> {
                           label: const Text('3. Testar Shell'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isLoading ? null : _navigateToStatefulShell,
+                          icon: const Icon(Icons.sync),
+                          label: const Text('3.5 Testar Stateful Shell'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.cyan,
                             foregroundColor: Colors.white,
                           ),
                         ),

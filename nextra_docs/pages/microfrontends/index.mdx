@@ -1,56 +1,41 @@
 # Microfrontends
 
-Build large apps as independent, deployable modules.
+Build large applications as independent, self-contained modules that can be developed and maintained by separate teams.
 
-## What Are Microfrontends?
+## Overview
 
-Microfrontends break large apps into smaller, independent pieces that can be developed and deployed separately.
+GoRouter Modular's module system naturally supports a microfrontend architecture. Each module encapsulates its own routes, dependencies, and business logic — making it possible for multiple teams to work on the same app independently.
 
-## Benefits
+## Architecture
 
-- **Independent teams** - Each team owns their module
-- **Different technologies** - Use what works best for each module
-- **Independent deployment** - Deploy modules without affecting others
-- **Scalable development** - Add teams without coordination overhead
+Each module is a self-contained unit with:
 
-## GoRouter Modular Approach
-
-Each module is a mini-app with its own:
-- Routes and pages
-- Dependencies and services
-- Business logic
-- Event communication
-
-## Example Structure
+- **Routes** — Pages and navigation within the module
+- **Dependencies** — Services and controllers via dependency injection
+- **Business logic** — Isolated from other modules
+- **Events** — Cross-module communication via `EventModule`
 
 ```dart
 class AppModule extends Module {
   @override
   List<ModularRoute> get routes => [
-    // E-commerce module
-    ModuleRoute('/shop', module: ShopModule()),
-    
-    // User management module
-    ModuleRoute('/users', module: UsersModule()),
-    
-    // Analytics module
-    ModuleRoute('/analytics', module: AnalyticsModule()),
-    
-    // Admin module
-    ModuleRoute('/admin', module: AdminModule()),
+    ModuleRoute('/shop', module: ShopModule()),       // Team A
+    ModuleRoute('/users', module: UsersModule()),      // Team B
+    ModuleRoute('/analytics', module: AnalyticsModule()), // Team C
+    ModuleRoute('/admin', module: AdminModule()),      // Team D
   ];
 }
 ```
 
 ## Module Communication
 
-Use events for cross-module communication:
+Modules communicate through events, avoiding direct dependencies:
 
 ```dart
-// Shop module sends event
+// Shop module fires an event
 ModularEvent.fire(ProductAddedToCartEvent(productId: '123'));
 
-// Analytics module listens (using EventModule)
+// Analytics module listens
 class AnalyticsModule extends EventModule {
   @override
   void listen() {
@@ -61,75 +46,84 @@ class AnalyticsModule extends EventModule {
 }
 ```
 
-## Team Organization
+See [Event Module](/event-module) for full documentation.
 
-### Team A: E-commerce
+## Team Structure Example
+
+### Team A: Product Catalog
+
 ```dart
 class ShopModule extends Module {
   @override
+  FutureBinds binds(Injector i) {
+    i.addSingleton<ProductService>((i) => ProductService());
+  }
+
+  @override
   List<ModularRoute> get routes => [
     ChildRoute('/', child: (_, __) => ProductListPage()),
-    ChildRoute('/product/:id', child: (_, __) => ProductDetailPage()),
+    ChildRoute('/product/:id', child: (_, state) =>
+      ProductDetailPage(id: state.pathParameters['id']!)),
     ChildRoute('/cart', child: (_, __) => CartPage()),
   ];
 }
 ```
 
 ### Team B: User Management
+
 ```dart
 class UsersModule extends Module {
   @override
+  FutureBinds binds(Injector i) {
+    i.addSingleton<UserService>((i) => UserService());
+  }
+
+  @override
   List<ModularRoute> get routes => [
     ChildRoute('/', child: (_, __) => UserListPage()),
-    ChildRoute('/profile/:id', child: (_, __) => UserProfilePage()),
+    ChildRoute('/profile/:id', child: (_, state) =>
+      UserProfilePage(id: state.pathParameters['id']!)),
   ];
 }
 ```
 
+## Dependency Isolation
 
+Each module manages its own dependencies. Binds are registered when the module is first visited and disposed when the module exits the navigation tree:
 
-## Best Practices
+```dart
+class OrdersModule extends Module {
+  @override
+  FutureBinds binds(Injector i) {
+    i.addSingleton<OrderService>((i) => OrderService());
+    i.addSingleton<PaymentService>((i) => PaymentService());
+  }
 
-1. **Clear boundaries** - Define module responsibilities
-2. **Event-driven communication** - Avoid direct dependencies
-3. **Shared design system** - Consistent UI across modules
-4. **Independent testing** - Test each module separately
-5. **Monitoring** - Track module performance and errors
+  @override
+  List<ModularRoute> get routes => [
+    ChildRoute('/', child: (_, __) => OrdersPage()),
+    ChildRoute('/:id', child: (_, state) =>
+      OrderDetailPage(id: state.pathParameters['id']!)),
+  ];
+}
+```
+
+No module can accidentally access another module's internal services unless explicitly shared through the parent module.
 
 ## When to Use
 
-✅ **Good for:**
-- Large teams (10+ developers)
-- Complex business domains
-- Need for independent deployment
-- Different technology requirements
+| Scenario | Microfrontends? |
+|----------|----------------|
+| Large teams (10+ developers) | Yes |
+| Complex business domains | Yes |
+| Features owned by different teams | Yes |
+| Small team, simple app | No — standard modules are sufficient |
+| Tightly coupled features | No — keep in the same module |
 
-❌ **Avoid for:**
-- Small teams
-- Simple applications
-- Tightly coupled features
-- Performance-critical apps
+## Best Practices
 
-## Real Example
-
-```dart
-// E-commerce app with microfrontends
-class EcommerceApp extends Module {
-  @override
-  List<ModularRoute> get routes => [
-    // Product catalog (Team A)
-    ModuleRoute('/products', module: ProductsModule()),
-    
-    // Shopping cart (Team B)
-    ModuleRoute('/cart', module: CartModule()),
-    
-    // User accounts (Team C)
-    ModuleRoute('/account', module: AccountModule()),
-    
-    // Order management (Team D)
-    ModuleRoute('/orders', module: OrdersModule()),
-  ];
-}
-```
-
-Each team can work independently while the app works as a cohesive whole.
+1. **Define clear module boundaries** — Each module should own a distinct feature or domain.
+2. **Communicate via events** — Avoid direct dependencies between modules.
+3. **Share UI through a design system** — Keep a shared theme/widget library outside the module layer.
+4. **Test modules independently** — Each module should be testable in isolation.
+5. **Use `ModuleRoute` for every team boundary** — This ensures proper DI isolation and auto-dispose.

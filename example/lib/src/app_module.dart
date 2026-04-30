@@ -5,6 +5,7 @@ import 'package:example/src/modules/binds_by_key/binds_by_key_module.dart';
 import 'package:example/src/modules/example_event_module/example_event_module.dart';
 import 'package:example/src/modules/home/home_module.dart';
 import 'package:example/src/modules/shell_example/shell_module.dart';
+import 'package:example/src/modules/stateful_shell_example/stateful_shell_module.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 class AppModule extends Module {
@@ -26,8 +27,13 @@ class AppModule extends Module {
           module: ShellModule(),
         ),
         ModuleRoute(
+          '/stateful-shell',
+          module: StatefulShellExampleModule(),
+        ),
+        ModuleRoute(
           '/binds-by-key',
           module: BindsByKeyModule(),
         )
       ];
 }
+

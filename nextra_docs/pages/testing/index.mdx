@@ -1,0 +1,157 @@
+# Testing
+
+A dedicated testing library that provides isolated, predictable test environments for code that depends on `go_router_modular`.
+
+## Overview
+
+The testing API solves three common problems when writing tests for modular Flutter apps:
+
+1. **Global state leaks** — DI container, event subscriptions, and dependency analyzer all use singletons. `ModularTestScope` resets everything between tests.
+2. **Event assertion boilerplate** — `EventRecorder` captures events from the global bus so you can assert what was fired without setting up manual subscriptions.
+3. **DI in unit tests** — `FakeInjector` provides a fully immutable, type-safe replacement for `InjectorReader` that needs no global state.
+
+## Installation
+
+The testing library is part of the package. Import it in your test files:
+
+```dart filename="my_test.dart"
+import 'package:go_router_modular/testing.dart';
+```
+
+No additional `pubspec.yaml` changes required.
+
+## ModularTestScope
+
+`ModularTestScope` is the main entry point. It handles the full test lifecycle in one object.
+
+### Lifecycle
+
+```dart filename="my_service_test.dart"
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+void main() {
+  final scope = ModularTestScope.fresh();
+
+  setUp(scope.setUp);     // clears DI + event state
+  tearDown(scope.tearDown); // cancels listeners + clears DI + event state
+
+  test('...', () {
+    // scope is clean for every test
+  });
+}
+```
+
+`setUp()` and `tearDown()` reset:
+- The global DI container (`Bind.clearAll`)
+- The event state (`clearEventModuleState`)
+- The dependency analyzer (`DependencyAnalyzer.clearAll`)
+
+### Registering Dependencies
+
+Use `registerInstance`, `registerFactory`, or `registerLazySingleton` inside the `setUp` callback or inside each test:
+
+```dart filename="checkout_test.dart"
+setUp(() {
+  scope.setUp();
+  scope.registerInstance<PaymentGateway>(FakePaymentGateway());
+  scope.registerInstance<UserRepository>(FakeUserRepository());
+  scope.registerFactory<OrderService>(() => OrderService(
+    scope.get<PaymentGateway>(),
+    scope.get<UserRepository>(),
+  ));
+});
+
+test('processes payment', () {
+  final service = scope.get<OrderService>();
+  expect(service.processOrder(1, 100), isTrue);
+});
+```
+
+| Method | Behavior |
+|--------|----------|
+| `registerInstance<T>(instance)` | Singleton — always returns the same object |
+| `registerFactory<T>(factory)` | New instance on every `get<T>()` |
+| `registerLazySingleton<T>(factory)` | Created once on first `get<T>()`, then reused |
+
+### Template (shared binds across all tests)
+
+Configure binds that are applied on every `setUp` call using the fluent `withXxx` methods. Each method returns a **new scope** without modifying the original.
+
+```dart filename="product_tests.dart"
+final scope = ModularTestScope.fresh()
+    .withInstance<AppConfig>(AppConfig.test())
+    .withLazySingleton<ApiClient>(() => ApiClient());
+
+setUp(scope.setUp);   // AppConfig and ApiClient are registered on every setUp
+tearDown(scope.tearDown);
+
+test('uses shared AppConfig', () {
+  final config = scope.get<AppConfig>();
+  expect(config.env, equals('test'));
+});
+```
+
+| Method | Returns |
+|--------|---------|
+| `withInstance<T>(instance)` | New `ModularTestScope` with T in its template |
+| `withFactory<T>(factory)` | New `ModularTestScope` with T factory in its template |
+| `withLazySingleton<T>(factory)` | New `ModularTestScope` with T lazy singleton in template |
+
+### Resolving and Checking
+
+```dart
+scope.get<MyService>();            // resolves T — throws if not registered
+scope.isRegistered<MyService>();   // returns bool
+```
+
+## Complete Example
+
+```dart filename="order_module_test.dart"
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+class FakePaymentGateway implements PaymentGateway {
+  bool _charged = false;
+  @override bool charge(int amount) { _charged = true; return true; }
+  bool get wasCharged => _charged;
+}
+
+void main() {
+  final scope = ModularTestScope.fresh()
+      .withInstance<UserRepository>(FakeUserRepository());
+
+  setUp(scope.setUp);
+  tearDown(scope.tearDown);
+
+  test('registers and resolves OrderService', () {
+    scope.registerInstance<PaymentGateway>(FakePaymentGateway());
+    scope.registerFactory<OrderService>(() => OrderService(
+      scope.get<PaymentGateway>(),
+      scope.get<UserRepository>(),
+    ));
+
+    expect(scope.isRegistered<OrderService>(), isTrue);
+
+    final service = scope.get<OrderService>();
+    expect(service, isA<OrderService>());
+  });
+
+  test('factory creates a new instance on each get', () {
+    scope.registerFactory<Object>(() => Object());
+
+    final a = scope.get<Object>();
+    final b = scope.get<Object>();
+
+    expect(a, isNot(same(b)));
+  });
+
+  test('lazy singleton returns the same instance', () {
+    int count = 0;
+    scope.registerLazySingleton<String>(() => 'instance-${++count}');
+
+    expect(scope.get<String>(), equals('instance-1'));
+    expect(scope.get<String>(), equals('instance-1')); // same
+  });
+}
+```
