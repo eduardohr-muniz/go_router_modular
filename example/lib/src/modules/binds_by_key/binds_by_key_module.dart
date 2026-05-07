@@ -47,7 +47,9 @@ abstract class IDioFake {
 class DioFake implements IDioFake {
   @override
   final String baseUrl;
-  DioFake({required this.baseUrl});
+  DioFake({required this.baseUrl}) {
+    print('DioFake criado');
+  }
 }
 
 abstract class IApiFake {
@@ -58,4 +60,10 @@ class ApiFake implements IApiFake {
   @override
   final IDioFake dio;
   ApiFake({required this.dio});
+}
+
+class BlocFake {
+  BlocFake() {
+    print('BlocFake criado');
+  }
 }
