@@ -20,6 +20,15 @@ class InjectionManager {
 
   bool get _debugLog => SetupModular.instance.debugLogGoRouterModular;
 
+  /// Clears every bind and module-registration state. Use between tests that
+  /// touch [InjectionManager] so `registerAppModule` is not skipped due to a
+  /// stale [BindContextTracker.appModule].
+  void resetForTesting() {
+    Bind.clearAll();
+    _tracker.clear();
+    _bindsToValidate.clear();
+  }
+
   // ==================== MODULE REGISTRATION ====================
 
   Future<void> registerAppModule(Module module) async {
