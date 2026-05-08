@@ -129,6 +129,10 @@ class BindRegistry {
   /// (e.g. `i.get<Dep>()` from another factory) resolve regardless of
   /// declaration order.
   ///
+  /// `bindsMap[T]` stores **only the unkeyed** bind for a given type; keyed
+  /// binds live exclusively in `bindsMapByKey`. This mirrors `BindLocator`'s
+  /// expectation that an unkeyed `get<T>()` skips keyed slots.
+  ///
   /// Object-typed binds (no static type information) fall back to the legacy
   /// deferred-discovery path via [BindStorage.pendingObjectBinds].
   void registerBatch(List<Bind<Object>> binds) {
@@ -145,21 +149,24 @@ class BindRegistry {
         continue;
       }
 
+      // Skip type-indexing for keyed binds: their canonical slot is the key map.
+      if (bind.key != null) continue;
+
       _indexCanonicalOrPropagate(declared, bind);
     }
   }
 
-  /// Materializes singletons registered in the current batch.
-  ///
-  /// Two passes:
-  ///   1. Instantiate canonical eager singletons (no ordering concerns: every
-  ///      typed bind is already in `bindsMap`, so `i.get<T>()` resolves via
-  ///      lazy `bind.instance`).
-  ///   2. Propagate `cachedInstance` to duplicate binds (same type, different
-  ///      `Bind` object — created when imports re-run `module.binds`). Avoids
-  ///      redundant factory calls in downstream introspection.
-  ///
-  /// Object-typed binds are resolved via the legacy deferred path.
+  /// Materializes binds registered in the current batch in three phases:
+  ///   1. **Canonical singletons** (eager and lazy): run the factory once,
+  ///      cache it, and index `bindsMap[runtimeType]` so the compatibility
+  ///      lookup (`Injector.get<I>()` against an interface) keeps working
+  ///      when the bind was registered without an explicit generic type.
+  ///   2. **Duplicate binds** produced when imports re-run `module.binds`:
+  ///      inherit `cachedInstance` from the canonical bind so introspection
+  ///      (`_mapBindsToIdentifiers`, `_logRegisteredBinds`,
+  ///      `_validateModuleBinds`) does not re-invoke factories.
+  ///   3. **Object-typed binds** (no compile-time generic) keep using the
+  ///      legacy deferred discovery path via [BindStorage.pendingObjectBinds].
   void commitBatch(Injector injector) {
     final batch = List<Bind<Object>>.from(_pendingBatch);
     _pendingBatch.clear();
@@ -169,48 +176,60 @@ class BindRegistry {
     _commitObjectBinds(injector);
   }
 
-  /// Pre-indexes a typed [bind] under [declared].
+  /// Pre-indexes an unkeyed typed [bind] under [declared].
   ///
   /// First registration wins; subsequent duplicates only inherit cache (when
-  /// available) and otherwise sit in [_pendingBatch] for phase 2 propagation.
-  /// A duplicate carrying a distinct [Bind.key] gets its own slot in
-  /// [BindStorage.bindsMapByKey] but does not displace the canonical type slot.
+  /// available) so introspection does not re-invoke factories. Caller must
+  /// ensure [bind] is unkeyed — keyed binds belong in
+  /// [BindStorage.bindsMapByKey] only.
   void _indexCanonicalOrPropagate(Type declared, Bind bind) {
+    assert(bind.key == null, 'Keyed binds must not be indexed in bindsMap');
+
     final existing = _storage.bindsMap[declared];
     if (existing == null) {
       _storage.bindsMap[declared] = bind;
       return;
     }
 
-    if (existing.key == bind.key) {
-      if (existing.isSingleton && existing.cachedInstance != null) {
-        bind.cachedInstance ??= existing.cachedInstance;
-      }
-      return;
+    if (existing.key == null && existing.isSingleton && existing.cachedInstance != null) {
+      bind.cachedInstance ??= existing.cachedInstance;
     }
   }
 
   void _instantiateCanonicalSingletons(List<Bind<Object>> batch, Injector injector) {
     for (final bind in batch) {
       if (bind.type == Object) continue;
-      if (!bind.isSingleton || bind.isLazy) continue;
+      if (!bind.isSingleton) continue;
       if (bind.cachedInstance != null) continue;
-
-      final canonical = _storage.bindsMap[bind.type];
-      if (canonical == null || !identical(canonical, bind)) continue;
+      if (!_isCanonical(bind)) continue;
 
       try {
         final instance = bind.factoryFunction(injector);
         bind.cachedInstance = instance;
 
+        // Index discovered runtime type so `BindLocator._searchCompatibleBind`
+        // can resolve `Injector.get<Interface>()` against concrete singletons
+        // — but never displace an unkeyed slot with a keyed one.
         final discovered = instance.runtimeType;
-        if (discovered != bind.type && discovered != Object) {
+        if (discovered != bind.type && discovered != Object && bind.key == null) {
           _storage.bindsMap.putIfAbsent(discovered, () => bind);
         }
       } catch (_) {
-        // Resolution will retry lazily via i.get<T>() (cachedInstance still null).
+        // Cache stays null; runtime resolution will retry the factory the
+        // next time `bind.instance` is read (e.g. through `i.get<T>()`).
       }
     }
+  }
+
+  /// A [bind] is canonical when it owns its slot in storage (`bindsMap[type]`
+  /// for unkeyed binds, `bindsMapByKey[key]` for keyed binds). Duplicates
+  /// produced by re-running `module.binds` from imports are non-canonical and
+  /// must reuse the canonical cache instead of running their factory again.
+  bool _isCanonical(Bind bind) {
+    if (bind.key != null) {
+      return identical(_storage.bindsMapByKey[bind.key!], bind);
+    }
+    return identical(_storage.bindsMap[bind.type], bind);
   }
 
   void _propagateCacheToDuplicates(List<Bind<Object>> batch) {
@@ -218,8 +237,12 @@ class BindRegistry {
       if (bind.type == Object) continue;
       if (bind.cachedInstance != null) continue;
 
-      final canonical = _storage.bindsMap[bind.type];
+      final canonical = bind.key != null //
+          ? _storage.bindsMapByKey[bind.key!]
+          : _storage.bindsMap[bind.type];
+
       if (canonical == null || identical(canonical, bind)) continue;
+      if (canonical.key != bind.key) continue;
       if (canonical.cachedInstance == null) continue;
 
       bind.cachedInstance = canonical.cachedInstance;
