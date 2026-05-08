@@ -1,12 +1,30 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router/go_router.dart';
+import 'package:go_transitions/go_transitions.dart';
 
-/// Modular wrapper for [StatefulShellRoute.indexedStack].
+import '../core/module/module.dart';
+import 'child_route.dart';
+import 'i_modular_route.dart';
+import 'module_route.dart';
+
+/// Modular wrapper for [StatefulShellRoute].
 ///
-/// Each branch contains its own navigator with persistent state,
-/// using an IndexedStack to manage the branch Widgets.
+/// Troca entre branches:
+/// - **`indexedStack`** (sem animação) só quando não há transição disponível —
+///   [Modular.getDefaultTransition] é `null` e você não passou
+///   [transition] nem [transitionDuration] nem [reverseTransitionDuration].
+/// - Caso contrário, usa-se transição igual à das rotas: preencha só [transition],
+///   só `transitionDuration`, ambos ou nenhum; o que faltar usa
+///   **[Modular.getDefaultTransition]** e **[GoTransition.defaultDuration]**
+///   (esta última também reflete `defaultTransitionDuration` de [GoRouterModular.configure]).
+///
+/// Sobrescritas explícitas: [transition], [transitionDuration], [reverseTransitionDuration].
+/// [navigatorContainerBuilder], quando informado, **substitui** toda a lógica acima.
+///
+/// As transições de [ChildRoute]/[ModuleRoute] (`go_transitions`) continuam válidas
+/// **dentro da pilha de cada branch**.
 ///
 /// Example:
 /// ```dart
@@ -14,6 +32,8 @@ import 'package:go_router_modular/go_router_modular.dart';
 ///   @override
 ///   List<ModularRoute> get routes => [
 ///     StatefulShellModularRoute(
+///       transition: GoTransitions.slide.toTop.withFade,
+///       transitionDuration: Duration(milliseconds: 300),
 ///       builder: (context, state, navigationShell) => ScaffoldWithNavBar(
 ///         navigationShell: navigationShell,
 ///       ),
@@ -33,10 +53,32 @@ import 'package:go_router_modular/go_router_modular.dart';
 /// }
 /// ```
 class StatefulShellModularRoute extends ModularRoute {
-  final Widget Function(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell)? builder;
-  final Page<dynamic> Function(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell)? pageBuilder;
+  final Widget Function(BuildContext context, GoRouterState state,
+      StatefulNavigationShell navigationShell)? builder;
+  final Page<dynamic> Function(BuildContext context, GoRouterState state,
+      StatefulNavigationShell navigationShell)? pageBuilder;
   final List<ModularBranch> branches;
-  final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
+
+  /// Transição entre branches (`GoTransitions.*`). Omitido usa [Modular.getDefaultTransition]
+  /// quando houver animação (ver documentação da classe).
+  final GoTransition? transition;
+
+  /// Duração da transição ao trocar de branch. Omitido usa [GoTransition.defaultDuration].
+  final Duration? transitionDuration;
+
+  /// Duração reversa opcional. Omitido usa [GoTransition.defaultReverseDuration] ou a duração efetiva.
+  final Duration? reverseTransitionDuration;
+
+  /// Container das branches.
+  ///
+  /// Se não for `null`, **substitui** [StatefulShellRoute.indexedStack] e tem prioridade
+  /// sobre [transition] / durações. Veja [StatefulShellBranchTransitions] para presets.
+  final ShellNavigationContainerBuilder? navigatorContainerBuilder;
+
+  /// Encaminhado para [StatefulShellRoute]: notificar o observer raiz da troca de páginas.
+  final bool notifyRootObserver;
+  final FutureOr<String?> Function(BuildContext context, GoRouterState state)?
+      redirect;
   final GlobalKey<NavigatorState>? parentNavigatorKey;
   final String? restorationScopeId;
   final GlobalKey<StatefulNavigationShellState>? shellKey;
@@ -45,6 +87,11 @@ class StatefulShellModularRoute extends ModularRoute {
     required this.branches,
     this.builder,
     this.pageBuilder,
+    this.transition,
+    this.transitionDuration,
+    this.reverseTransitionDuration,
+    this.navigatorContainerBuilder,
+    this.notifyRootObserver = true,
     this.redirect,
     this.parentNavigatorKey,
     this.restorationScopeId,

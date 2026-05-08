@@ -20,7 +20,7 @@ All notable changes to GoRouter Modular.
 
 ### Added
 
-- **StatefulShellModularRoute**: Persistent state across navigation branches using `IndexedStack`. Each branch gets its own navigator, preserving scroll position, form state, and navigation history.
+- **StatefulShellModularRoute**: Persistent state across tab branches — each branch keeps its own navigator. By default uses `StatefulShellRoute.indexedStack` when **no** effective transition applies (no global `defaultTransition`, no shell `transition`, and no `transitionDuration` / `reverseTransitionDuration`). When a transition is available (`transition`, `Modular.configure` defaults, durations, or `navigatorContainerBuilder` / presets like `StatefulShellBranchTransitions`), the shell uses an animated branch container aligned with **go_transitions** while preserving the same persistence guarantees.
 - **ModularBranch**: Define branches with direct routes or full modules (with DI).
 - **Lazy branch registration**: Branch module binds are registered on first visit and disposed when the shell exits.
 - **Enhanced DI**: New `binds(Injector i)` function with key support for multiple instances of the same type.

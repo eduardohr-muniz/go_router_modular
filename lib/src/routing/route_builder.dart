@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
 import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
+import 'package:go_transitions/go_transitions.dart';
 
 /// Builds GoRouter routes from a Module's route definitions.
 class ModularRouteBuilder {
@@ -31,7 +32,8 @@ class ModularRouteBuilder {
         .toList();
   }
 
-  GoRoute _createChild({required ChildRoute childRoute, required bool topLevel}) {
+  GoRoute _createChild(
+      {required ChildRoute childRoute, required bool topLevel}) {
     if (childRoute.pageBuilder != null) {
       return GoRoute(
         path: _normalizePath(path: childRoute.path, topLevel: topLevel),
@@ -71,33 +73,48 @@ class ModularRouteBuilder {
 
   // ==================== MODULE ROUTES ====================
 
-  List<GoRoute> _createModuleRoutes({required String modulePath, required bool topLevel}) {
+  List<GoRoute> _createModuleRoutes(
+      {required String modulePath, required bool topLevel}) {
     return module.routes
         .whereType<ModuleRoute>()
-        .map((m) => _createModule(module: m, modulePath: modulePath, topLevel: topLevel))
+        .map((m) => _createModule(
+            module: m, modulePath: modulePath, topLevel: topLevel))
         .toList();
   }
 
-  GoRoute _createModule({required ModuleRoute module, required String modulePath, required bool topLevel}) {
-    final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => _adjustRoute(route.path) == '/').firstOrNull;
-    final isShell = module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
-    final isStatefulShell = module.module.routes.whereType<StatefulShellModularRoute>().isNotEmpty;
+  GoRoute _createModule(
+      {required ModuleRoute module,
+      required String modulePath,
+      required bool topLevel}) {
+    final childRoute = module.module.routes
+        .whereType<ChildRoute>()
+        .where((route) => _adjustRoute(route.path) == '/')
+        .firstOrNull;
+    final isShell =
+        module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
+    final isStatefulShell =
+        module.module.routes.whereType<StatefulShellModularRoute>().isNotEmpty;
 
     if (!isShell && !isStatefulShell) {
-      assert(childRoute != null, ModuleAssert.childRouteAssert(module.module.runtimeType.toString()));
+      assert(childRoute != null,
+          ModuleAssert.childRouteAssert(module.module.runtimeType.toString()));
     }
 
     if (isStatefulShell) {
-      final statefulRoute = module.module.routes.whereType<StatefulShellModularRoute>().first;
-      final firstBranchInitialLocation = _resolveFirstBranchLocation(statefulRoute, module.path);
+      final statefulRoute =
+          module.module.routes.whereType<StatefulShellModularRoute>().first;
+      final firstBranchInitialLocation =
+          _resolveFirstBranchLocation(statefulRoute, module.path);
 
       return GoRoute(
         path: _normalizePath(path: module.path, topLevel: topLevel),
         name: module.name,
-        routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
+        routes: module.module
+            .configureRoutes(modulePath: module.path, topLevel: false),
         redirect: (context, state) async {
           final result = await _buildRedirectAndInjectBinds(
-            context, state,
+            context,
+            state,
             module: module.module,
             modulePath: module.path,
             redirect: null,
@@ -107,10 +124,14 @@ class ModularRouteBuilder {
 
           // Se a rota exata é o path do módulo, redirecionar para a primeira branch
           final currentPath = state.uri.path;
-          final normalizedModulePath = _normalizePath(path: module.path, topLevel: topLevel);
-          if (currentPath == normalizedModulePath || currentPath == '$normalizedModulePath/') {
+          final normalizedModulePath =
+              _normalizePath(path: module.path, topLevel: topLevel);
+          if (currentPath == normalizedModulePath ||
+              currentPath == '$normalizedModulePath/') {
             final target = firstBranchInitialLocation;
-            if (target != currentPath && target != '$currentPath/' && currentPath != '$target/') {
+            if (target != currentPath &&
+                target != '$currentPath/' &&
+                currentPath != '$target/') {
               return target;
             }
           }
@@ -123,24 +144,32 @@ class ModularRouteBuilder {
       return GoRoute(
         path: _normalizePath(path: module.path, topLevel: topLevel),
         name: module.name,
-        routes: module.module.configureRoutes(modulePath: module.path, topLevel: false),
-        redirect: (context, state) =>
-            _buildRedirectAndInjectBinds(context, state, module: module.module, modulePath: module.path, redirect: null, topLevel: topLevel),
+        routes: module.module
+            .configureRoutes(modulePath: module.path, topLevel: false),
+        redirect: (context, state) => _buildRedirectAndInjectBinds(
+            context, state,
+            module: module.module,
+            modulePath: module.path,
+            redirect: null,
+            topLevel: topLevel),
       );
     }
 
     final nonNullChildRoute = childRoute!;
     final moduleBuilder = (context, state) => ParentWidgetObserver(
           onDispose: (mod) => _disposeModule(mod),
-          didChangeDependencies: (mod) => this.module.onDidChangeGoingReference(mod),
+          didChangeDependencies: (mod) =>
+              this.module.onDidChangeGoingReference(mod),
           module: module.module,
           child: nonNullChildRoute.child(context, state),
         );
 
     final fullPath = module.path + nonNullChildRoute.path;
     final moduleName = nonNullChildRoute.name ?? module.name;
-    final childRoutes = module.module.configureRoutes(modulePath: module.path, topLevel: false);
-    final transition = nonNullChildRoute.transition ?? Modular.getDefaultTransition;
+    final childRoutes =
+        module.module.configureRoutes(modulePath: module.path, topLevel: false);
+    final transition =
+        nonNullChildRoute.transition ?? Modular.getDefaultTransition;
 
     if (transition != null) {
       final route = _buildGoRouteWithTransition(
@@ -149,8 +178,12 @@ class ModularRouteBuilder {
         transition: transition,
         builder: moduleBuilder,
         parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
-        redirect: (context, state) => _buildRedirectAndInjectBinds(context, state,
-            module: module.module, modulePath: module.path, redirect: nonNullChildRoute.redirect, topLevel: topLevel),
+        redirect: (context, state) => _buildRedirectAndInjectBinds(
+            context, state,
+            module: module.module,
+            modulePath: module.path,
+            redirect: nonNullChildRoute.redirect,
+            topLevel: topLevel),
         topLevel: topLevel,
         transitionDuration: nonNullChildRoute.transitionDuration,
         onExit: nonNullChildRoute.onExit,
@@ -173,7 +206,8 @@ class ModularRouteBuilder {
       builder: moduleBuilder,
       parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
       redirect: (context, state) => _buildRedirectAndInjectBinds(
-        context, state,
+        context,
+        state,
         module: module.module,
         modulePath: module.path,
         redirect: nonNullChildRoute.redirect,
@@ -188,9 +222,12 @@ class ModularRouteBuilder {
 
   List<RouteBase> _createShellRoutes(bool topLevel, String modulePath) {
     return module.routes.whereType<ShellModularRoute>().map((shellRoute) {
-      final existsChildRouteIncorrect =
-          shellRoute.routes.whereType<ChildRoute>().where((route) => _adjustRoute(route.path) == '/').isNotEmpty;
-      assert(!existsChildRouteIncorrect, ModuleAssert.shellRouteAssert(module.runtimeType.toString()));
+      final existsChildRouteIncorrect = shellRoute.routes
+          .whereType<ChildRoute>()
+          .where((route) => _adjustRoute(route.path) == '/')
+          .isNotEmpty;
+      assert(!existsChildRouteIncorrect,
+          ModuleAssert.shellRouteAssert(module.runtimeType.toString()));
 
       return ShellRoute(
         builder: (context, state, child) => shellRoute.builder!(
@@ -198,12 +235,16 @@ class ModularRouteBuilder {
           state,
           ParentWidgetObserver(
             onDispose: (mod) => _disposeModule(mod),
-            didChangeDependencies: (mod) => module.onDidChangeGoingReference(mod),
+            didChangeDependencies: (mod) =>
+                module.onDidChangeGoingReference(mod),
             module: module,
             child: child,
           ),
         ),
-        pageBuilder: shellRoute.pageBuilder != null ? (context, state, child) => shellRoute.pageBuilder!(context, state, child) : null,
+        pageBuilder: shellRoute.pageBuilder != null
+            ? (context, state, child) =>
+                shellRoute.pageBuilder!(context, state, child)
+            : null,
         redirect: shellRoute.redirect,
         navigatorKey: shellRoute.navigatorKey,
         observers: shellRoute.observers,
@@ -212,9 +253,13 @@ class ModularRouteBuilder {
         routes: shellRoute.routes
             .map((routeOrModule) {
               if (routeOrModule is ChildRoute) {
-                return _createChild(childRoute: routeOrModule, topLevel: topLevel);
+                return _createChild(
+                    childRoute: routeOrModule, topLevel: topLevel);
               } else if (routeOrModule is ModuleRoute) {
-                return _createModule(module: routeOrModule, modulePath: routeOrModule.path, topLevel: topLevel);
+                return _createModule(
+                    module: routeOrModule,
+                    modulePath: routeOrModule.path,
+                    topLevel: topLevel);
               }
               return null;
             })
@@ -227,7 +272,9 @@ class ModularRouteBuilder {
   // ==================== STATEFUL SHELL ROUTES ====================
 
   List<RouteBase> _createStatefulShellRoutes(bool topLevel, String modulePath) {
-    return module.routes.whereType<StatefulShellModularRoute>().map((statefulRoute) {
+    return module.routes
+        .whereType<StatefulShellModularRoute>()
+        .map((statefulRoute) {
       // Track branch modules for shell-level lifecycle management
       final branchModules = <Module>[];
 
@@ -246,16 +293,41 @@ class ModularRouteBuilder {
 
       // Always wrap with ParentWidgetObserver for disposal, even if builder is null
       final effectiveBuilder = statefulRoute.builder ??
-          (BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell) => navigationShell;
+          (BuildContext context, GoRouterState state,
+                  StatefulNavigationShell navigationShell) =>
+              navigationShell;
+
+      final shellChild = (
+        BuildContext context,
+        GoRouterState state,
+        StatefulNavigationShell navigationShell,
+      ) =>
+          ParentWidgetObserver(
+            onDispose: (mod) => _disposeStatefulShellModule(mod, branchModules),
+            didChangeDependencies: (mod) =>
+                module.onDidChangeGoingReference(mod),
+            module: module,
+            child: effectiveBuilder(context, state, navigationShell),
+          );
+
+      final navigatorContainer = _resolvedStatefulShellContainer(statefulRoute);
+      if (navigatorContainer != null) {
+        return StatefulShellRoute(
+          branches: branches,
+          notifyRootObserver: statefulRoute.notifyRootObserver,
+          navigatorContainerBuilder: navigatorContainer,
+          builder: shellChild,
+          redirect: statefulRoute.redirect,
+          parentNavigatorKey: statefulRoute.parentNavigatorKey,
+          restorationScopeId: statefulRoute.restorationScopeId,
+          key: statefulRoute.shellKey,
+        );
+      }
 
       return StatefulShellRoute.indexedStack(
         branches: branches,
-        builder: (context, state, navigationShell) => ParentWidgetObserver(
-          onDispose: (mod) => _disposeStatefulShellModule(mod, branchModules),
-          didChangeDependencies: (mod) => module.onDidChangeGoingReference(mod),
-          module: module,
-          child: effectiveBuilder(context, state, navigationShell),
-        ),
+        notifyRootObserver: statefulRoute.notifyRootObserver,
+        builder: shellChild,
         redirect: statefulRoute.redirect,
         parentNavigatorKey: statefulRoute.parentNavigatorKey,
         restorationScopeId: statefulRoute.restorationScopeId,
@@ -264,14 +336,53 @@ class ModularRouteBuilder {
     }).toList();
   }
 
-  List<RouteBase> _buildBranchRoutes(ModularBranch branch, bool topLevel, String modulePath) {
+  /// [StatefulShellModularRoute]: [navigatorContainerBuilder] OU transição efetiva
+  /// (`transition` / [Modular.getDefaultTransition] / durações explícitas / default global).
+  ShellNavigationContainerBuilder? _resolvedStatefulShellContainer(
+    StatefulShellModularRoute route,
+  ) {
+    if (route.navigatorContainerBuilder != null) {
+      return route.navigatorContainerBuilder;
+    }
+
+    final moduleDefault = Modular.getDefaultTransition;
+    final transitionFromSources = route.transition ?? moduleDefault;
+    final passesExplicitDuration = route.transitionDuration != null ||
+        route.reverseTransitionDuration != null;
+
+    final useAnimatedContainer =
+        transitionFromSources != null || passesExplicitDuration;
+
+    if (!useAnimatedContainer) return null;
+
+    final effectiveTransition = transitionFromSources ?? GoTransitions.fade;
+    final effectiveDuration =
+        route.transitionDuration ?? GoTransition.defaultDuration;
+    final effectiveReverse = route.reverseTransitionDuration ??
+        GoTransition.defaultReverseDuration ??
+        effectiveDuration;
+
+    // Durações já normalizadas (GoTransition.default* / configure) para igualar ao
+    // comportamento das rotas; o helper quase sempre aplica copyWith nos settings.
+    return StatefulShellBranchTransitions.withGoTransition(
+      effectiveTransition,
+      transitionDuration: effectiveDuration,
+      reverseTransitionDuration: effectiveReverse,
+    );
+  }
+
+  List<RouteBase> _buildBranchRoutes(
+      ModularBranch branch, bool topLevel, String modulePath) {
     return branch.routes
         .map((routeOrModule) {
           if (routeOrModule is ChildRoute) {
             return _createChild(childRoute: routeOrModule, topLevel: topLevel);
           }
           if (routeOrModule is ModuleRoute) {
-            return _createModule(module: routeOrModule, modulePath: routeOrModule.path, topLevel: topLevel);
+            return _createModule(
+                module: routeOrModule,
+                modulePath: routeOrModule.path,
+                topLevel: topLevel);
           }
           return null;
         })
@@ -279,7 +390,8 @@ class ModularRouteBuilder {
         .toList();
   }
 
-  void _collectBranchModulesFromRoutes(List<ModularRoute> routes, List<Module> branchModules) {
+  void _collectBranchModulesFromRoutes(
+      List<ModularRoute> routes, List<Module> branchModules) {
     for (final modularRoute in routes) {
       if (modularRoute is ModuleRoute) {
         branchModules.add(modularRoute.module);
@@ -288,7 +400,8 @@ class ModularRouteBuilder {
   }
 
   /// Disposes all branch modules and then the shell module itself.
-  void _disposeStatefulShellModule(Module shellMod, List<Module> branchModules) {
+  void _disposeStatefulShellModule(
+      Module shellMod, List<Module> branchModules) {
     for (final branchModule in branchModules) {
       if (module.didChangeGoingReference.contains(branchModule)) continue;
       InjectionManager.instance.unregisterModule(branchModule);
@@ -299,7 +412,8 @@ class ModularRouteBuilder {
   // ==================== HELPERS ====================
 
   /// Resolve o caminho da primeira rota da primeira branch de um StatefulShellModularRoute.
-  String _resolveFirstBranchLocation(StatefulShellModularRoute statefulRoute, String modulePath) {
+  String _resolveFirstBranchLocation(
+      StatefulShellModularRoute statefulRoute, String modulePath) {
     final firstBranch = statefulRoute.branches.first;
 
     // Se a branch tem initialLocation explícito, usar ele
@@ -345,7 +459,8 @@ class ModularRouteBuilder {
         GoTransition.defaultDuration = customDuration;
 
         try {
-          final tempPage = transition.build(builder: (_, __) => widget)(context, state);
+          final tempPage =
+              transition.build(builder: (_, __) => widget)(context, state);
 
           if (tempPage is CustomTransitionPage) {
             return CustomTransitionPage<void>(

@@ -58,7 +58,7 @@ ShellModularRoute(
 
 ### StatefulShellModularRoute
 
-For bottom navigation bars and tabs that preserve state across branches. Each branch gets its own navigator backed by an `IndexedStack`:
+For bottom navigation bars and tabs that preserve state across branches. Each branch gets its own navigator — by default **`IndexedStack`** (no animation between tabs) unless you set a **`transition`**, durations, **`Modular.configure` `defaultTransition`**, **`navigatorContainerBuilder`**, or use **`StatefulShellBranchTransitions`** presets. See [Shell Routes](/routes/shell-route) for behaviour details.
 
 ```dart
 StatefulShellModularRoute(
@@ -66,11 +66,21 @@ StatefulShellModularRoute(
     navigationShell: navigationShell,
   ),
   branches: [
-    ModularBranch(module: HomeModule()),
-    ModularBranch(module: SearchModule()),
-    ModularBranch(routes: [
-      ChildRoute('/profile', child: (_, __) => ProfilePage()),
-    ]),
+    ModularBranch(
+      routes: [
+        ModuleRoute('/home', module: HomeModule()),
+      ],
+    ),
+    ModularBranch(
+      routes: [
+        ModuleRoute('/search', module: SearchModule()),
+      ],
+    ),
+    ModularBranch(
+      routes: [
+        ChildRoute('/profile', child: (_, __) => ProfilePage()),
+      ],
+    ),
   ],
 )
 ```

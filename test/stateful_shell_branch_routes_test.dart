@@ -53,6 +53,97 @@ class _AppModuleUnderTest extends Module {
       ];
 }
 
+class _ShellWithCustomNavigatorContainer extends Module {
+  _ShellWithCustomNavigatorContainer(this.navigatorContainerBuilder);
+
+  final ShellNavigationContainerBuilder navigatorContainerBuilder;
+
+  @override
+  List<ModularRoute> get routes => [
+        StatefulShellModularRoute(
+          navigatorContainerBuilder: navigatorContainerBuilder,
+          branches: [
+            ModularBranch(
+              routes: [
+                ModuleRoute('/pos', module: _EmptyLeafModule()),
+              ],
+            ),
+            ModularBranch(
+              routes: [
+                ModuleRoute('/settings', module: _EmptyLeafModule()),
+              ],
+            ),
+          ],
+        ),
+      ];
+}
+
+class _ShellWithTransitionFields extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        StatefulShellModularRoute(
+          transition: GoTransitions.fade,
+          transitionDuration: const Duration(milliseconds: 300),
+          branches: [
+            ModularBranch(
+                routes: [ModuleRoute('/pos', module: _EmptyLeafModule())]),
+            ModularBranch(
+                routes: [ModuleRoute('/settings', module: _EmptyLeafModule())]),
+          ],
+        ),
+      ];
+}
+
+class _ShellWithTransitionOnly extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        StatefulShellModularRoute(
+          transition: GoTransitions.fade,
+          branches: [
+            ModularBranch(
+                routes: [ModuleRoute('/pos', module: _EmptyLeafModule())]),
+            ModularBranch(
+                routes: [ModuleRoute('/settings', module: _EmptyLeafModule())]),
+          ],
+        ),
+      ];
+}
+
+class _ShellWithDurationOnly extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        StatefulShellModularRoute(
+          transitionDuration: const Duration(milliseconds: 500),
+          branches: [
+            ModularBranch(
+                routes: [ModuleRoute('/pos', module: _EmptyLeafModule())]),
+            ModularBranch(
+                routes: [ModuleRoute('/settings', module: _EmptyLeafModule())]),
+          ],
+        ),
+      ];
+}
+
+class _ShellWithNavigatorOverridesTransition extends Module {
+  final ShellNavigationContainerBuilder preset =
+      StatefulShellBranchTransitions.animatedFadeBetweenBranches();
+
+  @override
+  List<ModularRoute> get routes => [
+        StatefulShellModularRoute(
+          navigatorContainerBuilder: preset,
+          transition: GoTransitions.slide.toRight,
+          transitionDuration: const Duration(milliseconds: 200),
+          branches: [
+            ModularBranch(
+                routes: [ModuleRoute('/pos', module: _EmptyLeafModule())]),
+            ModularBranch(
+                routes: [ModuleRoute('/settings', module: _EmptyLeafModule())]),
+          ],
+        ),
+      ];
+}
+
 void main() {
   group('ModularBranch — apenas routes', () {
     test('ModularBranch deve falhar quando routes está vazio', () {
@@ -62,8 +153,11 @@ void main() {
       );
     });
 
-    test('cada branch com ModuleRoute distinto gera GoRoute com path diferente no shell', () {
-      final built = ModularRouteBuilder(_TwoBranchShellModule()).buildRoutes(modulePath: '/home', topLevel: false);
+    test(
+        'cada branch com ModuleRoute distinto gera GoRoute com path diferente no shell',
+        () {
+      final built = ModularRouteBuilder(_TwoBranchShellModule())
+          .buildRoutes(modulePath: '/home', topLevel: false);
       final shell = built.whereType<StatefulShellRoute>().single;
       expect(shell.branches.length, equals(2));
 
@@ -74,14 +168,63 @@ void main() {
         return (route as GoRoute).path;
       }).toList();
 
-      expect(branchPaths.toSet().length, equals(2), reason: 'paths duplicados quebram redirect do go_router');
+      expect(branchPaths.toSet().length, equals(2),
+          reason: 'paths duplicados quebram redirect do go_router');
       expect(branchPaths, containsAll(<String>['pos', 'settings']));
+    });
+
+    test('navigatorContainerBuilder custom é repassado ao StatefulShellRoute',
+        () {
+      final preset =
+          StatefulShellBranchTransitions.animatedFadeBetweenBranches();
+      final built =
+          ModularRouteBuilder(_ShellWithCustomNavigatorContainer(preset))
+              .buildRoutes(modulePath: '/app', topLevel: false);
+      final shell = built.whereType<StatefulShellRoute>().single;
+      expect(identical(shell.navigatorContainerBuilder, preset), isTrue);
+    });
+
+    test(
+        'transition + transitionDuration montam shell com navigatorContainerBuilder',
+        () {
+      final built = ModularRouteBuilder(_ShellWithTransitionFields())
+          .buildRoutes(modulePath: '/app', topLevel: false);
+      final shell = built.whereType<StatefulShellRoute>().single;
+      expect(shell.navigatorContainerBuilder, isNotNull);
+    });
+
+    test('somente transition monta shell com navigatorContainerBuilder', () {
+      final built = ModularRouteBuilder(_ShellWithTransitionOnly())
+          .buildRoutes(modulePath: '/app', topLevel: false);
+      expect(
+          built.whereType<StatefulShellRoute>().single.navigatorContainerBuilder,
+          isNotNull);
+    });
+
+    test(
+        'somente transitionDuration monta shell quando não há Modular defaultTransition',
+        () {
+      final built = ModularRouteBuilder(_ShellWithDurationOnly())
+          .buildRoutes(modulePath: '/app', topLevel: false);
+      expect(
+          built.whereType<StatefulShellRoute>().single.navigatorContainerBuilder,
+          isNotNull);
+    });
+
+    test('navigatorContainerBuilder tem prioridade sobre transition/duration',
+        () {
+      final module = _ShellWithNavigatorOverridesTransition();
+      final built =
+          ModularRouteBuilder(module).buildRoutes(modulePath: '/app', topLevel: false);
+      final shell = built.whereType<StatefulShellRoute>().single;
+      expect(identical(shell.navigatorContainerBuilder, module.preset), isTrue);
     });
 
     testWidgets(
       'GoRouter: ModuleRoute com StatefulShell não quebra redirect quando primeira branch resolve para o mesmo path',
       (tester) async {
-        final routes = ModularRouteBuilder(_AppModuleUnderTest()).buildRoutes(topLevel: true);
+        final routes = ModularRouteBuilder(_AppModuleUnderTest())
+            .buildRoutes(topLevel: true);
 
         await tester.pumpWidget(
           MaterialApp.router(
@@ -113,14 +256,18 @@ void main() {
       expect(identical(mr.module, leaf), isTrue);
     });
 
-    test('produz o mesmo resultado no RouteBuilder que ModularBranch + ModuleRoute', () {
+    test(
+        'produz o mesmo resultado no RouteBuilder que ModularBranch + ModuleRoute',
+        () {
       final leaf = _EmptyLeafModule();
 
       final shellModular = _ShellWithModularBranches(leaf);
       final shellModuleBranch = _ShellWithModuleBranches(leaf);
 
-      final builtA = ModularRouteBuilder(shellModular).buildRoutes(modulePath: '/app', topLevel: false);
-      final builtB = ModularRouteBuilder(shellModuleBranch).buildRoutes(modulePath: '/app', topLevel: false);
+      final builtA = ModularRouteBuilder(shellModular)
+          .buildRoutes(modulePath: '/app', topLevel: false);
+      final builtB = ModularRouteBuilder(shellModuleBranch)
+          .buildRoutes(modulePath: '/app', topLevel: false);
 
       final pathsA = _branchPathsFromShell(builtA);
       final pathsB = _branchPathsFromShell(builtB);

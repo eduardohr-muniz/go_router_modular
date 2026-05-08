@@ -54,9 +54,14 @@ class DashboardLayout extends StatelessWidget {
 
 ## StatefulShellModularRoute
 
-For **persistent state across tabs**. Each branch gets its own navigator backed by an `IndexedStack`, so switching tabs preserves scroll position, form state, and navigation history.
+For **persistent state across tabs**. Each branch gets its own navigator so switching tabs preserves scroll position, form state, and navigation history.
 
-This wraps GoRouter's `StatefulShellRoute.indexedStack`.
+**Container:**
+
+- **`IndexedStack`** via `StatefulShellRoute.indexedStack` when nothing selects an animated swap: no **`transition`**, no **`transitionDuration`** / **`reverseTransitionDuration`**, and no global **`Modular.configure` `defaultTransition`**.
+- **Animated** swap (aligned with **[go_transitions](https://pub.dev/packages/go_transitions)**) when any of those is set, or when you pass **`navigatorContainerBuilder`** — for example presets from **`StatefulShellBranchTransitions`** (`withGoTransition`, fade presets, …). The explicit builder **wins** over `transition`/durations.
+
+You can combine partial overrides (only **`transition`**, only durations, or both); missing pieces fall back to **`Modular.configure`** defaults and **`GoTransition.defaultDuration`** (including **`defaultTransitionDuration`** in configure).
 
 ### Basic Example
 
@@ -174,10 +179,10 @@ StatefulShellModularRoute(
 |-------|-------------|
 | Shell enters navigation tree | Shell module binds are registered |
 | First visit to a branch | Branch module binds are registered (lazy) |
-| Switch between branches | Nothing — all branches stay alive in `IndexedStack` |
+| Switch between branches | Nothing — navigators stay mounted (IndexedStack **or** animated container; branches are **not** disposed on tab switch) |
 | Shell exits navigation tree | All branch modules are disposed, then the shell module |
 
-> Because `IndexedStack` keeps all branches alive, branch modules are **not** disposed when switching tabs. This is by design — state persists across tab switches.
+> Whether the shell uses IndexedStack or an animated container, inactive branches typically stay **mounted**. Branch modules are **not** disposed when switching tabs — state persists across tab switches.
 
 ### Layout with StatefulNavigationShell
 
@@ -224,6 +229,10 @@ class AppShell extends StatelessWidget {
 
 > Use `ModuleRoute('/segment', module: YourModule())` inside `routes` when the branch needs its own binds and route tree.
 
+### Branch transitions (`go_transitions`)
+
+Optional **`transition`** (e.g. `GoTransitions.slide.toTop.withFade`), **`transitionDuration`**, **`reverseTransitionDuration`**, **or `navigatorContainerBuilder`** control how the shell switches branch content. Omitting them uses **`IndexedStack`** only when **no effective transition** applies (see above). Prefer **`StatefulShellBranchTransitions.withGoTransition`** presets when wrapping custom logic isn’t needed.
+
 ### StatefulShellModularRoute Parameters
 
 | Parameter | Type | Description |
@@ -231,6 +240,11 @@ class AppShell extends StatelessWidget {
 | `branches` | `List<ModularBranch>` | **Required.** Branches for the shell (`ModularBranch`, `ModuleBranch`, …) |
 | `builder` | `Widget Function(context, state, navigationShell)?` | Builds the shell layout |
 | `pageBuilder` | `Page Function(context, state, navigationShell)?` | Custom page builder |
+| `transition` | `GoTransition?` | Branch-to-branch animation (inherits from `Modular.configure` default when omitted) |
+| `transitionDuration` | `Duration?` | Forward duration (`GoTransition.defaultDuration` when omitted; reflects configure `defaultTransitionDuration`) |
+| `reverseTransitionDuration` | `Duration?` | Optional reverse duration |
+| `navigatorContainerBuilder` | `ShellNavigationContainerBuilder?` | **Overrides** IndexedStack/default transition wiring when non-null |
+| `notifyRootObserver` | `bool` | Forwarded to `StatefulShellRoute` (default `true`) |
 | `redirect` | `FutureOr<String?> Function(context, state)?` | Redirect logic |
 | `parentNavigatorKey` | `GlobalKey<NavigatorState>?` | Parent navigator key |
 | `restorationScopeId` | `String?` | Restoration scope |
@@ -248,6 +262,7 @@ class AppShell extends StatelessWidget {
 | Back button per tab | No | Yes |
 | Branch-level DI | No | Yes |
 | Use case | Simple layouts, sidebars | Bottom navigation, tab bars |
+| Typical branch container | `child` swaps in one navigator | `IndexedStack` **or** animated builder (defaults + presets) |
 
 ---
 

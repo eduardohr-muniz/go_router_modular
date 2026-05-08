@@ -1,6 +1,11 @@
 import 'dart:async';
-import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/routing/route_builder.dart';
+
+import 'package:go_router/go_router.dart';
+
+import '../../di/injector.dart';
+import '../../routing/i_modular_route.dart';
+import '../../routing/route_builder.dart';
+import '../manager/injection_manager.dart';
 
 typedef FutureBinds = FutureOr<void>;
 typedef FutureModules = FutureOr<List<Module>>;
