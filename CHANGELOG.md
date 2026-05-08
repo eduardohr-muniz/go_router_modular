@@ -1,8 +1,12 @@
-## 5.0.6
+## 5.1.0
 
 ### Fix
 
 - **Dependency Injection**: Fixed singleton binds being instantiated 3× when a `RouteModule` imports `AppModule` (or any module already registered).
+
+## 5.0.6
+
+### Fix
 
   **Root cause**: `_collectImportedBinds` calls `module.binds(injector)` on every module registration pass, creating new `Bind` objects with `cachedInstance == null`. `commitBatch` correctly skipped those duplicates via the fast-path (`_isSingletonAlreadyRegistered`), but did **not** propagate `cachedInstance` to the new `Bind` object. Downstream methods `_mapBindsToIdentifiers` and `_validateModuleBinds` use `bind.cachedInstance ?? bind.factoryFunction(...)`, so they fell back to calling the factory — executing the constructor 2 extra times.
 

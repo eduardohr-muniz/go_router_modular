@@ -30,4 +30,11 @@ class BindContextTracker {
 
     return false;
   }
+
+  /// Clears all module/bind associations (e.g. between tests).
+  void clear() {
+    _bindModuleContext.clear();
+    moduleBindTypes.clear();
+    appModule = null;
+  }
 }

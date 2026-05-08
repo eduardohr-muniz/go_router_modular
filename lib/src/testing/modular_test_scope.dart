@@ -1,6 +1,7 @@
 import 'package:event_bus/event_bus.dart';
 import 'package:go_router_modular/src/core/bind/bind.dart';
 import 'package:go_router_modular/src/core/dependency_analyzer/dependency_analyzer.dart';
+import 'package:go_router_modular/src/core/manager/injection_manager.dart';
 import 'package:go_router_modular/src/events/modular_event.dart';
 import 'package:go_router_modular/src/testing/modular_event_bus.dart';
 import 'package:go_router_modular/src/testing/bind_template.dart';
@@ -131,7 +132,7 @@ class ModularTestScope {
   ///
   /// Deve ser chamado no `setUp` de cada grupo de testes.
   void setUp() {
-    Bind.clearAll();
+    InjectionManager.instance.resetForTesting();
     DependencyAnalyzer.clearAll();
     clearEventModuleState();
     _template.registerAll();
@@ -142,7 +143,7 @@ class ModularTestScope {
   /// Deve ser chamado no `tearDown` de cada grupo de testes.
   void tearDown() {
     _recorder.dispose();
-    Bind.clearAll();
+    InjectionManager.instance.resetForTesting();
     DependencyAnalyzer.clearAll();
     clearEventModuleState();
   }

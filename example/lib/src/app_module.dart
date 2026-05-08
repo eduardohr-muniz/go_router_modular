@@ -12,6 +12,7 @@ class AppModule extends Module {
   @override
   FutureOr<void> binds(Injector i) {
     i.addSingleton<DioFake>((i) => DioFake(baseUrl: 'https://padrao.com'));
+    i.addSingleton<BlocFake>((i) => BlocFake());
   }
 
   @override
@@ -36,4 +37,3 @@ class AppModule extends Module {
         )
       ];
 }
-

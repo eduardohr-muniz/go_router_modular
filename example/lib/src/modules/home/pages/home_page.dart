@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print, deprecated_member_use
 
+import 'package:example/src/modules/binds_by_key/binds_by_key_module.dart';
 import 'package:example/src/modules/shared/module_singleton.dart';
 import 'package:example/src/modules/shared/shared_service.dart';
 import 'package:example/src/modules/shared/test_controller.dart';
@@ -19,6 +20,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
+    Modular.get<BlocFake>();
     super.initState();
   }
 
