@@ -7,6 +7,13 @@ import 'package:go_router_modular/src/di/injector.dart';
 class BindRegistry {
   final BindStorage _storage = BindStorage.instance;
 
+  /// Binds queued by [registerBatch] awaiting [commitBatch].
+  ///
+  /// Holding a per-batch list lets [commitBatch] propagate the canonical
+  /// `cachedInstance` to duplicate `Bind` objects (created when imports re-run
+  /// `module.binds`) without re-invoking factories.
+  final List<Bind<Object>> _pendingBatch = [];
+
   bool _isSingletonAlreadyRegistered(Type type, Bind bind) {
     if (!bind.isSingleton) return false;
     final existing = _storage.bindsMap[type];
@@ -114,53 +121,137 @@ class BindRegistry {
     _registerDiscoveredType(registrationType, bind);
   }
 
-  /// Registers multiple binds without creating instances.
-  /// Real types are discovered later in [commitBatch].
+  /// Registers multiple binds, indexing them by their declared type up front.
+  ///
+  /// `Bind<T>` already carries `T` at compile time (`bind.type`), so we can
+  /// populate `bindsMap` immediately. Factories are NOT invoked here — that is
+  /// [commitBatch]'s job. Pre-indexing means cross-references inside the batch
+  /// (e.g. `i.get<Dep>()` from another factory) resolve regardless of
+  /// declaration order.
+  ///
+  /// Object-typed binds (no static type information) fall back to the legacy
+  /// deferred-discovery path via [BindStorage.pendingObjectBinds].
   void registerBatch(List<Bind<Object>> binds) {
     for (final bind in binds) {
-      _storage.pendingObjectBinds.add(bind);
+      _pendingBatch.add(bind);
 
       if (bind.key != null) {
         _storage.bindsMapByKey[bind.key!] = bind;
       }
-    }
-  }
 
-  /// Commits pending binds by discovering their real types.
-  void commitBatch(Injector injector) {
-    final pendingBinds = List<Bind<Object>>.from(_storage.pendingObjectBinds);
-    _storage.pendingObjectBinds.clear();
-
-    for (final bind in pendingBinds) {
-      if (bind.type != Object && _isSingletonAlreadyRegistered(bind.type, bind)) {
-        bind.cachedInstance ??= _storage.bindsMap[bind.type]?.cachedInstance;
+      final declared = bind.type;
+      if (declared == Object) {
+        _storage.pendingObjectBinds.add(bind);
         continue;
       }
 
+      _indexCanonicalOrPropagate(declared, bind);
+    }
+  }
+
+  /// Materializes singletons registered in the current batch.
+  ///
+  /// Two passes:
+  ///   1. Instantiate canonical eager singletons (no ordering concerns: every
+  ///      typed bind is already in `bindsMap`, so `i.get<T>()` resolves via
+  ///      lazy `bind.instance`).
+  ///   2. Propagate `cachedInstance` to duplicate binds (same type, different
+  ///      `Bind` object — created when imports re-run `module.binds`). Avoids
+  ///      redundant factory calls in downstream introspection.
+  ///
+  /// Object-typed binds are resolved via the legacy deferred path.
+  void commitBatch(Injector injector) {
+    final batch = List<Bind<Object>>.from(_pendingBatch);
+    _pendingBatch.clear();
+
+    _instantiateCanonicalSingletons(batch, injector);
+    _propagateCacheToDuplicates(batch);
+    _commitObjectBinds(injector);
+  }
+
+  /// Pre-indexes a typed [bind] under [declared].
+  ///
+  /// First registration wins; subsequent duplicates only inherit cache (when
+  /// available) and otherwise sit in [_pendingBatch] for phase 2 propagation.
+  /// A duplicate carrying a distinct [Bind.key] gets its own slot in
+  /// [BindStorage.bindsMapByKey] but does not displace the canonical type slot.
+  void _indexCanonicalOrPropagate(Type declared, Bind bind) {
+    final existing = _storage.bindsMap[declared];
+    if (existing == null) {
+      _storage.bindsMap[declared] = bind;
+      return;
+    }
+
+    if (existing.key == bind.key) {
+      if (existing.isSingleton && existing.cachedInstance != null) {
+        bind.cachedInstance ??= existing.cachedInstance;
+      }
+      return;
+    }
+  }
+
+  void _instantiateCanonicalSingletons(List<Bind<Object>> batch, Injector injector) {
+    for (final bind in batch) {
+      if (bind.type == Object) continue;
+      if (!bind.isSingleton || bind.isLazy) continue;
+      if (bind.cachedInstance != null) continue;
+
+      final canonical = _storage.bindsMap[bind.type];
+      if (canonical == null || !identical(canonical, bind)) continue;
+
       try {
         final instance = bind.factoryFunction(injector);
-        final discoveredType = instance.runtimeType;
+        bind.cachedInstance = instance;
 
-        if (discoveredType == Object) {
+        final discovered = instance.runtimeType;
+        if (discovered != bind.type && discovered != Object) {
+          _storage.bindsMap.putIfAbsent(discovered, () => bind);
+        }
+      } catch (_) {
+        // Resolution will retry lazily via i.get<T>() (cachedInstance still null).
+      }
+    }
+  }
+
+  void _propagateCacheToDuplicates(List<Bind<Object>> batch) {
+    for (final bind in batch) {
+      if (bind.type == Object) continue;
+      if (bind.cachedInstance != null) continue;
+
+      final canonical = _storage.bindsMap[bind.type];
+      if (canonical == null || identical(canonical, bind)) continue;
+      if (canonical.cachedInstance == null) continue;
+
+      bind.cachedInstance = canonical.cachedInstance;
+    }
+  }
+
+  void _commitObjectBinds(Injector injector) {
+    if (_storage.pendingObjectBinds.isEmpty) return;
+
+    final pending = List<Bind<Object>>.from(_storage.pendingObjectBinds);
+    _storage.pendingObjectBinds.clear();
+
+    for (final bind in pending) {
+      try {
+        final instance = bind.factoryFunction(injector);
+        final discovered = instance.runtimeType;
+
+        if (discovered == Object) {
           _storage.pendingObjectBinds.add(bind);
           continue;
         }
 
-        if (_isSingletonAlreadyRegistered(discoveredType, bind)) {
-          bind.cachedInstance ??= instance;
-          _registerDeclaredType(bind);
+        if (_isSingletonAlreadyRegistered(discovered, bind)) {
+          bind.cachedInstance ??= _storage.bindsMap[discovered]?.cachedInstance;
           continue;
         }
 
         _processInstance(bind, instance);
 
-        if (_handleExistingBind(discoveredType, bind)) {
-          _registerDeclaredType(bind);
-          continue;
-        }
+        if (_handleExistingBind(discovered, bind)) continue;
 
-        _registerDeclaredType(bind);
-        _registerDiscoveredType(discoveredType, bind);
+        _registerInStorage(discovered, bind);
       } catch (_) {
         _storage.pendingObjectBinds.add(bind);
       }

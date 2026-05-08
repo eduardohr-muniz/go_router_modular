@@ -1,8 +1,21 @@
 ## 5.1.0
 
+### Improved
+
+- **Dependency injection — `registerBatch` / `commitBatch`**: Reworked how a module batch is registered so resolution matches the intent of “queue everything, then commit” without ad-hoc retry loops.
+  - **Typed binds (`Bind<T>` with `T != Object`)** are indexed in `bindsMap` under the **declared** type **before** any eager factory runs, so another bind in the **same batch** can call `i.get<T>()` in any order (e.g. `AppModule` depending on types provided by imports).
+  - **Eager singletons** (`addSingleton`): `commitBatch` materializes instances for the canonical bind per type and then **propagates `cachedInstance`** onto duplicate `Bind` objects produced when `_collectImportedBinds` runs `module.binds()` again — no extra constructors from `_mapBindsToIdentifiers`, logging, or validation.
+  - **Lazy singletons** (`addLazySingleton`): `commitBatch` **does not** call factories anymore; construction happens on first `get<T>()`, matching lazy semantics (see updated `reproduce_issue_test.dart` expectations).
+
 ### Fix
 
-- **Dependency Injection**: Fixed singleton binds being instantiated 3× when a `RouteModule` imports `AppModule` (or any module already registered).
+- **Dependency injection**: Fixed singleton binds being instantiated multiple times when imports re-ran `module.binds()`, creating new `Bind` instances with empty `cachedInstance` (combined with `_mapBindsToIdentifiers` / `_logRegisteredBinds` / `_validateModuleBinds`).
+- **Dependency injection — typed abstractions**: Resolving binds registered with an **interface / abstract type** (e.g. `addSingleton<IService>(...)`) failed when keyed only by the concrete runtime type. Registration now keeps the **declared generic type** as the lookup key where appropriate, so `Injector.get<IService>()` works even when factories delegate via `get<Concrete>()` inside the graph.
+- **Routing — `StatefulShell` + `go_transitions`**: `StatefulShellModularRoute` integrates with **`go_transitions`**: configurable branch switching via `StatefulShellBranchTransitions.withGoTransition` (aligned with `GoTransitionRoute` / `GoTransition.defaultDuration`), optional `navigatorContainerBuilder` override, and `Modular.configure`’s `defaultTransitionDuration`/`defaultTransition` feeding shell branch transitions when durations are omitted.
+
+### Added
+
+- **Stateful shell branch transitions**: Helpers in `StatefulShellBranchTransitions` (e.g. `withGoTransition`, fade presets) so bottom tabs / branches can reuse the same transition style as modular `GoRoute`s.
 
 ## 5.0.6
 

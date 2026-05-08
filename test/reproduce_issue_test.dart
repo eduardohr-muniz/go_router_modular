@@ -81,45 +81,38 @@ void main() {
     );
 
     test(
-      'Instanciação isolada via registerBatch + commitBatch: construtor chamado 1 vez',
+      'addLazySingleton: registerBatch + commitBatch não invocam factory (lazy preservado)',
       () async {
         AuthBloc.constructorCalls = 0;
         HttpClient.constructorCalls = 0;
         Bind.clearAll();
 
-        // Simula manualmente o fluxo de registro de binds
         final injector = Injector();
         injector.startRegistering();
         injector.addLazySingleton((i) => HttpClient());
         injector.addLazySingleton((i) => AuthBloc(i.get()));
         final moduleBinds = injector.finishRegistering();
 
-        // Nenhuma instância deve ser criada ainda
         expect(AuthBloc.constructorCalls, 0);
         expect(HttpClient.constructorCalls, 0);
 
-        // registerBatch + commitBatch (descobre tipos)
         Bind.registerBatch(moduleBinds);
         Bind.commitBatch(injector);
 
-        // commitBatch chama a factory para descobrir o tipo real (1 vez cada)
-        expect(AuthBloc.constructorCalls, 1);
-        expect(HttpClient.constructorCalls, 1);
+        expect(AuthBloc.constructorCalls, 0, reason: 'lazy singleton só constrói no primeiro get<T>()');
+        expect(HttpClient.constructorCalls, 0, reason: 'lazy singleton só constrói no primeiro get<T>()');
 
-        // cachedInstance deve estar preenchida após commitBatch
         for (final bind in moduleBinds) {
-          expect(bind.cachedInstance, isNotNull, reason: 'cachedInstance deve ser setada após commitBatch para singleton');
+          expect(bind.cachedInstance, isNull, reason: 'lazy singleton mantém cachedInstance vazio até o primeiro acesso');
         }
 
-        // _mapBindsToIdentifiers deve reusar cachedInstance (sem chamar factory)
-        for (final bind in moduleBinds) {
-          final instance = bind.cachedInstance ?? bind.factoryFunction(injector);
-          expect(instance, isNotNull);
-        }
+        final bloc = Injector().get<AuthBloc>();
+        expect(bloc, isNotNull);
+        expect(AuthBloc.constructorCalls, 1, reason: 'primeiro get<AuthBloc>() constrói 1x');
+        expect(HttpClient.constructorCalls, 1, reason: 'dependência HttpClient é resolvida 1x via cadeia');
 
-        // Nenhuma chamada extra
-        expect(AuthBloc.constructorCalls, 1, reason: 'cachedInstance deve evitar chamadas extras à factory');
-        expect(HttpClient.constructorCalls, 1, reason: 'cachedInstance deve evitar chamadas extras à factory');
+        Injector().get<AuthBloc>();
+        expect(AuthBloc.constructorCalls, 1, reason: 'segunda chamada reusa cache');
       },
     );
   });

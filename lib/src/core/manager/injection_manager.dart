@@ -20,6 +20,23 @@ class InjectionManager {
 
   bool get _debugLog => SetupModular.instance.debugLogGoRouterModular;
 
+  /// Defensive resolver for bind introspection (tracking, logging, validation).
+  ///
+  /// `commitBatch` already populates `cachedInstance` for eager singletons.
+  /// This helper handles the residual cases — lazy singletons whose factory
+  /// must run for type discovery, or binds whose factory failed during commit
+  /// — without leaking duplicate singleton instances.
+  Object _singletonInstanceOrFactory(Bind<Object> bind) {
+    final cached = bind.cachedInstance;
+    if (cached != null) return cached;
+
+    final instance = bind.factoryFunction(_injector);
+    if (bind.isSingleton) {
+      bind.cachedInstance = instance;
+    }
+    return instance;
+  }
+
   /// Clears every bind and module-registration state. Use between tests that
   /// touch [InjectionManager] so `registerAppModule` is not skipped due to a
   /// stale [BindContextTracker.appModule].
@@ -92,7 +109,7 @@ class InjectionManager {
   Set<BindIdentifier> _mapBindsToIdentifiers(List<Bind<Object>> binds, Module module) {
     return binds.map((bind) {
       try {
-        final instance = bind.cachedInstance ?? bind.factoryFunction(_injector);
+        final instance = _singletonInstanceOrFactory(bind);
         final type = instance.runtimeType;
         final bindId = BindIdentifier(type, bind.key ?? type.toString());
         _tracker.addModuleToBindContext(bindId, module);
@@ -168,7 +185,7 @@ class InjectionManager {
     for (final bind in moduleBinds) {
       Type? bindType;
       try {
-        final newInstance = bind.cachedInstance ?? bind.factoryFunction(_injector);
+        final newInstance = _singletonInstanceOrFactory(bind);
         bindType = newInstance.runtimeType;
       } catch (e) {
         bindType ??= _tryGetBindType(bind);
@@ -194,7 +211,7 @@ class InjectionManager {
   void _logRegisteredBinds(Module module, List<Bind<Object>> binds) {
     final bindDescriptions = binds.map((bind) {
       try {
-        final instance = bind.cachedInstance ?? bind.factoryFunction(_injector);
+        final instance = _singletonInstanceOrFactory(bind);
         final type = instance.runtimeType.toString();
         final keyInfo = bind.key != null && bind.key != type ? 'key: ${bind.key}' : '';
         return '$type($keyInfo)';
