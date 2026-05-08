@@ -109,7 +109,10 @@ class ModularRouteBuilder {
           final currentPath = state.uri.path;
           final normalizedModulePath = _normalizePath(path: module.path, topLevel: topLevel);
           if (currentPath == normalizedModulePath || currentPath == '$normalizedModulePath/') {
-            return firstBranchInitialLocation;
+            final target = firstBranchInitialLocation;
+            if (target != currentPath && target != '$currentPath/' && currentPath != '$target/') {
+              return target;
+            }
           }
           return null;
         },
@@ -229,7 +232,7 @@ class ModularRouteBuilder {
       final branchModules = <Module>[];
 
       final branches = statefulRoute.branches.map((branch) {
-        if (branch.module != null) branchModules.add(branch.module!);
+        _collectBranchModulesFromRoutes(branch.routes, branchModules);
         final branchRoutes = _buildBranchRoutes(branch, topLevel, modulePath);
 
         return StatefulShellBranch(
@@ -262,15 +265,12 @@ class ModularRouteBuilder {
   }
 
   List<RouteBase> _buildBranchRoutes(ModularBranch branch, bool topLevel, String modulePath) {
-    if (branch.module != null) {
-      return _buildBranchModuleRoutes(branch.module!, topLevel, modulePath);
-    }
-
-    return (branch.routes ?? [])
+    return branch.routes
         .map((routeOrModule) {
           if (routeOrModule is ChildRoute) {
             return _createChild(childRoute: routeOrModule, topLevel: topLevel);
-          } else if (routeOrModule is ModuleRoute) {
+          }
+          if (routeOrModule is ModuleRoute) {
             return _createModule(module: routeOrModule, modulePath: routeOrModule.path, topLevel: topLevel);
           }
           return null;
@@ -279,82 +279,12 @@ class ModularRouteBuilder {
         .toList();
   }
 
-  /// Builds routes for a branch module with lazy DI injection via redirect.
-  /// Does NOT call configureRoutes() to avoid registerAppModule interference.
-  List<RouteBase> _buildBranchModuleRoutes(Module branchModule, bool topLevel, String modulePath) {
-    final routes = <RouteBase>[];
-
-    for (final route in branchModule.routes) {
-      if (route is ChildRoute) {
-        routes.add(_createChildWithBranchInjection(
-          childRoute: route,
-          branchModule: branchModule,
-          modulePath: modulePath,
-          topLevel: topLevel,
-        ));
-      } else if (route is ModuleRoute) {
-        routes.add(_createModule(module: route, modulePath: route.path, topLevel: topLevel));
-      } else if (route is ShellModularRoute || route is StatefulShellModularRoute) {
-        // Nested shells inside branch — delegate to RouteBuilder
-        final builder = ModularRouteBuilder(branchModule);
-        routes.addAll(builder.buildRoutes(modulePath: modulePath, topLevel: topLevel));
+  void _collectBranchModulesFromRoutes(List<ModularRoute> routes, List<Module> branchModules) {
+    for (final modularRoute in routes) {
+      if (modularRoute is ModuleRoute) {
+        branchModules.add(modularRoute.module);
       }
     }
-
-    return routes;
-  }
-
-  /// Creates a GoRoute for a ChildRoute with branch module bind injection in the redirect.
-  GoRoute _createChildWithBranchInjection({
-    required ChildRoute childRoute,
-    required Module branchModule,
-    required String modulePath,
-    required bool topLevel,
-  }) {
-    final redirectWithInjection = (BuildContext context, GoRouterState state) =>
-        _buildRedirectAndInjectBinds(
-          context, state,
-          module: branchModule,
-          modulePath: modulePath,
-          redirect: childRoute.redirect,
-          topLevel: topLevel,
-        );
-
-    if (childRoute.pageBuilder != null) {
-      return GoRoute(
-        path: _normalizePath(path: childRoute.path, topLevel: topLevel),
-        name: childRoute.name,
-        pageBuilder: childRoute.pageBuilder,
-        parentNavigatorKey: childRoute.parentNavigatorKey,
-        redirect: redirectWithInjection,
-        onExit: childRoute.onExit,
-      );
-    }
-
-    final transition = childRoute.transition ?? Modular.getDefaultTransition;
-
-    if (transition != null) {
-      return _buildGoRouteWithTransition(
-        path: childRoute.path,
-        name: childRoute.name,
-        transition: transition,
-        builder: (context, state) => childRoute.child(context, state),
-        parentNavigatorKey: childRoute.parentNavigatorKey,
-        redirect: redirectWithInjection,
-        topLevel: topLevel,
-        transitionDuration: childRoute.transitionDuration,
-        onExit: childRoute.onExit,
-      );
-    }
-
-    return GoRoute(
-      path: _normalizePath(path: childRoute.path, topLevel: topLevel),
-      name: childRoute.name,
-      builder: (context, state) => childRoute.child(context, state),
-      parentNavigatorKey: childRoute.parentNavigatorKey,
-      redirect: redirectWithInjection,
-      onExit: childRoute.onExit,
-    );
   }
 
   /// Disposes all branch modules and then the shell module itself.
@@ -377,25 +307,17 @@ class ModularRouteBuilder {
       return firstBranch.initialLocation!;
     }
 
-    // Resolver a partir das rotas da branch
-    if (firstBranch.routes != null && firstBranch.routes!.isNotEmpty) {
-      final firstRoute = firstBranch.routes!.first;
-      if (firstRoute is ChildRoute) {
-        return '$modulePath${firstRoute.path}';
-      }
-      if (firstRoute is ModuleRoute) {
-        return '$modulePath${firstRoute.path}';
-      }
+    if (firstBranch.routes.isEmpty) {
+      return modulePath;
     }
 
-    // Se a branch tem um módulo, resolver a partir da primeira rota do módulo
-    if (firstBranch.module != null) {
-      final moduleRoutes = firstBranch.module!.routes;
-      final firstChildRoute = moduleRoutes.whereType<ChildRoute>().firstOrNull;
-      if (firstChildRoute != null) {
-        final routePath = firstChildRoute.path == '/' ? '' : firstChildRoute.path;
-        return '$modulePath$routePath';
-      }
+    final firstRoute = firstBranch.routes.first;
+    if (firstRoute is ChildRoute) {
+      final routePath = firstRoute.path == '/' ? '' : firstRoute.path;
+      return '$modulePath$routePath';
+    }
+    if (firstRoute is ModuleRoute) {
+      return '$modulePath${firstRoute.path}';
     }
 
     return modulePath;

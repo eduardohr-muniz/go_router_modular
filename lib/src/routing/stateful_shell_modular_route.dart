@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
@@ -22,7 +23,8 @@ import 'package:go_router_modular/go_router_modular.dart';
 ///             ChildRoute('/home', child: (_, __) => HomePage()),
 ///           ],
 ///         ),
-///         ModularBranch(
+///         ModuleBranch(
+///           '/settings',
 ///           module: SettingsModule(),
 ///         ),
 ///       ],
@@ -52,22 +54,61 @@ class StatefulShellModularRoute extends ModularRoute {
 
 /// Represents a branch in a [StatefulShellModularRoute].
 ///
-/// A branch can contain either direct [routes] (ChildRoute/ModuleRoute)
-/// or a [module] whose routes will be used.
+/// Uma branch define pelo menos uma rota ([ChildRoute], [ModuleRoute], etc.).
+/// Quando a branch é só um `ModuleRoute(path, module: …)`, use [ModuleBranch] como atalho.
 class ModularBranch {
-  final List<ModularRoute>? routes;
-  final Module? module;
+  final List<ModularRoute> routes;
   final GlobalKey<NavigatorState>? navigatorKey;
   final String? restorationScopeId;
   final String? initialLocation;
   final List<NavigatorObserver>? observers;
 
   ModularBranch({
-    this.routes,
-    this.module,
+    required this.routes,
     this.navigatorKey,
     this.restorationScopeId,
     this.initialLocation,
     this.observers,
-  }) : assert(routes != null || module != null, 'A ModularBranch must have either routes or a module.');
+  }) : assert(routes.isNotEmpty, 'A ModularBranch must have routes.');
+}
+
+/// Atalho para uma branch do [StatefulShellModularRoute] que monta um único [Module]
+/// em um segmento de URL ([path]).
+///
+/// É equivalente a:
+/// ```dart
+/// ModularBranch(
+///   routes: [ModuleRoute(path, module: module)],
+///   navigatorKey: navigatorKey,
+///   restorationScopeId: restorationScopeId,
+///   initialLocation: initialLocation,
+///   observers: observers,
+/// )
+/// ```
+///
+/// O primeiro argumento é o [path] posicional (mesmo estilo de [ModuleRoute]).
+///
+/// O [path] deve ser **único entre as branches** do mesmo shell (por exemplo `/pos`,
+/// `/settings`). Caminhos duplicados quebram redirects e rotas nomeadas do GoRouter.
+///
+/// O módulo recebe binds e rotas como em qualquer [ModuleRoute]: registro lazy ao
+/// visitar a aba e dispose quando o shell sai da árvore de navegação.
+class ModuleBranch extends ModularBranch {
+  /// Módulo montado nesta aba (mesmo valor passado ao [ModuleRoute] interno).
+  final Module module;
+
+  /// Segmento desta aba sob o módulo pai (mesmo valor passado ao [ModuleRoute] interno).
+  final String path;
+
+  /// [path] posicional: segmento de URL desta aba (único entre as branches do shell).
+  ModuleBranch(
+    this.path, {
+    required this.module,
+    super.navigatorKey,
+    super.restorationScopeId,
+    super.initialLocation,
+    super.observers,
+  }) : super(
+          routes: [ModuleRoute(path, module: module)],
+        );
 }

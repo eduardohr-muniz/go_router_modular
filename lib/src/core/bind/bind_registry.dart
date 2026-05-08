@@ -41,6 +41,40 @@ class BindRegistry {
     _storage.bindsMap[type] = bind;
   }
 
+  /// Registers [bind] under its declared generic type ([Bind.type]) when not [Object].
+  ///
+  /// Alias binds (e.g. `Bind<IAddressAutocompleteDatasource>` returning `ApiSearchAddressDatasource`)
+  /// must stay keyed by the interface so `Injector.get<I>()` resolves without relying on
+  /// compatibility search (which can fail when the factory delegates to `get<Impl>()`).
+  void _registerDeclaredType(Bind bind) {
+    final declared = bind.type;
+    if (declared == Object) return;
+
+    final existingDeclared = _storage.bindsMap[declared];
+    if (identical(existingDeclared, bind)) return;
+
+    if (_handleExistingBind(declared, bind)) return;
+
+    final stillExisting = _storage.bindsMap[declared];
+    if (stillExisting != null && !identical(stillExisting, bind)) return;
+
+    _registerInStorage(declared, bind);
+  }
+
+  /// Registers under [discoveredType] unless another bind already owns that implementation key.
+  ///
+  /// Avoids replacing a concrete singleton (e.g. `ApiSearchAddressDatasource`) with an alias
+  /// factory registered only for an interface type.
+  void _registerDiscoveredType(Type discoveredType, Bind bind) {
+    final existing = _storage.bindsMap[discoveredType];
+    if (identical(existing, bind)) return;
+    if (existing != null && !identical(existing, bind)) return;
+
+    if (_handleExistingBind(discoveredType, bind)) return;
+
+    _registerInStorage(discoveredType, bind);
+  }
+
   /// Caches singleton instances; disposes factory temp instances.
   void _processInstance(Bind bind, dynamic instance) {
     if (bind.isSingleton && bind.cachedInstance == null) {
@@ -76,7 +110,8 @@ class BindRegistry {
     if (_isSingletonAlreadyRegistered(registrationType, bind)) return;
     if (_handleExistingBind(registrationType, bind)) return;
 
-    _registerInStorage(registrationType, bind);
+    _registerDeclaredType(bind);
+    _registerDiscoveredType(registrationType, bind);
   }
 
   /// Registers multiple binds without creating instances.
@@ -113,14 +148,19 @@ class BindRegistry {
 
         if (_isSingletonAlreadyRegistered(discoveredType, bind)) {
           bind.cachedInstance ??= instance;
+          _registerDeclaredType(bind);
           continue;
         }
 
         _processInstance(bind, instance);
 
-        if (_handleExistingBind(discoveredType, bind)) continue;
+        if (_handleExistingBind(discoveredType, bind)) {
+          _registerDeclaredType(bind);
+          continue;
+        }
 
-        _registerInStorage(discoveredType, bind);
+        _registerDeclaredType(bind);
+        _registerDiscoveredType(discoveredType, bind);
       } catch (_) {
         _storage.pendingObjectBinds.add(bind);
       }
