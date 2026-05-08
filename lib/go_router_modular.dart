@@ -36,5 +36,5 @@ export 'src/events/modular_event_listener.dart' show ModularEventListener;
 // External packages
 export 'package:go_router/go_router.dart' hide GoRouter, ShellRoute;
 export 'package:event_bus/event_bus.dart';
-export 'package:go_transitions/go_transitions.dart';
+export 'package:go_transitions/go_transitions.dart' hide GoTransition;
 export 'src/events/modular_event_mixin.dart' show ModularEventMixin;

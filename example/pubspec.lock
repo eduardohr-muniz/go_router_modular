@@ -102,7 +102,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "5.0.6"
+    version: "5.1.0"
   go_transitions:
     dependency: transitive
     description:
