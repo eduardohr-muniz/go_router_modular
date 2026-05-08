@@ -209,27 +209,55 @@ class BindLocator {
 
   // ==================== COMPATIBILITY SEARCH ====================
 
+  /// Last-resort: walks `bindsMap` looking for a bind whose instance satisfies
+  /// `T` (e.g. a concrete singleton registered under the implementation type
+  /// while the caller asked for the interface).
+  ///
+  /// Singletons reuse their **cached** instance via `bind.instance` to avoid
+  /// silently breaking singleton identity (every call would otherwise build a
+  /// fresh instance through `factoryFunction`). For factory binds, a typed
+  /// delegate is created since each call must build a new instance anyway.
   Bind? _searchCompatibleBind<T>(Type type) {
-    for (var entry in _storage.bindsMap.entries) {
-      if (entry.key == Object) continue;
-      if (entry.value.key != null) continue;
+    // Iterate a snapshot — this method writes to `bindsMap` (and the factory
+    // probes can recursively trigger the registry to mutate it as well), so
+    // walking the live entries view raises ConcurrentModificationError.
+    final snapshot = List<MapEntry<Type, Bind>>.of(_storage.bindsMap.entries);
 
-      try {
-        final testInstance = entry.value.factoryFunction(Injector());
-        if (testInstance is T) {
-          final compatibleBind = Bind<T>(
-            (injector) => entry.value.factoryFunction(injector) as T,
-            isSingleton: entry.value.isSingleton,
-            isLazy: entry.value.isLazy,
-            key: entry.value.key,
-          );
-          _storage.bindsMap[type] = compatibleBind;
-          return compatibleBind;
-        }
-      } catch (_) {}
+    for (final entry in snapshot) {
+      if (entry.key == Object) continue;
+      final candidate = entry.value;
+      if (candidate.key != null) continue;
+
+      if (!_candidateProducesT<T>(candidate)) continue;
+
+      if (candidate.isSingleton) {
+        _storage.bindsMap[type] = candidate;
+        return candidate;
+      }
+
+      final delegate = Bind<T>(
+        (injector) => candidate.factoryFunction(injector) as T,
+        isSingleton: false,
+        isLazy: candidate.isLazy,
+        key: candidate.key,
+      );
+      _storage.bindsMap[type] = delegate;
+      return delegate;
     }
 
     return null;
+  }
+
+  bool _candidateProducesT<T>(Bind candidate) {
+    final cached = candidate.cachedInstance;
+    if (cached is T) return true;
+    if (cached != null) return false;
+
+    try {
+      return candidate.factoryFunction(Injector()) is T;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ==================== HELPERS ====================

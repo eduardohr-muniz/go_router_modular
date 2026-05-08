@@ -1,102 +1,94 @@
+import 'dart:developer' as developer;
+
 import 'package:go_router_modular/src/core/bind/bind.dart';
 import 'package:go_router_modular/src/core/bind/bind_storage.dart';
 import 'package:go_router_modular/src/di/clean_bind.dart';
 import 'package:go_router_modular/src/di/injector.dart';
+import 'package:go_router_modular/src/internal/setup.dart';
 
-/// Handles bind registration logic.
+/// Outcome of resolving a slot conflict in [BindStorage].
+///
+/// `BindRegistry` chooses the next step from a small, named set instead of
+/// returning a raw `bool` whose meaning depended on the call site.
+enum _SlotConflictResolution {
+  /// No bind currently owns the slot — caller should write the new bind into it.
+  empty,
+
+  /// New bind has been routed to its keyed slot — no further action is needed.
+  routedToKeyMap,
+
+  /// Slot has been overwritten because the new bind takes precedence — caller
+  /// is done.
+  replaced,
+}
+
+/// Owns every write to [BindStorage].
+///
+/// Two flows live side-by-side:
+///   * **Batch flow** ([registerBatch] + [commitBatch]): used by
+///     `InjectionManager` when a module commits its `binds`. Pre-indexes every
+///     typed bind in `bindsMap` so factories within the same batch resolve
+///     dependencies regardless of declaration order, then materialises
+///     singletons exactly once.
+///   * **Singular legacy flow** ([register] / [registerTyped]): kept for
+///     direct callers (tests, `bind_template`, `modular_test_scope`) that
+///     register one bind at a time.
+///
+/// Both flows respect a single invariant for the dual-map storage:
+/// `bindsMap[Type]` only ever holds **unkeyed** binds; keyed binds live
+/// exclusively in `bindsMapByKey`. [BindLocator._searchByType] relies on this
+/// when an unkeyed `get<T>()` skips keyed slots.
 class BindRegistry {
   final BindStorage _storage = BindStorage.instance;
 
   /// Binds queued by [registerBatch] awaiting [commitBatch].
+  final List<Bind<Object>> _uncommittedBatch = [];
+
+  // ==================== PUBLIC API: BATCH FLOW ====================
+
+  /// Queues [binds] for commit and pre-indexes their canonical slots.
   ///
-  /// Holding a per-batch list lets [commitBatch] propagate the canonical
-  /// `cachedInstance` to duplicate `Bind` objects (created when imports re-run
-  /// `module.binds`) without re-invoking factories.
-  final List<Bind<Object>> _pendingBatch = [];
+  /// Factories are NOT invoked here — that is [commitBatch]'s job. Pre-indexing
+  /// means cross-references inside the batch (e.g. `i.get<Dep>()` from another
+  /// factory) resolve regardless of declaration order.
+  void registerBatch(List<Bind<Object>> binds) {
+    for (final bind in binds) {
+      _uncommittedBatch.add(bind);
+      _routeKeyedBindToKeyMap(bind);
 
-  bool _isSingletonAlreadyRegistered(Type type, Bind bind) {
-    if (!bind.isSingleton) return false;
-    final existing = _storage.bindsMap[type];
-    return existing != null && existing.key == bind.key;
-  }
+      if (bind.type == Object) {
+        _storage.pendingObjectBinds.add(bind);
+        continue;
+      }
 
-  /// Handles existing bind with different keys. Returns true if handled.
-  bool _handleExistingBind(Type type, Bind bind) {
-    final existingBind = _storage.bindsMap[type];
-    if (existingBind == null) return false;
+      if (bind.key != null) continue;
 
-    if (existingBind.key == bind.key) {
-      existingBind.clearCache();
-      return false;
-    }
-
-    if (bind.key != null) {
-      _storage.bindsMapByKey[bind.key!] = bind;
-      return true;
-    }
-
-    _storage.bindsMap.remove(type);
-    _storage.bindsMap[type] = bind;
-    return true;
-  }
-
-  void _registerInStorage(Type type, Bind bind) {
-    if (bind.key != null) {
-      _storage.bindsMapByKey[bind.key!] = bind;
-      return;
-    }
-    _storage.bindsMap[type] = bind;
-  }
-
-  /// Registers [bind] under its declared generic type ([Bind.type]) when not [Object].
-  ///
-  /// Alias binds (e.g. `Bind<IAddressAutocompleteDatasource>` returning `ApiSearchAddressDatasource`)
-  /// must stay keyed by the interface so `Injector.get<I>()` resolves without relying on
-  /// compatibility search (which can fail when the factory delegates to `get<Impl>()`).
-  void _registerDeclaredType(Bind bind) {
-    final declared = bind.type;
-    if (declared == Object) return;
-
-    final existingDeclared = _storage.bindsMap[declared];
-    if (identical(existingDeclared, bind)) return;
-
-    if (_handleExistingBind(declared, bind)) return;
-
-    final stillExisting = _storage.bindsMap[declared];
-    if (stillExisting != null && !identical(stillExisting, bind)) return;
-
-    _registerInStorage(declared, bind);
-  }
-
-  /// Registers under [discoveredType] unless another bind already owns that implementation key.
-  ///
-  /// Avoids replacing a concrete singleton (e.g. `ApiSearchAddressDatasource`) with an alias
-  /// factory registered only for an interface type.
-  void _registerDiscoveredType(Type discoveredType, Bind bind) {
-    final existing = _storage.bindsMap[discoveredType];
-    if (identical(existing, bind)) return;
-    if (existing != null && !identical(existing, bind)) return;
-
-    if (_handleExistingBind(discoveredType, bind)) return;
-
-    _registerInStorage(discoveredType, bind);
-  }
-
-  /// Caches singleton instances; disposes factory temp instances.
-  void _processInstance(Bind bind, dynamic instance) {
-    if (bind.isSingleton && bind.cachedInstance == null) {
-      bind.cachedInstance = instance;
-      return;
-    }
-
-    if (!bind.isSingleton) {
-      try {
-        CleanBind.fromInstance(instance);
-      } catch (_) {}
+      _indexUnkeyedCanonicalSlot(bind);
     }
   }
 
-  /// Registers a bind, discovering the real type immediately if possible.
+  /// Materialises binds queued by [registerBatch] in three phases:
+  ///   1. Run the canonical singleton factory once and cache it; index its
+  ///      `runtimeType` in `bindsMap` so the compatibility lookup
+  ///      (`Injector.get<I>()` against an interface) finds concrete singletons.
+  ///   2. Propagate `cachedInstance` to duplicate `Bind` objects produced when
+  ///      imports re-execute `module.binds`, so introspection
+  ///      (`_mapBindsToIdentifiers`, logging, validation) doesn't re-invoke
+  ///      factories.
+  ///   3. Resolve `Bind<Object>` registrations via the deferred discovery path.
+  void commitBatch(Injector injector) {
+    final batch = List<Bind<Object>>.from(_uncommittedBatch);
+    _uncommittedBatch.clear();
+
+    _instantiateCanonicalSingletons(batch, injector);
+    _propagateCacheToDuplicates(batch);
+    _commitObjectBinds(injector);
+  }
+
+  // ==================== PUBLIC API: SINGULAR (LEGACY) FLOW ====================
+
+  /// Registers [bind] eagerly, discovering its real type via the factory when
+  /// possible. Kept for direct callers; new code should prefer [registerBatch].
   void register(dynamic bind) {
     if (bind is! Bind) {
       throw ArgumentError('Bind.register expects a Bind, but received ${bind.runtimeType}');
@@ -108,128 +100,57 @@ class BindRegistry {
       final instance = bind.factoryFunction(Injector());
       registrationType = instance.runtimeType;
       _processInstance(bind, instance);
-    } catch (_) {
+    } catch (e, s) {
+      _swallowError(e, s, context: 'register.factory');
       if (registrationType == Object) {
         _storage.pendingObjectBinds.add(bind);
       }
     }
 
     if (_isSingletonAlreadyRegistered(registrationType, bind)) return;
-    if (_handleExistingBind(registrationType, bind)) return;
+    if (_resolveSlotConflict(registrationType, bind) != _SlotConflictResolution.empty) return;
 
-    _registerDeclaredType(bind);
-    _registerDiscoveredType(registrationType, bind);
+    _writeToCanonicalSlot(registrationType, bind);
+    _indexDiscoveredType(registrationType, bind);
   }
 
-  /// Registers multiple binds, indexing them by their declared type up front.
-  ///
-  /// `Bind<T>` already carries `T` at compile time (`bind.type`), so we can
-  /// populate `bindsMap` immediately. Factories are NOT invoked here — that is
-  /// [commitBatch]'s job. Pre-indexing means cross-references inside the batch
-  /// (e.g. `i.get<Dep>()` from another factory) resolve regardless of
-  /// declaration order.
-  ///
-  /// `bindsMap[T]` stores **only the unkeyed** bind for a given type; keyed
-  /// binds live exclusively in `bindsMapByKey`. This mirrors `BindLocator`'s
-  /// expectation that an unkeyed `get<T>()` skips keyed slots.
-  ///
-  /// Object-typed binds (no static type information) fall back to the legacy
-  /// deferred-discovery path via [BindStorage.pendingObjectBinds].
-  void registerBatch(List<Bind<Object>> binds) {
-    for (final bind in binds) {
-      _pendingBatch.add(bind);
-
-      if (bind.key != null) {
-        _storage.bindsMapByKey[bind.key!] = bind;
-      }
-
-      final declared = bind.type;
-      if (declared == Object) {
-        _storage.pendingObjectBinds.add(bind);
-        continue;
-      }
-
-      // Skip type-indexing for keyed binds: their canonical slot is the key map.
-      if (bind.key != null) continue;
-
-      _indexCanonicalOrPropagate(declared, bind);
-    }
-  }
-
-  /// Materializes binds registered in the current batch in three phases:
-  ///   1. **Canonical singletons** (eager and lazy): run the factory once,
-  ///      cache it, and index `bindsMap[runtimeType]` so the compatibility
-  ///      lookup (`Injector.get<I>()` against an interface) keeps working
-  ///      when the bind was registered without an explicit generic type.
-  ///   2. **Duplicate binds** produced when imports re-run `module.binds`:
-  ///      inherit `cachedInstance` from the canonical bind so introspection
-  ///      (`_mapBindsToIdentifiers`, `_logRegisteredBinds`,
-  ///      `_validateModuleBinds`) does not re-invoke factories.
-  ///   3. **Object-typed binds** (no compile-time generic) keep using the
-  ///      legacy deferred discovery path via [BindStorage.pendingObjectBinds].
-  void commitBatch(Injector injector) {
-    final batch = List<Bind<Object>>.from(_pendingBatch);
-    _pendingBatch.clear();
-
-    _instantiateCanonicalSingletons(batch, injector);
-    _propagateCacheToDuplicates(batch);
-    _commitObjectBinds(injector);
-  }
-
-  /// Pre-indexes an unkeyed typed [bind] under [declared].
-  ///
-  /// First registration wins; subsequent duplicates only inherit cache (when
-  /// available) so introspection does not re-invoke factories. Caller must
-  /// ensure [bind] is unkeyed — keyed binds belong in
-  /// [BindStorage.bindsMapByKey] only.
-  void _indexCanonicalOrPropagate(Type declared, Bind bind) {
-    assert(bind.key == null, 'Keyed binds must not be indexed in bindsMap');
-
-    final existing = _storage.bindsMap[declared];
-    if (existing == null) {
-      _storage.bindsMap[declared] = bind;
+  /// Generic version of [register] used when the type is statically known.
+  void registerTyped<T>(Bind<T> bind) {
+    if (T == Object) {
+      register(bind);
       return;
     }
 
-    if (existing.key == null && existing.isSingleton && existing.cachedInstance != null) {
-      bind.cachedInstance ??= existing.cachedInstance;
+    try {
+      final instance = bind.factoryFunction(Injector());
+      _processInstance(bind, instance);
+    } catch (e, s) {
+      _swallowError(e, s, context: 'registerTyped.factory');
     }
+
+    if (_isSingletonAlreadyRegistered(T, bind)) return;
+    if (_resolveSlotConflict(T, bind) != _SlotConflictResolution.empty) return;
+
+    _writeToCanonicalSlot(T, bind);
   }
+
+  // ==================== BATCH PHASES ====================
 
   void _instantiateCanonicalSingletons(List<Bind<Object>> batch, Injector injector) {
     for (final bind in batch) {
       if (bind.type == Object) continue;
       if (!bind.isSingleton) continue;
       if (bind.cachedInstance != null) continue;
-      if (!_isCanonical(bind)) continue;
+      if (!_ownsCanonicalSlot(bind)) continue;
 
       try {
         final instance = bind.factoryFunction(injector);
         bind.cachedInstance = instance;
-
-        // Index discovered runtime type so `BindLocator._searchCompatibleBind`
-        // can resolve `Injector.get<Interface>()` against concrete singletons
-        // — but never displace an unkeyed slot with a keyed one.
-        final discovered = instance.runtimeType;
-        if (discovered != bind.type && discovered != Object && bind.key == null) {
-          _storage.bindsMap.putIfAbsent(discovered, () => bind);
-        }
-      } catch (_) {
-        // Cache stays null; runtime resolution will retry the factory the
-        // next time `bind.instance` is read (e.g. through `i.get<T>()`).
+        _indexDiscoveredType(instance.runtimeType, bind);
+      } catch (e, s) {
+        _swallowError(e, s, context: 'commitBatch.singleton<${bind.type}>');
       }
     }
-  }
-
-  /// A [bind] is canonical when it owns its slot in storage (`bindsMap[type]`
-  /// for unkeyed binds, `bindsMapByKey[key]` for keyed binds). Duplicates
-  /// produced by re-running `module.binds` from imports are non-canonical and
-  /// must reuse the canonical cache instead of running their factory again.
-  bool _isCanonical(Bind bind) {
-    if (bind.key != null) {
-      return identical(_storage.bindsMapByKey[bind.key!], bind);
-    }
-    return identical(_storage.bindsMap[bind.type], bind);
   }
 
   void _propagateCacheToDuplicates(List<Bind<Object>> batch) {
@@ -237,10 +158,7 @@ class BindRegistry {
       if (bind.type == Object) continue;
       if (bind.cachedInstance != null) continue;
 
-      final canonical = bind.key != null //
-          ? _storage.bindsMapByKey[bind.key!]
-          : _storage.bindsMap[bind.type];
-
+      final canonical = _canonicalBindFor(bind);
       if (canonical == null || identical(canonical, bind)) continue;
       if (canonical.key != bind.key) continue;
       if (canonical.cachedInstance == null) continue;
@@ -272,30 +190,129 @@ class BindRegistry {
 
         _processInstance(bind, instance);
 
-        if (_handleExistingBind(discovered, bind)) continue;
+        if (_resolveSlotConflict(discovered, bind) != _SlotConflictResolution.empty) continue;
 
-        _registerInStorage(discovered, bind);
-      } catch (_) {
+        _writeToCanonicalSlot(discovered, bind);
+      } catch (e, s) {
+        _swallowError(e, s, context: 'commitObjectBinds.factory');
         _storage.pendingObjectBinds.add(bind);
       }
     }
   }
 
-  /// Generic version for typed registration.
-  void registerTyped<T>(Bind<T> bind) {
-    if (T == Object) {
-      register(bind);
+  // ==================== CANONICAL SLOT POLICY ====================
+
+  /// Returns the bind that currently owns [bind]'s canonical slot, or null.
+  Bind? _canonicalBindFor(Bind bind) {
+    if (bind.key != null) return _storage.bindsMapByKey[bind.key!];
+    return _storage.bindsMap[bind.type];
+  }
+
+  /// `true` when [bind] is the storage owner of its canonical slot.
+  bool _ownsCanonicalSlot(Bind bind) => identical(_canonicalBindFor(bind), bind);
+
+  /// Writes [bind] into its canonical slot.
+  ///
+  /// Keyed binds always go to `bindsMapByKey`; unkeyed binds go to
+  /// `bindsMap[type]`. Routing through here is the single point that enforces
+  /// the invariant relied upon by [BindLocator].
+  void _writeToCanonicalSlot(Type type, Bind bind) {
+    if (bind.key != null) {
+      _storage.bindsMapByKey[bind.key!] = bind;
+      return;
+    }
+    _storage.bindsMap[type] = bind;
+  }
+
+  /// Pre-indexes an unkeyed [bind] under its declared type.
+  ///
+  /// First registration wins; later duplicates only inherit cache. Caller must
+  /// ensure [bind] is unkeyed.
+  void _indexUnkeyedCanonicalSlot(Bind bind) {
+    assert(bind.key == null, 'Keyed binds must not be indexed in bindsMap');
+
+    final declared = bind.type;
+    final existing = _storage.bindsMap[declared];
+    if (existing == null) {
+      _storage.bindsMap[declared] = bind;
       return;
     }
 
-    try {
-      final instance = bind.factoryFunction(Injector());
-      _processInstance(bind, instance);
-    } catch (_) {}
+    if (existing.key == null && existing.isSingleton && existing.cachedInstance != null) {
+      bind.cachedInstance ??= existing.cachedInstance;
+    }
+  }
 
-    if (_isSingletonAlreadyRegistered(T, bind)) return;
-    if (_handleExistingBind(T, bind)) return;
+  /// Indexes [bind] under its discovered runtime type, never displacing an
+  /// existing slot. Allows `BindLocator._searchCompatibleBind` to resolve
+  /// `Injector.get<Interface>()` against concrete singletons.
+  void _indexDiscoveredType(Type discovered, Bind bind) {
+    if (discovered == Object) return;
+    if (discovered == bind.type) return;
+    if (bind.key != null) return;
+    _storage.bindsMap.putIfAbsent(discovered, () => bind);
+  }
 
-    _registerInStorage(T, bind);
+  /// Routes a keyed [bind] to `bindsMapByKey`. No-op when [bind] is unkeyed.
+  void _routeKeyedBindToKeyMap(Bind bind) {
+    final key = bind.key;
+    if (key == null) return;
+    _storage.bindsMapByKey[key] = bind;
+  }
+
+  // ==================== LEGACY FLOW HELPERS ====================
+
+  bool _isSingletonAlreadyRegistered(Type type, Bind bind) {
+    if (!bind.isSingleton) return false;
+    final existing = _storage.bindsMap[type];
+    return existing != null && existing.key == bind.key;
+  }
+
+  _SlotConflictResolution _resolveSlotConflict(Type type, Bind bind) {
+    final existing = _storage.bindsMap[type];
+    if (existing == null) return _SlotConflictResolution.empty;
+
+    if (existing.key == bind.key) {
+      existing.clearCache();
+      return _SlotConflictResolution.empty;
+    }
+
+    if (bind.key != null) {
+      _storage.bindsMapByKey[bind.key!] = bind;
+      return _SlotConflictResolution.routedToKeyMap;
+    }
+
+    _storage.bindsMap[type] = bind;
+    return _SlotConflictResolution.replaced;
+  }
+
+  /// Caches singleton instances; disposes factory temp instances.
+  void _processInstance(Bind bind, dynamic instance) {
+    if (bind.isSingleton && bind.cachedInstance == null) {
+      bind.cachedInstance = instance;
+      return;
+    }
+
+    if (!bind.isSingleton) {
+      try {
+        CleanBind.fromInstance(instance);
+      } catch (e, s) {
+        _swallowError(e, s, context: 'processInstance.cleanFactoryTemp');
+      }
+    }
+  }
+
+  // ==================== ERROR HANDLING ====================
+
+  /// Logs swallowed errors when `debugLogGoRouterModular` is enabled. Keeps
+  /// silent in release builds.
+  void _swallowError(Object error, StackTrace stack, {required String context}) {
+    if (!SetupModular.instance.debugLogGoRouterModular) return;
+    developer.log(
+      'Swallowed error in $context: $error',
+      name: 'GO_ROUTER_MODULAR',
+      error: error,
+      stackTrace: stack,
+    );
   }
 }

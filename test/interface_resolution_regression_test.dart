@@ -73,4 +73,24 @@ void main() {
     expect(identical(asInterface, asConcrete), isTrue,
         reason: 'singleton must yield the same instance regardless of lookup type');
   });
+
+  test(
+    'compatibility lookup preserves singleton identity across interface and concrete',
+    () {
+      injector.startRegistering();
+      injector.addSingleton((i) => AuthApiImpl());
+      final binds = injector.finishRegistering();
+      Bind.registerBatch(binds);
+      Bind.commitBatch(injector);
+
+      final viaConcrete = Bind.get<AuthApiImpl>();
+      final viaInterfaceFirst = Bind.get<IAuthApi>();
+      final viaInterfaceSecond = Bind.get<IAuthApi>();
+
+      expect(identical(viaInterfaceFirst, viaInterfaceSecond), isTrue,
+          reason: 'every interface lookup must yield the same singleton');
+      expect(identical(viaInterfaceFirst, viaConcrete), isTrue,
+          reason: 'interface lookup must reuse the canonical singleton, not a wrapper');
+    },
+  );
 }
