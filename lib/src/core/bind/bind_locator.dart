@@ -166,6 +166,7 @@ class BindLocator {
         return testBind;
       }
 
+      _protection.blockBind(testBind);
       try {
         final instance = testBind.factoryFunction(Injector());
         if (instance is T) {
@@ -178,7 +179,10 @@ class BindLocator {
           }
           return testBind;
         }
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        _protection.unblockBind(testBind);
+      }
     }
 
     return null;
@@ -199,6 +203,7 @@ class BindLocator {
         return pendingBind;
       }
 
+      _protection.blockBind(pendingBind);
       try {
         final instance = pendingBind.factoryFunction(Injector());
         if (instance is T) {
@@ -210,7 +215,10 @@ class BindLocator {
           pendingToRemove.add(pendingBind);
           return pendingBind;
         }
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        _protection.unblockBind(pendingBind);
+      }
     }
 
     for (var b in pendingToRemove) {
@@ -270,10 +278,19 @@ class BindLocator {
     if (cached is T) return true;
     if (cached != null) return false;
 
+    // Block candidate during the factory probe: a recursive `i.get<T>()`
+    // from inside this factory must skip *this* bind in both `_searchByType`
+    // and `_searchCompatibleBind` — otherwise compatibility search would
+    // re-probe the same candidate, re-invoke its factory, and loop. Each
+    // re-invocation also re-runs the candidate's side effects (stream
+    // subscriptions, event listeners), which is visible as a UI freeze.
+    _protection.blockBind(candidate);
     try {
       return candidate.factoryFunction(Injector()) is T;
     } catch (_) {
       return false;
+    } finally {
+      _protection.unblockBind(candidate);
     }
   }
 
