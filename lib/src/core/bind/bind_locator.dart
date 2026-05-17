@@ -97,15 +97,23 @@ class BindLocator {
     }
 
     if (_protection.currentlySearching.contains(type)) {
-      // Re-entry from a factory that self-references its own type
-      // (`addFactory<I>((i) => i.get())`). The recursive lookup will skip
-      // any bind currently inside a factory invocation and fall through
-      // to compatibility search to find a different bind that produces `T`.
-      if (_protection.hasBlockedBinds) return;
+      // Bypass `currentlySearching` ONLY when the topmost in-flight factory
+      // is producing this exact type. That covers the legitimate
+      // self-reference `addFactory<I>((i) => i.get())`: the inferred
+      // `i.get<I>()` re-enters here from inside the I-producing factory, and
+      // we want compatibility search to find a different bind that produces I.
+      //
+      // Every other re-entry is a cross-type circular dependency (e.g.
+      // `A` whose factory needs `B`, whose factory needs `A`) and must
+      // surface as a clear error instead of being silently rerouted.
+      if (_protection.isTopInvocationFor(type)) return;
 
+      final chain = _protection.searchStack.map((t) => t.toString()).join(' -> ');
       throw GoRouterModularException(
-        'Type "${type.toString()}" is already being searched. '
-        'Possible infinite loop detected. Please ensure the bind is registered before use.',
+        'Circular dependency detected while resolving type "${type.toString()}".\n'
+        'Dependency chain: $chain -> ${type.toString()}\n'
+        'Break the cycle by injecting an abstraction, using a lazy factory, '
+        'or refactoring one of the participants to not depend on the other at construction time.',
       );
     }
   }
@@ -140,9 +148,9 @@ class BindLocator {
     if (bind == null) return null;
     if (bind.key != null) return null;
 
-    // Skip a bind that is currently inside its own factory invocation
-    // (self-referential `addFactory<I>((i) => i.get())`). The caller must
-    // continue searching for a different bind that produces `T`.
+    // Skip a bind whose factory is currently on the invocation stack —
+    // re-invoking it would loop (the recursive call originated from inside
+    // its own factory).
     if (_protection.isBlocked(bind)) return null;
 
     return bind;
@@ -166,23 +174,15 @@ class BindLocator {
         return testBind;
       }
 
-      _protection.blockBind(testBind);
-      try {
-        final instance = testBind.factoryFunction(Injector());
-        if (instance is T) {
-          if (objectBinds.length == 1) _storage.bindsMap.remove(Object);
-
-          if (testBind.key != null) {
-            _storage.bindsMapByKey[testBind.key!] = testBind;
-          } else {
-            _storage.bindsMap[instance.runtimeType] = testBind;
-          }
-          return testBind;
+      final matched = _probeAs<T>(testBind, (instance) {
+        if (objectBinds.length == 1) _storage.bindsMap.remove(Object);
+        if (testBind.key != null) {
+          _storage.bindsMapByKey[testBind.key!] = testBind;
+        } else {
+          _storage.bindsMap[instance.runtimeType] = testBind;
         }
-      } catch (_) {
-      } finally {
-        _protection.unblockBind(testBind);
-      }
+      });
+      if (matched) return testBind;
     }
 
     return null;
@@ -203,22 +203,15 @@ class BindLocator {
         return pendingBind;
       }
 
-      _protection.blockBind(pendingBind);
-      try {
-        final instance = pendingBind.factoryFunction(Injector());
-        if (instance is T) {
-          if (pendingBind.key != null) {
-            _storage.bindsMapByKey[pendingBind.key!] = pendingBind;
-          } else {
-            _storage.bindsMap[instance.runtimeType] = pendingBind;
-          }
-          pendingToRemove.add(pendingBind);
-          return pendingBind;
+      final matched = _probeAs<T>(pendingBind, (instance) {
+        if (pendingBind.key != null) {
+          _storage.bindsMapByKey[pendingBind.key!] = pendingBind;
+        } else {
+          _storage.bindsMap[instance.runtimeType] = pendingBind;
         }
-      } catch (_) {
-      } finally {
-        _protection.unblockBind(pendingBind);
-      }
+        pendingToRemove.add(pendingBind);
+      });
+      if (matched) return pendingBind;
     }
 
     for (var b in pendingToRemove) {
@@ -234,23 +227,18 @@ class BindLocator {
   /// `T` (e.g. a concrete singleton registered under the implementation type
   /// while the caller asked for the interface).
   ///
-  /// Singletons reuse their **cached** instance via `bind.instance` to avoid
-  /// silently breaking singleton identity (every call would otherwise build a
-  /// fresh instance through `factoryFunction`). For factory binds, a typed
-  /// delegate is created since each call must build a new instance anyway.
+  /// Singletons reuse their cached instance to preserve singleton identity.
+  /// Factory binds get a typed delegate that re-invokes the original factory
+  /// on each lookup, since each call must build a new instance anyway.
   Bind? _searchCompatibleBind<T>(Type type) {
-    // Iterate a snapshot — this method writes to `bindsMap` (and the factory
-    // probes can recursively trigger the registry to mutate it as well), so
-    // walking the live entries view raises ConcurrentModificationError.
+    // Iterate a snapshot — this method writes to `bindsMap`, so walking the
+    // live entries view raises ConcurrentModificationError.
     final snapshot = List<MapEntry<Type, Bind>>.of(_storage.bindsMap.entries);
 
     for (final entry in snapshot) {
       if (entry.key == Object) continue;
       final candidate = entry.value;
       if (candidate.key != null) continue;
-
-      // Skip a self-referential bind currently inside its own factory.
-      // Probing it would re-invoke the same factory and loop.
       if (_protection.isBlocked(candidate)) continue;
 
       if (!_candidateProducesT<T>(candidate)) continue;
@@ -273,25 +261,46 @@ class BindLocator {
     return null;
   }
 
+  /// Type-checks a candidate. Singleton results are cached so later probes
+  /// (and direct lookups) reuse the same instance without re-invoking the
+  /// factory. Factory binds discard the probe instance — by definition a
+  /// factory bind must build a fresh instance on every call.
   bool _candidateProducesT<T>(Bind candidate) {
     final cached = candidate.cachedInstance;
     if (cached is T) return true;
     if (cached != null) return false;
 
-    // Block candidate during the factory probe: a recursive `i.get<T>()`
-    // from inside this factory must skip *this* bind in both `_searchByType`
-    // and `_searchCompatibleBind` — otherwise compatibility search would
-    // re-probe the same candidate, re-invoke its factory, and loop. Each
-    // re-invocation also re-runs the candidate's side effects (stream
-    // subscriptions, event listeners), which is visible as a UI freeze.
-    _protection.blockBind(candidate);
-    try {
-      return candidate.factoryFunction(Injector()) is T;
-    } catch (_) {
+    return _withInvocation<bool>(candidate, T, () {
+      try {
+        final instance = candidate.factoryFunction(Injector());
+        if (candidate.isSingleton) {
+          // Preserve singleton identity: every subsequent probe and direct
+          // lookup must reuse this instance, not build a new one.
+          candidate.cachedInstance = instance;
+        }
+        return instance is T;
+      } catch (_) {
+        return false;
+      }
+    });
+  }
+
+  /// Probes an `Object`-typed bind (used by [_discoverFromObjectBinds] and
+  /// [_discoverFromPendingBinds]). Unlike the compatibility search, these
+  /// paths must invoke even factory bind factories — `Bind<Object>` has no
+  /// declared type, so the only way to discover what it produces is to
+  /// build an instance. On match, [onMatch] is run with the built instance.
+  bool _probeAs<T>(Bind testBind, void Function(dynamic instance) onMatch) {
+    return _withInvocation<bool>(testBind, T, () {
+      try {
+        final instance = testBind.factoryFunction(Injector());
+        if (instance is T) {
+          onMatch(instance);
+          return true;
+        }
+      } catch (_) {}
       return false;
-    } finally {
-      _protection.unblockBind(candidate);
-    }
+    });
   }
 
   // ==================== HELPERS ====================
@@ -310,20 +319,31 @@ class BindLocator {
   }
 
   /// Invokes [bind]'s factory while marking it as "currently inside a
-  /// factory invocation." A recursive `i.get<T>()` from inside the factory
-  /// will skip this bind (see [_searchByType] / [_searchCompatibleBind])
-  /// and fall through to compatibility search. Nested invocations
-  /// push/pop their own bind, so the guard handles arbitrary depth.
+  /// factory invocation producing T." A recursive `i.get<T>()` from inside
+  /// the factory will skip this bind in [_searchByType] and
+  /// [_searchCompatibleBind] and bypass the `currentlySearching` check via
+  /// [BindSearchProtection.isTopInvocationFor]. Nested invocations push/pop
+  /// their own entry so the guard handles arbitrary depth.
   T _invokeFactoryWithSelfRefGuard<T>(Bind bind, {bool cacheOnSingleton = false}) {
-    _protection.blockBind(bind);
-    try {
+    return _withInvocation<T>(bind, T, () {
       final value = bind.factoryFunction(Injector()) as T;
       if (cacheOnSingleton && bind.isSingleton && bind.cachedInstance == null) {
         bind.cachedInstance = value;
       }
       return value;
+    });
+  }
+
+  /// Runs [action] while [bind] is marked as invoking its factory for
+  /// [requestedType]. Single place that pairs `pushInvocation` /
+  /// `popInvocation` — every factory invocation in this file goes through
+  /// here so the invocation stack stays balanced.
+  R _withInvocation<R>(Bind bind, Type requestedType, R Function() action) {
+    _protection.pushInvocation(bind, requestedType);
+    try {
+      return action();
     } finally {
-      _protection.unblockBind(bind);
+      _protection.popInvocation(bind);
     }
   }
 
