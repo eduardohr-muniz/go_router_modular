@@ -216,7 +216,7 @@ class InjectionManager {
         final keyInfo = bind.key != null && bind.key != type ? 'key: ${bind.key}' : '';
         return '$type($keyInfo)';
       } catch (_) {
-        return 'Object(${bind.key != null ? 'key: ${bind.key}' : ''})';
+        // return 'Object(${bind.key != null ? 'key: ${bind.key}' : ''})'
       }
     }).join('\n');
 

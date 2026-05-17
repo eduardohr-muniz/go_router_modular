@@ -97,6 +97,12 @@ class BindLocator {
     }
 
     if (_protection.currentlySearching.contains(type)) {
+      // Re-entry from a factory that self-references its own type
+      // (`addFactory<I>((i) => i.get())`). The recursive lookup will skip
+      // any bind currently inside a factory invocation and fall through
+      // to compatibility search to find a different bind that produces `T`.
+      if (_protection.hasBlockedBinds) return;
+
       throw GoRouterModularException(
         'Type "${type.toString()}" is already being searched. '
         'Possible infinite loop detected. Please ensure the bind is registered before use.',
@@ -131,7 +137,14 @@ class BindLocator {
 
     // When searching without key, skip binds that have a key
     final bind = _storage.bindsMap[type];
-    if (bind != null && bind.key != null) return null;
+    if (bind == null) return null;
+    if (bind.key != null) return null;
+
+    // Skip a bind that is currently inside its own factory invocation
+    // (self-referential `addFactory<I>((i) => i.get())`). The caller must
+    // continue searching for a different bind that produces `T`.
+    if (_protection.isBlocked(bind)) return null;
+
     return bind;
   }
 
@@ -228,6 +241,10 @@ class BindLocator {
       final candidate = entry.value;
       if (candidate.key != null) continue;
 
+      // Skip a self-referential bind currently inside its own factory.
+      // Probing it would re-invoke the same factory and loop.
+      if (_protection.isBlocked(candidate)) continue;
+
       if (!_candidateProducesT<T>(candidate)) continue;
 
       if (candidate.isSingleton) {
@@ -263,12 +280,33 @@ class BindLocator {
   // ==================== HELPERS ====================
 
   T _createInstance<T>(Bind bind) {
-    if (!bind.isSingleton) return bind.factoryFunction(Injector()) as T;
+    if (!bind.isSingleton) return _invokeFactoryWithSelfRefGuard<T>(bind);
 
+    // Singleton with a cached instance is a pure value lookup — no factory
+    // call, no risk of self-reference, so the guard is unnecessary.
+    if (bind.cachedInstance != null) {
+      try {
+        return bind.instance as T;
+      } catch (_) {}
+    }
+    return _invokeFactoryWithSelfRefGuard<T>(bind, cacheOnSingleton: true);
+  }
+
+  /// Invokes [bind]'s factory while marking it as "currently inside a
+  /// factory invocation." A recursive `i.get<T>()` from inside the factory
+  /// will skip this bind (see [_searchByType] / [_searchCompatibleBind])
+  /// and fall through to compatibility search. Nested invocations
+  /// push/pop their own bind, so the guard handles arbitrary depth.
+  T _invokeFactoryWithSelfRefGuard<T>(Bind bind, {bool cacheOnSingleton = false}) {
+    _protection.blockBind(bind);
     try {
-      return bind.instance as T;
-    } catch (_) {
-      return bind.factoryFunction(Injector()) as T;
+      final value = bind.factoryFunction(Injector()) as T;
+      if (cacheOnSingleton && bind.isSingleton && bind.cachedInstance == null) {
+        bind.cachedInstance = value;
+      }
+      return value;
+    } finally {
+      _protection.unblockBind(bind);
     }
   }
 
