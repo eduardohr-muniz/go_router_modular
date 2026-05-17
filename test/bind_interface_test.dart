@@ -302,19 +302,41 @@ void main() {
         expect(service.name, 'ServiceImplementation');
       });
 
-      test('should resolve with untyped factory registration', () {
-        // Arrange - Registra factory sem especificar tipo genérico
-        final bind = Bind.factory((i) => ServiceImpl());
+      test(
+        'should throw on untyped factory + interface lookup '
+        '(breaking change: type the factory explicitly)',
+        () {
+          // Arrange - Untyped factory: Dart infers T as ServiceImpl, so the
+          // bind is indexed under ServiceImpl, NOT under IService.
+          final bind = Bind.factory((i) => ServiceImpl());
+          Bind.register(bind);
+
+          // Act + Assert - Interface lookup now throws NotFound. The previous
+          // behavior probed every factory bind in `bindsMap`, instantiating a
+          // throwaway ServiceImpl with all its constructor side effects, just
+          // to type-check it. Migration: use `Bind.factory<IService>((i) => ServiceImpl())`
+          // (typed) or `Bind.singleton((i) => ServiceImpl())` (cached probe).
+          expect(() => Bind.get<IService>(), throwsA(isA<Exception>()));
+
+          // Sanity: direct lookup by the discovered concrete type still works.
+          final concrete = Bind.get<ServiceImpl>();
+          expect(concrete, isA<ServiceImpl>());
+        },
+      );
+
+      test('typed factory<IService> auto-resolves via Strategy 2 (replacement pattern)', () {
+        // Arrange - Type the factory with the interface explicitly.
+        final bind = Bind.factory<IService>((i) => ServiceImpl());
         Bind.register(bind);
 
-        // Act - Busca pela interface
+        // Act - Interface lookup hits Strategy 2 directly, no probe.
         final service = Bind.get<IService>();
 
-        // Assert - Deve funcionar por auto-resolução
+        // Assert
         expect(service, isA<IService>());
         expect(service, isA<ServiceImpl>());
 
-        // Factory deve criar instâncias diferentes
+        // Factory semantics preserved.
         final service2 = Bind.get<IService>();
         expect(identical(service, service2), false);
       });

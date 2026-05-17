@@ -1,3 +1,38 @@
+## 5.2.0
+
+### Breaking
+
+- **Untyped factory binds no longer auto-resolve through supertypes**. Applies to **any** supertype relationship — interfaces, abstract classes, concrete superclasses, and mixins — not just interfaces. The previous compatibility search probed every factory bind in `bindsMap` to type-check it against the requested supertype, invoking the factory's constructor (with all its side effects: event publication, stream subscription, HTTP calls, etc.) and discarding the resulting instance. Production traces showed cubits being silently instantiated multiple times per session as a byproduct of unrelated `get<T>()` calls. The compatibility search now skips factory binds entirely; only singletons (whose probe instance is cached and reused) participate. Migration:
+
+  ```dart
+  // Before — works by accident, instantiates ServiceImpl as a probe side-effect
+  i.addFactory((i) => ServiceImpl());
+  i.get<IService>(); // ✅ resolved
+
+  // After — explicit, no probe, zero side effects until first real get
+  i.addFactory<IService>((i) => ServiceImpl());
+  i.get<IService>(); // ✅ resolved via Strategy 2 (direct lookup)
+
+  // Or, if singleton semantics are acceptable:
+  i.addSingleton((i) => ServiceImpl());
+  i.get<IService>(); // ✅ resolved (singleton cached, probe-safe)
+  ```
+
+  Direct lookups by the registered concrete type (`get<ServiceImpl>()`) still work for untyped factories — only the supertype auto-discovery is removed.
+
+### Fixed
+
+- **Phantom factory instances during interface lookup** (the breaking change above is the fix). Reproduction: with 4 factory binds in a module, every unrelated `get<IUnregistered>` instantiated all 4 (running their constructors). After 100 lookups in a session, ~400 phantom Cubit/Service instances leaked — each potentially opening WebSockets, subscribing to streams, or firing events. Now: zero phantom invocations.
+- **Cross-type circular dependency now surfaces a clear error**. `A → B → A` previously fell into the global `hasBlockedBinds` bypass and was masked as `Bind not found for type "A"` at the deepest probe level. The validation bypass is now tightened to the specific self-reference case (`addFactory<I>((i) => i.get())`) using a typed `(bind, requestedType)` invocation stack. Cross-type cycles now throw `GoRouterModularException: Circular dependency detected while resolving type "A". Dependency chain: A -> B -> A.`
+- **`BindRegistry.register` indexes typed binds under the declared type**. `Bind.factory<IService>((i) => ServiceImpl())` previously stored the bind only under `ServiceImpl` (the discovered runtime type), making `get<IService>` miss Strategy 2 and depend on probing. Typed binds now occupy `bindsMap[IService]` directly; the discovered runtime type is also indexed for `get<ServiceImpl>` lookups.
+
+### Improved
+
+- **`BindSearchProtection` is re-entrant safe**. Replaced `Set<Object> _blockedBinds` with a counter-backed `Map<Object, int>` so nested invocations of the same bind don't prematurely "unblock" each other on the first `pop`.
+- **Single helper for factory invocations**. Extracted `BindLocator._withInvocation(bind, requestedType, action)` — every factory call goes through here, eliminating the previous four-way duplication of `pushInvocation / try / finally / popInvocation`.
+
+---
+
 ## 5.1.0
 
 ### Added
