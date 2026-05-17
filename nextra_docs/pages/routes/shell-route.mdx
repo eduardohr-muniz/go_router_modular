@@ -54,9 +54,14 @@ class DashboardLayout extends StatelessWidget {
 
 ## StatefulShellModularRoute
 
-For **persistent state across tabs**. Each branch gets its own navigator backed by an `IndexedStack`, so switching tabs preserves scroll position, form state, and navigation history.
+For **persistent state across tabs**. Each branch gets its own navigator so switching tabs preserves scroll position, form state, and navigation history.
 
-This wraps GoRouter's `StatefulShellRoute.indexedStack`.
+**Container:**
+
+- **`IndexedStack`** via `StatefulShellRoute.indexedStack` when nothing selects an animated swap: no **`transition`**, no **`transitionDuration`** / **`reverseTransitionDuration`**, and no global **`Modular.configure` `defaultTransition`**.
+- **Animated** swap (aligned with **[go_transitions](https://pub.dev/packages/go_transitions)**) when any of those is set, or when you pass **`navigatorContainerBuilder`** — for example presets from **`StatefulShellBranchTransitions`** (`withGoTransition`, fade presets, …). The explicit builder **wins** over `transition`/durations.
+
+You can combine partial overrides (only **`transition`**, only durations, or both); missing pieces fall back to **`Modular.configure`** defaults and **`GoTransition.defaultDuration`** (including **`defaultTransitionDuration`** in configure).
 
 ### Basic Example
 
@@ -92,9 +97,11 @@ class TabsModule extends Module {
 
 > When using `StatefulShellModularRoute` inside a `ModuleRoute`, navigating to the module path (e.g. `/tabs`) automatically redirects to the first branch.
 
-### Branches with Modules
+### Branches with modules (`ModuleRoute`)
 
-Each branch can contain a full module with its own dependencies and routes. Branch module binds are registered **lazily** on first visit and disposed when the shell exits:
+Each branch is declared with **`routes`** (required). To mount a full module (binds + routes), wrap it in a **`ModuleRoute`** with a **distinct path per branch** — duplicate URLs across branches break GoRouter redirects.
+
+Branch module binds are registered **lazily** on first visit (via the `ModuleRoute` redirect) and disposed when the shell exits:
 
 ```dart
 StatefulShellModularRoute(
@@ -102,17 +109,18 @@ StatefulShellModularRoute(
     navigationShell: navigationShell,
   ),
   branches: [
-    // Branch with a full module (binds + routes)
-    ModularBranch(module: HomeBranchModule()),
+    ModularBranch(
+      routes: [
+        ModuleRoute('/home', module: HomeBranchModule()),
+      ],
+    ),
 
-    // Branch with direct routes
     ModularBranch(
       routes: [
         ChildRoute('/search', child: (_, __) => SearchPage()),
       ],
     ),
 
-    // Branch with a nested module route
     ModularBranch(
       routes: [
         ModuleRoute('/settings', module: SettingsModule()),
@@ -131,10 +139,39 @@ class HomeBranchModule extends Module {
 
   @override
   List<ModularRoute> get routes => [
-    ChildRoute('/home', child: (_, __) => HomePage()),
-  ];
+        ChildRoute('/', child: (_, __) => HomePage()),
+      ];
 }
 ```
+
+The outer `ModuleRoute('/home', …)` defines the segment for this tab; the branch module typically uses `ChildRoute('/')` as its root page under that segment (final path: `…/home`).
+
+### `ModuleBranch` (shortcut)
+
+When a branch is exactly **one** `ModuleRoute(path, module: …)`, you can use **`ModuleBranch`** instead of spelling `ModularBranch` + list. Behavior and lifecycle are the same.
+
+```dart
+StatefulShellModularRoute(
+  builder: (context, state, navigationShell) => AppShell(
+    navigationShell: navigationShell,
+  ),
+  branches: [
+    ModuleBranch('/home', module: HomeBranchModule()),
+    ModuleBranch('/settings', module: SettingsModule()),
+  ],
+)
+```
+
+#### ModuleBranch parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `path` | `String` | **Required (positional).** URL segment for this tab (unique per branch under the shell). Same convention as `ModuleRoute(path, …)`. |
+| `module` | `Module` | **Required.** Module mounted at `path` (binds + routes). |
+| `navigatorKey` | `GlobalKey<NavigatorState>?` | Same as `ModularBranch`. |
+| `initialLocation` | `String?` | Same as `ModularBranch`. |
+| `restorationScopeId` | `String?` | Same as `ModularBranch`. |
+| `observers` | `List<NavigatorObserver>?` | Same as `ModularBranch`. |
 
 ### Dependency Injection Lifecycle
 
@@ -142,10 +179,10 @@ class HomeBranchModule extends Module {
 |-------|-------------|
 | Shell enters navigation tree | Shell module binds are registered |
 | First visit to a branch | Branch module binds are registered (lazy) |
-| Switch between branches | Nothing — all branches stay alive in `IndexedStack` |
+| Switch between branches | Nothing — navigators stay mounted (IndexedStack **or** animated container; branches are **not** disposed on tab switch) |
 | Shell exits navigation tree | All branch modules are disposed, then the shell module |
 
-> Because `IndexedStack` keeps all branches alive, branch modules are **not** disposed when switching tabs. This is by design — state persists across tab switches.
+> Whether the shell uses IndexedStack or an animated container, inactive branches typically stay **mounted**. Branch modules are **not** disposed when switching tabs — state persists across tab switches.
 
 ### Layout with StatefulNavigationShell
 
@@ -180,26 +217,34 @@ class AppShell extends StatelessWidget {
 }
 ```
 
-### ModularBranch Parameters
+### ModularBranch parameters
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `routes` | `List<ModularRoute>?` | Direct routes for this branch |
-| `module` | `Module?` | A module whose routes and binds will be used |
+| `routes` | `List<ModularRoute>` | **Required.** Non-empty list (`ChildRoute`, `ModuleRoute`, etc.) for this branch |
 | `navigatorKey` | `GlobalKey<NavigatorState>?` | Custom navigator key for this branch |
 | `initialLocation` | `String?` | Initial route when switching to this branch |
 | `restorationScopeId` | `String?` | Restoration scope for state restoration |
 | `observers` | `List<NavigatorObserver>?` | Navigation observers for this branch |
 
-> Each branch must have either `routes` or `module`, not both.
+> Use `ModuleRoute('/segment', module: YourModule())` inside `routes` when the branch needs its own binds and route tree.
+
+### Branch transitions (`go_transitions`)
+
+Optional **`transition`** (e.g. `GoTransitions.slide.toTop.withFade`), **`transitionDuration`**, **`reverseTransitionDuration`**, **or `navigatorContainerBuilder`** control how the shell switches branch content. Omitting them uses **`IndexedStack`** only when **no effective transition** applies (see above). Prefer **`StatefulShellBranchTransitions.withGoTransition`** presets when wrapping custom logic isn’t needed.
 
 ### StatefulShellModularRoute Parameters
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `branches` | `List<ModularBranch>` | **Required.** The branches for the shell |
+| `branches` | `List<ModularBranch>` | **Required.** Branches for the shell (`ModularBranch`, `ModuleBranch`, …) |
 | `builder` | `Widget Function(context, state, navigationShell)?` | Builds the shell layout |
 | `pageBuilder` | `Page Function(context, state, navigationShell)?` | Custom page builder |
+| `transition` | `GoTransition?` | Branch-to-branch animation (inherits from `Modular.configure` default when omitted) |
+| `transitionDuration` | `Duration?` | Forward duration (`GoTransition.defaultDuration` when omitted; reflects configure `defaultTransitionDuration`) |
+| `reverseTransitionDuration` | `Duration?` | Optional reverse duration |
+| `navigatorContainerBuilder` | `ShellNavigationContainerBuilder?` | **Overrides** IndexedStack/default transition wiring when non-null |
+| `notifyRootObserver` | `bool` | Forwarded to `StatefulShellRoute` (default `true`) |
 | `redirect` | `FutureOr<String?> Function(context, state)?` | Redirect logic |
 | `parentNavigatorKey` | `GlobalKey<NavigatorState>?` | Parent navigator key |
 | `restorationScopeId` | `String?` | Restoration scope |
@@ -217,20 +262,23 @@ class AppShell extends StatelessWidget {
 | Back button per tab | No | Yes |
 | Branch-level DI | No | Yes |
 | Use case | Simple layouts, sidebars | Bottom navigation, tab bars |
+| Typical branch container | `child` swaps in one navigator | `IndexedStack` **or** animated builder (defaults + presets) |
 
 ---
 
-## Best Practices
+## Best practices
 
-- Do not place `ChildRoute('/')` inside a shell route. Use concrete paths like `/home`.
+- Do not place `ChildRoute('/')` directly inside `ShellModularRoute`. Use concrete paths (e.g. `/home`) or nest under `ModuleRoute`.
+- For `StatefulShellModularRoute`, give each tab a **unique URL**: prefer `ModuleRoute('/pos', …)`, `ModuleRoute('/settings', …)` per branch instead of several inner `ChildRoute('/')` that all resolve to the same path.
 - Keep the shell builder minimal: layout and navigation only. Push business logic into child modules.
-- Use `ModularBranch(module: ...)` to keep branch features isolated and testable.
+- Use **`ModuleBranch('/segment', module: …)`** or **`ModularBranch(routes: [ ModuleRoute(...) ])`** to isolate each tab’s module (binds + routes).
 - Use `StatefulShellModularRoute` when you need state to persist across tab switches.
 - Navigate to the shell via `context.go()`, not `context.push()`. The `goBranch()` method uses `go()` internally, and mixing `push` + `go` causes unexpected behavior.
 
-## Common Pitfalls
+## Common pitfalls
 
 - Adding `ChildRoute('/')` inside `ShellModularRoute` (use concrete paths).
+- **Several `StatefulShellModularRoute` branches mapping to the same full path** (e.g. multiple inner `/` without distinct `ModuleRoute` prefixes) — breaks redirects / named routes.
 - Using `context.push()` to navigate to a `StatefulShellModularRoute` (use `context.go()`).
 - Forgetting to render `child` / `navigationShell` in the layout builder.
 - Using `ShellModularRoute` when you need tab state preservation (use `StatefulShellModularRoute` instead).

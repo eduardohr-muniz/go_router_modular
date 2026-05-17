@@ -87,37 +87,33 @@ void main() {
         HttpClient.constructorCalls = 0;
         Bind.clearAll();
 
-        // Simula manualmente o fluxo de registro de binds
         final injector = Injector();
         injector.startRegistering();
         injector.addLazySingleton((i) => HttpClient());
         injector.addLazySingleton((i) => AuthBloc(i.get()));
         final moduleBinds = injector.finishRegistering();
 
-        // Nenhuma instância deve ser criada ainda
         expect(AuthBloc.constructorCalls, 0);
         expect(HttpClient.constructorCalls, 0);
 
-        // registerBatch + commitBatch (descobre tipos)
         Bind.registerBatch(moduleBinds);
         Bind.commitBatch(injector);
 
-        // commitBatch chama a factory para descobrir o tipo real (1 vez cada)
+        // commitBatch materializes singletons (eager and lazy) so the
+        // discovered runtimeType is registered in `bindsMap`, keeping
+        // `Injector.get<Interface>()` resolution intact.
         expect(AuthBloc.constructorCalls, 1);
         expect(HttpClient.constructorCalls, 1);
 
-        // cachedInstance deve estar preenchida após commitBatch
         for (final bind in moduleBinds) {
           expect(bind.cachedInstance, isNotNull, reason: 'cachedInstance deve ser setada após commitBatch para singleton');
         }
 
-        // _mapBindsToIdentifiers deve reusar cachedInstance (sem chamar factory)
         for (final bind in moduleBinds) {
           final instance = bind.cachedInstance ?? bind.factoryFunction(injector);
           expect(instance, isNotNull);
         }
 
-        // Nenhuma chamada extra
         expect(AuthBloc.constructorCalls, 1, reason: 'cachedInstance deve evitar chamadas extras à factory');
         expect(HttpClient.constructorCalls, 1, reason: 'cachedInstance deve evitar chamadas extras à factory');
       },

@@ -1,4 +1,5 @@
-import 'package:go_router_modular/go_router_modular.dart';
+import '../core/module/module.dart';
+import 'i_modular_route.dart';
 
 class ModuleRoute extends ModularRoute {
   final String path;

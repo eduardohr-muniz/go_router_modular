@@ -16,8 +16,7 @@ export 'src/routing/i_modular_route.dart';
 export 'src/routing/module_route.dart';
 export 'src/routing/shell_modular_route.dart';
 export 'src/routing/stateful_shell_modular_route.dart';
-
-// Extensions exports
+export 'src/routing/stateful_shell_branch_transitions.dart';
 export 'src/extensions/context_extension.dart';
 export 'src/extensions/route_extension.dart';
 
@@ -36,5 +35,5 @@ export 'src/events/modular_event_listener.dart' show ModularEventListener;
 // External packages
 export 'package:go_router/go_router.dart' hide GoRouter, ShellRoute;
 export 'package:event_bus/event_bus.dart';
-export 'package:go_transitions/go_transitions.dart';
+export 'package:go_transitions/go_transitions.dart' hide GoTransition;
 export 'src/events/modular_event_mixin.dart' show ModularEventMixin;

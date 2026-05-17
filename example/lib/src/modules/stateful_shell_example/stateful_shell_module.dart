@@ -26,17 +26,20 @@ class StatefulShellExampleModule extends Module {
             navigationShell: navigationShell,
           ),
           branches: [
-            // Branch 1: Home (com módulo e binds)
             ModularBranch(
-              module: HomeBranchModule(),
+              routes: [
+                ModuleRoute('/home', module: HomeBranchModule()),
+              ],
             ),
-            // Branch 2: Favorites (com módulo e binds)
             ModularBranch(
-              module: FavoritesBranchModule(),
+              routes: [
+                ModuleRoute('/favorites', module: FavoritesBranchModule()),
+              ],
             ),
-            // Branch 3: Profile (com módulo e binds)
             ModularBranch(
-              module: ProfileBranchModule(),
+              routes: [
+                ModuleRoute('/profile', module: ProfileBranchModule()),
+              ],
             ),
           ],
         ),
@@ -66,7 +69,7 @@ class HomeBranchModule extends Module {
   @override
   List<ModularRoute> get routes => [
         ChildRoute(
-          '/home',
+          '/',
           child: (context, state) => const StatefulHomePage(),
         ),
       ];
@@ -91,7 +94,7 @@ class FavoritesBranchModule extends Module {
   @override
   List<ModularRoute> get routes => [
         ChildRoute(
-          '/favorites',
+          '/',
           child: (context, state) => const StatefulFavoritesPage(),
         ),
       ];
@@ -116,7 +119,7 @@ class ProfileBranchModule extends Module {
   @override
   List<ModularRoute> get routes => [
         ChildRoute(
-          '/profile',
+          '/',
           child: (context, state) => const StatefulProfilePage(),
         ),
       ];

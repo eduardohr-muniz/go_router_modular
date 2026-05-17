@@ -163,7 +163,8 @@ class GoRouterModular {
     if (_router != null) return _router!;
     _defaultTransition = defaultTransition;
 
-    // Configura duration e curve para GoTransitions se fornecidos
+    // Afeta GoTransition.defaultDuration usada por rotas sem duração explícita e por
+    // [StatefulShellModularRoute] quando [transitionDuration] é omitido.
     if (defaultTransitionDuration != null) {
       GoTransition.defaultDuration = defaultTransitionDuration;
     }

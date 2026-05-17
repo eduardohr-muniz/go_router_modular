@@ -2,6 +2,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/injector.dart';
 
 // Interfaces para teste
 abstract class IService {
@@ -226,6 +227,26 @@ void main() {
         // Para singleton, instâncias devem ser iguais
         expect(identical(service1, service2), true);
       });
+
+      test(
+        'commitBatch: singleton concreto + factory alias na interface delegando ao concreto '
+        '(cenário AddressModule / AutoCompleteCubit)',
+        () {
+          final injector = Injector();
+          injector.startRegistering();
+          injector.addSingleton<ServiceImpl>((i) => ServiceImpl());
+          injector.addFactory<IService>((i) => i.get<ServiceImpl>());
+          final binds = injector.finishRegistering();
+
+          Bind.registerBatch(binds);
+          Bind.commitBatch(injector);
+
+          final viaInterface = Bind.get<IService>();
+          final viaConcrete = Bind.get<ServiceImpl>();
+
+          expect(identical(viaInterface, viaConcrete), true);
+        },
+      );
     });
 
     group('Error Handling', () {
