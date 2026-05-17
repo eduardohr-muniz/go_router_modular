@@ -49,7 +49,7 @@ mixin ModularEventMixin<T extends StatefulWidget> on State<T> {
 
     _subscriptions[E] = stream.listen((event) {
       if (_debugLog) {
-        log('Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        log('📨 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
       }
       callback(event, mounted ? context : null);
     });

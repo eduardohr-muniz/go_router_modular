@@ -56,12 +56,12 @@ class ModularEvent {
 
     if (exclusive) {
       _state.subscriptions[busId]![T] = eventBus.on<T>().asBroadcastStream().listen((event) {
-        if (_debugLog) log('Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        if (_debugLog) log('📨 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
       });
     } else {
       _state.subscriptions[busId]![T] = eventBus.on<T>().listen((event) {
-        if (_debugLog) log('Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        if (_debugLog) log('📨 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
         return callback(event, _navigatorContext);
       });
     }
@@ -69,7 +69,7 @@ class ModularEvent {
 
   static void fire<T>(T event, {EventBus? eventBus}) {
     eventBus ??= _eventBus;
-    if (_debugLog) log('Event fired: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+    if (_debugLog) log('🔥 Event fired: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
     eventBus.fire(event);
   }
 }
@@ -148,7 +148,7 @@ mixin EventListenerMixin on Module {
     if (_state.exclusiveStreams[eventBusHashCode]?[T] != null) return;
 
     _state.subscriptions[eventBusId]![T] = internalEventBus.on<T>().listen((event) {
-      if (_debugLog) log('Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+      if (_debugLog) log('📨 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
       return callback(event, _navigatorContext);
     });
   }
@@ -166,7 +166,7 @@ mixin EventListenerMixin on Module {
     currentActive?.subscription?.cancel();
 
     nextListener.subscription = _state.exclusiveStreams[eventBusHashCode]![eventType]!.listen((event) {
-      if (_debugLog) log('Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+      if (_debugLog) log('📨 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
       return nextListener.callback(event, nextListener.getContext());
     });
 
