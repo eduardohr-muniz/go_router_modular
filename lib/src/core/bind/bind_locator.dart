@@ -223,24 +223,9 @@ class BindLocator {
 
   // ==================== COMPATIBILITY SEARCH ====================
 
-  /// Last-resort: walks `bindsMap` looking for a **singleton** bind whose
-  /// instance satisfies `T` (e.g. a concrete singleton registered under the
-  /// implementation type while the caller asked for the interface).
-  ///
-  /// Factory binds are deliberately skipped. Type-checking a factory requires
-  /// invoking its factory, which constructs a throwaway instance with whatever
-  /// side effects the constructor performs (event publication, stream
-  /// subscription, HTTP calls) — and then discards it because the result is
-  /// either irrelevant (lookup didn't match) or wrapped in a delegate (which
-  /// re-invokes the factory on every subsequent call anyway). Users who want
-  /// interface→factory resolution must **type the factory explicitly**:
-  ///
-  /// ```dart
-  /// // Indexed under IService → resolved via Strategy 2, no probe.
-  /// i.addFactory<IService>((i) => ServiceImpl());
-  /// ```
-  ///
-  /// or register the concrete as a singleton (cached, probe-safe).
+  /// Last-resort: walks `bindsMap` looking for a bind whose declared type is
+  /// a subtype of `T`. Uses Dart's reified generics (`<DeclaredType>[] is List<T>`)
+  /// to check compatibility WITHOUT invoking the factory — avoiding phantom instances.
   Bind? _searchCompatibleBind<T>(Type type) {
     // Iterate a snapshot — this method writes to `bindsMap`, so walking the
     // live entries view raises ConcurrentModificationError.
@@ -250,36 +235,15 @@ class BindLocator {
       if (entry.key == Object) continue;
       final candidate = entry.value;
       if (candidate.key != null) continue;
-      if (!candidate.isSingleton) continue; // see method doc
       if (_protection.isBlocked(candidate)) continue;
 
-      if (!_singletonProducesT<T>(candidate)) continue;
+      if (!candidate.isCompatibleWith<T>()) continue;
 
       _storage.bindsMap[type] = candidate;
       return candidate;
     }
 
     return null;
-  }
-
-  /// Type-checks a singleton candidate. The first probe of a not-yet-built
-  /// singleton invokes the factory and caches the result; subsequent probes
-  /// and direct lookups reuse the cached instance — preserving singleton
-  /// identity and ensuring zero re-invocation.
-  bool _singletonProducesT<T>(Bind candidate) {
-    final cached = candidate.cachedInstance;
-    if (cached is T) return true;
-    if (cached != null) return false;
-
-    return _withInvocation<bool>(candidate, T, () {
-      try {
-        final instance = candidate.factoryFunction(Injector());
-        candidate.cachedInstance = instance;
-        return instance is T;
-      } catch (_) {
-        return false;
-      }
-    });
   }
 
   /// Probes an `Object`-typed bind (used by [_discoverFromObjectBinds] and

@@ -100,25 +100,23 @@ void main() {
     });
   });
 
-  group('untyped factory migration: untyped form throws NotFound', () {
-    test('addFactory((i) => Impl()) + get<IService> now throws (was: silently probed)', () {
+  group('untyped factory: resolves via interface without phantom instances', () {
+    test('addFactory((i) => Impl()) + get<IService> resolves (no phantom, no breaking change)', () {
       injector.startRegistering();
-      // T is inferred as _ServiceImpl from the closure; bind is Bind<_ServiceImpl>,
-      // indexed under _ServiceImpl. NOT under _IService.
+      // T is inferred as _ServiceImpl; bind is Bind<_ServiceImpl>.
+      // The declared type is checked via <_ServiceImpl>[] is List<_IService>
+      // — no factory invocation needed to discover compatibility.
       injector.add((i) => _ServiceImpl());
       final binds = injector.finishRegistering();
 
       Bind.registerBatch(binds);
       Bind.commitBatch(injector);
 
-      expect(() => Bind.get<_IService>(),
-          throwsA(isA<GoRouterModularException>()),
-          reason: 'untyped factory cannot be discovered as IService '
-              'without invoking it (= phantom instance + side effects). '
-              'Type the factory explicitly: addFactory<IService>(...).');
-
-      // And still no side effect leaked from the failed lookup.
-      expect(_ServiceImpl.constructed, 0);
+      // Must resolve without throwing — no breaking change.
+      final svc = Bind.get<_IService>();
+      expect(svc, isA<_ServiceImpl>());
+      // Factory invoked exactly once (for the real lookup, not a phantom probe).
+      expect(_ServiceImpl.constructed, 1);
     });
 
     test('untyped factory still resolves via its concrete type (no probe needed)', () {

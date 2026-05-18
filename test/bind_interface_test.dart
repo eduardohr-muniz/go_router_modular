@@ -303,22 +303,22 @@ void main() {
       });
 
       test(
-        'should throw on untyped factory + interface lookup '
-        '(breaking change: type the factory explicitly)',
+        'untyped factory + interface lookup resolves without phantom instances',
         () {
-          // Arrange - Untyped factory: Dart infers T as ServiceImpl, so the
-          // bind is indexed under ServiceImpl, NOT under IService.
+          // Arrange - Untyped factory: Dart infers T as ServiceImpl.
           final bind = Bind.factory((i) => ServiceImpl());
           Bind.register(bind);
 
-          // Act + Assert - Interface lookup now throws NotFound. The previous
-          // behavior probed every factory bind in `bindsMap`, instantiating a
-          // throwaway ServiceImpl with all its constructor side effects, just
-          // to type-check it. Migration: use `Bind.factory<IService>((i) => ServiceImpl())`
-          // (typed) or `Bind.singleton((i) => ServiceImpl())` (cached probe).
-          expect(() => Bind.get<IService>(), throwsA(isA<Exception>()));
+          // Act - Interface lookup resolves via declared-type subtype check
+          // (<ServiceImpl>[] is List<IService>) — no factory invocation needed
+          // to discover compatibility, so no phantom instances.
+          final service = Bind.get<IService>();
 
-          // Sanity: direct lookup by the discovered concrete type still works.
+          // Assert
+          expect(service, isA<IService>());
+          expect(service, isA<ServiceImpl>());
+
+          // Sanity: direct lookup by the concrete type still works.
           final concrete = Bind.get<ServiceImpl>();
           expect(concrete, isA<ServiceImpl>());
         },

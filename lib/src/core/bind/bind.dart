@@ -18,6 +18,10 @@ class Bind<T> {
 
   bool isType<U>() => this is Bind<U>;
 
+  /// Returns true if T (this bind's declared type) is a subtype of U.
+  /// Uses Dart's covariant List to check subtype without creating an instance.
+  bool isCompatibleWith<U>() => <T>[] is List<U>;
+
   T? _cachedInstance;
 
   Bind(this.factoryFunction, {this.isSingleton = true, this.isLazy = false, this.key})
