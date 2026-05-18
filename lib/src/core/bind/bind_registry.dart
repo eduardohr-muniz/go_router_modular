@@ -52,6 +52,7 @@ class BindRegistry {
   /// means cross-references inside the batch (e.g. `i.get<Dep>()` from another
   /// factory) resolve regardless of declaration order.
   void registerBatch(List<Bind<Object>> binds) {
+    _storage.negativeLookupCache.clear();
     for (final bind in binds) {
       _uncommittedBatch.add(bind);
       _routeKeyedBindToKeyMap(bind);
@@ -100,6 +101,7 @@ class BindRegistry {
     if (bind is! Bind) {
       throw ArgumentError('Bind.register expects a Bind, but received ${bind.runtimeType}');
     }
+    _storage.negativeLookupCache.clear();
 
     Type discoveredType = bind.type;
 

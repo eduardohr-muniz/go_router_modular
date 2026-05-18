@@ -10,5 +10,9 @@ class BindStorage {
   final Map<Type, Bind> bindsMap = {};
   final Map<String, Bind> bindsMapByKey = {};
   final List<Bind> pendingObjectBinds = [];
+
+  /// Types confirmed to have no compatible bind registered.
+  /// Cleared whenever binds are added or removed so results stay consistent.
+  final Set<Type> negativeLookupCache = {};
 }
 
