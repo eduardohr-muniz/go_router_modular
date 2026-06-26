@@ -9,7 +9,11 @@ class AppWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: Modular.routerConfig,
+      // Use `copyWith` para sobrescrever opções do router (ex.: observers)
+      // reaproveitando tudo que foi passado em `Modular.configure(...)`.
+      routerConfig: Modular.routerConfig.copyWith(
+        observers: [],
+      ),
       builder: (context, child) => ModularLoader.builder(context, child),
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: {

@@ -42,6 +42,16 @@ class GoRouterModular {
   /// Private router instance.
   static GoRouter? _router;
 
+  /// Router derived from [routerConfig] via [copyRouterConfig]/`copyWith`.
+  ///
+  /// Memoized so that successive widget rebuilds reuse the same [GoRouter]
+  /// instance and the navigation state is preserved.
+  static GoRouter? _derivedRouter;
+
+  /// Parameters captured during [configure], used to rebuild the router with
+  /// overrides through [copyRouterConfig].
+  static _ModularRouterParams? _params;
+
   /// Default page transition.
   static GoTransition? _defaultTransition;
 
@@ -186,7 +196,7 @@ class GoRouterModular {
     );
     modularNavigatorKey = navigatorKey ?? GlobalKey<NavigatorState>();
 
-    _router = GoRouter(
+    _params = _ModularRouterParams(
       routes: appModule.configureRoutes(topLevel: true),
       initialLocation: initialRoute,
       debugLogDiagnostics: debugLogDiagnosticsGoRouter,
@@ -205,8 +215,230 @@ class GoRouterModular {
       restorationScopeId: restorationScopeId,
       routerNeglect: routerNeglect,
     );
+
+    _router = _params!.build();
     debugLogDiagnostics = debugLogDiagnostics;
     return _router!;
+  }
+
+  /// Builds a [GoRouter] reusing the configuration provided to [configure],
+  /// overriding only the parameters you pass.
+  ///
+  /// Prefer the `Modular.routerConfig.copyWith(...)` extension, which forwards
+  /// to this method. Useful to tweak view-level options (for example
+  /// [observers]) directly at `MaterialApp.router` without repeating the whole
+  /// [configure] call:
+  ///
+  /// ```dart
+  /// MaterialApp.router(
+  ///   routerConfig: Modular.routerConfig.copyWith(
+  ///     observers: [MyNavigatorObserver()],
+  ///   ),
+  /// );
+  /// ```
+  ///
+  /// The derived router is memoized: the first call builds it and subsequent
+  /// calls return the same instance, so widget rebuilds keep the navigation
+  /// state intact.
+  static GoRouter copyRouterConfig({
+    List<RouteBase>? routes,
+    String? initialLocation,
+    bool? debugLogDiagnostics,
+    Widget Function(BuildContext, GoRouterState)? errorBuilder,
+    Page<dynamic> Function(BuildContext, GoRouterState)? errorPageBuilder,
+    Codec<Object?, Object?>? extraCodec,
+    Object? initialExtra,
+    GlobalKey<NavigatorState>? navigatorKey,
+    List<NavigatorObserver>? observers,
+    void Function(BuildContext, GoRouterState, GoRouter)? onException,
+    bool? overridePlatformDefaultLocation,
+    FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
+    Listenable? refreshListenable,
+    int? redirectLimit,
+    bool? requestFocus,
+    String? restorationScopeId,
+    bool? routerNeglect,
+  }) {
+    assert(_params != null, GoRouterModularConfigureAssert.goRouterModularConfigureAssert());
+    if (_derivedRouter != null) return _derivedRouter!;
+
+    _derivedRouter = _params!
+        .copyWith(
+          routes: routes,
+          initialLocation: initialLocation,
+          debugLogDiagnostics: debugLogDiagnostics,
+          errorBuilder: errorBuilder,
+          errorPageBuilder: errorPageBuilder,
+          extraCodec: extraCodec,
+          initialExtra: initialExtra,
+          navigatorKey: navigatorKey,
+          observers: observers,
+          onException: onException,
+          overridePlatformDefaultLocation: overridePlatformDefaultLocation,
+          redirect: redirect,
+          refreshListenable: refreshListenable,
+          redirectLimit: redirectLimit,
+          requestFocus: requestFocus,
+          restorationScopeId: restorationScopeId,
+          routerNeglect: routerNeglect,
+        )
+        .build();
+    return _derivedRouter!;
+  }
+}
+
+/// Immutable snapshot of the parameters used to build the modular [GoRouter].
+///
+/// Captured during [GoRouterModular.configure] so the router can be rebuilt
+/// with overrides via [GoRouterModular.copyRouterConfig].
+class _ModularRouterParams {
+  const _ModularRouterParams({
+    required this.routes,
+    required this.initialLocation,
+    required this.debugLogDiagnostics,
+    required this.errorBuilder,
+    required this.errorPageBuilder,
+    required this.extraCodec,
+    required this.initialExtra,
+    required this.navigatorKey,
+    required this.observers,
+    required this.onException,
+    required this.overridePlatformDefaultLocation,
+    required this.redirect,
+    required this.refreshListenable,
+    required this.redirectLimit,
+    required this.requestFocus,
+    required this.restorationScopeId,
+    required this.routerNeglect,
+  });
+
+  final List<RouteBase> routes;
+  final String initialLocation;
+  final bool debugLogDiagnostics;
+  final Widget Function(BuildContext, GoRouterState)? errorBuilder;
+  final Page<dynamic> Function(BuildContext, GoRouterState)? errorPageBuilder;
+  final Codec<Object?, Object?>? extraCodec;
+  final Object? initialExtra;
+  final GlobalKey<NavigatorState> navigatorKey;
+  final List<NavigatorObserver>? observers;
+  final void Function(BuildContext, GoRouterState, GoRouter)? onException;
+  final bool overridePlatformDefaultLocation;
+  final FutureOr<String?> Function(BuildContext, GoRouterState)? redirect;
+  final Listenable? refreshListenable;
+  final int redirectLimit;
+  final bool requestFocus;
+  final String? restorationScopeId;
+  final bool routerNeglect;
+
+  _ModularRouterParams copyWith({
+    List<RouteBase>? routes,
+    String? initialLocation,
+    bool? debugLogDiagnostics,
+    Widget Function(BuildContext, GoRouterState)? errorBuilder,
+    Page<dynamic> Function(BuildContext, GoRouterState)? errorPageBuilder,
+    Codec<Object?, Object?>? extraCodec,
+    Object? initialExtra,
+    GlobalKey<NavigatorState>? navigatorKey,
+    List<NavigatorObserver>? observers,
+    void Function(BuildContext, GoRouterState, GoRouter)? onException,
+    bool? overridePlatformDefaultLocation,
+    FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
+    Listenable? refreshListenable,
+    int? redirectLimit,
+    bool? requestFocus,
+    String? restorationScopeId,
+    bool? routerNeglect,
+  }) {
+    return _ModularRouterParams(
+      routes: routes ?? this.routes,
+      initialLocation: initialLocation ?? this.initialLocation,
+      debugLogDiagnostics: debugLogDiagnostics ?? this.debugLogDiagnostics,
+      errorBuilder: errorBuilder ?? this.errorBuilder,
+      errorPageBuilder: errorPageBuilder ?? this.errorPageBuilder,
+      extraCodec: extraCodec ?? this.extraCodec,
+      initialExtra: initialExtra ?? this.initialExtra,
+      navigatorKey: navigatorKey ?? this.navigatorKey,
+      observers: observers ?? this.observers,
+      onException: onException ?? this.onException,
+      overridePlatformDefaultLocation: overridePlatformDefaultLocation ?? this.overridePlatformDefaultLocation,
+      redirect: redirect ?? this.redirect,
+      refreshListenable: refreshListenable ?? this.refreshListenable,
+      redirectLimit: redirectLimit ?? this.redirectLimit,
+      requestFocus: requestFocus ?? this.requestFocus,
+      restorationScopeId: restorationScopeId ?? this.restorationScopeId,
+      routerNeglect: routerNeglect ?? this.routerNeglect,
+    );
+  }
+
+  GoRouter build() {
+    return GoRouter(
+      routes: routes,
+      initialLocation: initialLocation,
+      debugLogDiagnostics: debugLogDiagnostics,
+      errorBuilder: errorBuilder,
+      errorPageBuilder: errorPageBuilder,
+      extraCodec: extraCodec,
+      initialExtra: initialExtra,
+      navigatorKey: navigatorKey,
+      observers: observers,
+      onException: onException,
+      overridePlatformDefaultLocation: overridePlatformDefaultLocation,
+      redirect: redirect,
+      refreshListenable: refreshListenable,
+      redirectLimit: redirectLimit,
+      requestFocus: requestFocus,
+      restorationScopeId: restorationScopeId,
+      routerNeglect: routerNeglect,
+    );
+  }
+}
+
+/// Adds a [copyWith] to the [GoRouter] returned by [GoRouterModular.routerConfig].
+///
+/// Lets you override modular routing options (for example [observers])
+/// directly where the router is consumed, reusing everything else provided to
+/// [GoRouterModular.configure].
+extension ModularRouterConfigCopyWith on GoRouter {
+  /// Returns a [GoRouter] reusing the modular configuration with the given
+  /// overrides applied. See [GoRouterModular.copyRouterConfig].
+  GoRouter copyWith({
+    List<RouteBase>? routes,
+    String? initialLocation,
+    bool? debugLogDiagnostics,
+    Widget Function(BuildContext, GoRouterState)? errorBuilder,
+    Page<dynamic> Function(BuildContext, GoRouterState)? errorPageBuilder,
+    Codec<Object?, Object?>? extraCodec,
+    Object? initialExtra,
+    GlobalKey<NavigatorState>? navigatorKey,
+    List<NavigatorObserver>? observers,
+    void Function(BuildContext, GoRouterState, GoRouter)? onException,
+    bool? overridePlatformDefaultLocation,
+    FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
+    Listenable? refreshListenable,
+    int? redirectLimit,
+    bool? requestFocus,
+    String? restorationScopeId,
+    bool? routerNeglect,
+  }) {
+    return GoRouterModular.copyRouterConfig(
+      routes: routes,
+      initialLocation: initialLocation,
+      debugLogDiagnostics: debugLogDiagnostics,
+      errorBuilder: errorBuilder,
+      errorPageBuilder: errorPageBuilder,
+      extraCodec: extraCodec,
+      initialExtra: initialExtra,
+      navigatorKey: navigatorKey,
+      observers: observers,
+      onException: onException,
+      overridePlatformDefaultLocation: overridePlatformDefaultLocation,
+      redirect: redirect,
+      refreshListenable: refreshListenable,
+      redirectLimit: redirectLimit,
+      requestFocus: requestFocus,
+      restorationScopeId: restorationScopeId,
+      routerNeglect: routerNeglect,
+    );
   }
 }
 
