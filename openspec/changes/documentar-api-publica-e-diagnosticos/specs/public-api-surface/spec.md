@@ -1,0 +1,56 @@
+## ADDED Requirements
+
+### Requirement: O barril principal exporta a superfície pública por área
+
+O sistema SHALL expor sua API pública pelo barril `lib/go_router_modular.dart`, agrupada por área. O barril MUST exportar, no mínimo: o core (`bind.dart`, `go_router_modular_configure.dart`, `module.dart`, `injection_manager.dart`), a DI (`injector.dart`), o roteamento (`route_model.dart`, `child_route.dart`, `i_modular_route.dart`, `module_route.dart`, `shell_modular_route.dart`, `stateful_shell_modular_route.dart`, `stateful_shell_branch_transitions.dart`) e as extensions (`context_extension.dart`, `route_extension.dart`), as exceções (`exception.dart`) e os widgets (`material_app_router.dart`, `modular_loader.dart`). Importar `package:go_router_modular/go_router_modular.dart` MUST ser suficiente para usar a API de produção do pacote sem imports internos de `src/`.
+
+Arquivos de referência: `lib/go_router_modular.dart`.
+
+#### Scenario: Import único dá acesso à API de produção
+
+- **WHEN** um consumidor importa `package:go_router_modular/go_router_modular.dart`
+- **THEN** tipos como `Module`, `Bind`, `Injector`, `ChildRoute`, `ModuleRoute`, `ShellModularRoute`, `ModularApp` e `GoRouterModularException` ficam disponíveis sem importar arquivos de `src/`
+
+#### Scenario: Widgets internos não-públicos não são exportados
+
+- **WHEN** o barril principal é inspecionado
+- **THEN** widgets de uso interno (`once_builder.dart`, `parent_widget_observer.dart`) não constam entre os exports públicos
+
+### Requirement: O barril principal re-exporta pacotes externos ocultando os tipos substituídos
+
+O sistema SHALL re-exportar pacotes externos pelo barril principal aplicando ocultação seletiva para evitar colisão com os tipos modulares. O barril MUST exportar `package:go_router/go_router.dart` com `hide GoRouter, ShellRoute`, `package:go_transitions/go_transitions.dart` com `hide GoTransition` e `package:event_bus/event_bus.dart` por completo. Do sistema de eventos, MUST exportar apenas os símbolos públicos selecionados: de `modular_event.dart` `show ModularEvent, EventListenerMixin, clearEventModuleState, defaultModularEventBus`; de `event_module.dart` `show EventModule`; de `modular_event_listener.dart` `show ModularEventListener`; de `modular_event_mixin.dart` `show ModularEventMixin`.
+
+Arquivos de referência: `lib/go_router_modular.dart`.
+
+#### Scenario: Tipos do go_router substituídos ficam ocultos
+
+- **WHEN** um consumidor importa o barril principal
+- **THEN** `GoRouter` e `ShellRoute` do `go_router` não vazam pelo re-export
+- **AND** os demais símbolos do `go_router` (ex.: `GoRouterState`) continuam acessíveis
+
+#### Scenario: GoTransition original é ocultado
+
+- **WHEN** o barril principal é inspecionado
+- **THEN** `go_transitions` é re-exportado com `hide GoTransition`
+
+#### Scenario: Apenas símbolos públicos de eventos são expostos
+
+- **WHEN** o barril principal é inspecionado
+- **THEN** o sistema de eventos é exportado com `show` limitado (ex.: `ModularEvent`, `EventModule`, `ModularEventListener`, `ModularEventMixin`)
+- **AND** detalhes internos como `EventState` não são exportados
+
+### Requirement: O barril de testes expõe a infraestrutura de testes
+
+O sistema SHALL expor a infraestrutura de testes pelo barril `lib/testing.dart`, importável por `package:go_router_modular/testing.dart`. O barril MUST exportar `ModularTestScope`, `EventRecorder`, `RecordedEventList`, `FakeInjector` e `ModularEventBus`, e MUST re-exportar por conveniência `clearEventModuleState` e `defaultModularEventBus` de `modular_event.dart`, evitando dois imports nos testes.
+
+Arquivos de referência: `lib/testing.dart`, `lib/src/testing/*`.
+
+#### Scenario: Import de testes dá acesso aos utilitários
+
+- **WHEN** um teste importa `package:go_router_modular/testing.dart`
+- **THEN** `ModularTestScope`, `EventRecorder`, `RecordedEventList`, `FakeInjector` e `ModularEventBus` ficam disponíveis
+
+#### Scenario: Re-exports de conveniência evitam segundo import
+
+- **WHEN** um teste importa apenas o barril de testes
+- **THEN** `clearEventModuleState` e `defaultModularEventBus` ficam acessíveis sem importar o barril principal

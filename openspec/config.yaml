@@ -3,18 +3,87 @@ schema: spec-driven
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Idioma: todos os artefatos (proposal, design, specs, tasks) devem ser escritos em Português do Brasil (pt-BR).
+
+  Projeto: go_router_modular — pacote Dart/Flutter que adiciona injeção de dependência
+  modular e roteamento por módulos em cima do go_router.
+
+  Stack:
+    - Linguagem: Dart (null-safe)
+    - Framework: Flutter
+    - Roteamento: go_router
+    - Testes: package:test / flutter_test
+    - Análise estática: package:flutter_lints / análise via `dart analyze` e `flutter analyze`
+
+  Princípios de engenharia (obrigatórios em todo código produzido ou revisado):
+
+    Boas práticas Dart e Flutter (Effective Dart):
+      - Seguir o guia Effective Dart (Style, Documentation, Usage, Design).
+      - Preferir `const` sempre que possível; widgets imutáveis.
+      - Composição de widgets em vez de herança; extrair widgets pequenos e reutilizáveis.
+      - Separar UI, lógica de negócio e acesso a dados; sem regra de negócio dentro de widget.
+      - Tratar todos os estados assíncronos (loading, erro, vazio, sucesso).
+      - `async`/`await` com tratamento de erro explícito; nunca engolir exceções.
+      - Respeitar o lifecycle: dispor controllers, streams e binds; sem leaks.
+      - Documentar APIs públicas com `///`.
+
+    Object Calisthenics:
+      1. Apenas um nível de indentação por método.
+      2. Não usar `else` (preferir early return / cláusula de guarda).
+      3. Encapsular tipos primitivos e String quando carregam regra de domínio.
+      4. Coleções de primeira classe (uma classe por coleção com comportamento próprio).
+      5. Um ponto por linha (evitar train wreck / Law of Demeter).
+      6. Não abreviar nomes.
+      7. Manter entidades pequenas (classes e métodos curtos).
+      8. Poucas variáveis de instância por classe.
+      9. Sem getters/setters expondo estado interno desnecessariamente; preferir comportamento (Tell, Don't Ask).
+
+    Clean Code:
+      - Nomes revelam intenção; funções pequenas que fazem uma só coisa.
+      - Sem código morto, sem comentários óbvios; o código se explica.
+      - DRY: nenhuma duplicação de lógica.
+      - Tratamento de erro como cidadão de primeira classe; não retornar/passar null silenciosamente.
+      - Boy Scout Rule: deixar o código mais limpo do que encontrou.
+
+    Princípios SOLID:
+      - S — Single Responsibility: cada classe/módulo tem um único motivo para mudar.
+      - O — Open/Closed: aberto para extensão, fechado para modificação.
+      - L — Liskov Substitution: subtipos substituíveis sem quebrar contrato.
+      - I — Interface Segregation: interfaces pequenas e específicas.
+      - D — Dependency Inversion: depender de abstrações, não de implementações concretas.
+
+  Convenção de nomes (regra forte):
+    - Proibido abreviações em nomes de variáveis, parâmetros, campos e métodos.
+    - O nome deve dizer o que a variável É. Ex.: usar `routeConfiguration` e não `routeCfg`;
+      `dependencyInjector` e não `di`/`injector`; `controller` e não `ctrl`; `index` e não `i`;
+      `errorMessage` e não `err`/`msg`.
+    - Exceção única: convenções idiomáticas universais já consagradas e inevitáveis do framework
+      (ex.: `context` do `BuildContext`), e mesmo assim sem encurtar.
+
+  Cobertura de testes:
+    - Meta obrigatória: 100% de cobertura de testes (linhas e branches).
+    - Toda mudança de comportamento entra com teste cobrindo caminhos de sucesso e de erro.
+    - Validar com `flutter test --coverage` e conferir o `coverage/lcov.info`.
+    - Nenhuma tarefa é considerada concluída sem os testes correspondentes passando e cobertos.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Escrever em pt-BR.
+    - Sempre incluir uma seção "Não-objetivos" (Non-goals).
+    - Justificar a mudança em termos de SOLID, Clean Code ou boas práticas Flutter/Dart quando aplicável.
+  design:
+    - Escrever em pt-BR.
+    - Descrever como o desenho respeita SOLID (especialmente Single Responsibility e Dependency Inversion).
+    - Apontar pontos de extensão (Open/Closed) e abstrações envolvidas.
+  specs:
+    - Escrever em pt-BR.
+    - Cada requisito deve ser testável e mensurável.
+    - Incluir cenários de erro, vazio e borda, não apenas o caminho feliz.
+  tasks:
+    - Escrever em pt-BR.
+    - Toda tarefa de implementação deve ter uma tarefa de teste associada visando 100% de cobertura.
+    - Nomear tudo sem abreviações; o nome deve dizer o que a coisa é.
+    - Incluir tarefa de verificação com `flutter analyze` e `flutter test --coverage`.
