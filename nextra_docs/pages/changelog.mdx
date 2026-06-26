@@ -2,6 +2,25 @@
 
 All notable changes to GoRouter Modular.
 
+## 5.3.0
+
+### Added
+
+- **`copyWith` on the modular router** — override individual `GoRouter` options (`observers`, `redirect`, `refreshListenable`, `errorBuilder`, and more) at the point where the router is consumed, reusing everything from `Modular.configure(...)`. See [Overriding router options](/docs/quick-start#overriding-router-options).
+
+  ```dart
+  MaterialApp.router(
+    routerConfig: Modular.routerConfig.copyWith(
+      observers: [MyAnalyticsObserver()],
+    ),
+    builder: (context, child) => ModularLoader.builder(context, child),
+  );
+  ```
+
+### Changed
+
+- Bumped the `go_router` constraint to `^17.3.0` (chained redirect resolution and `pop()` + `onExit` fixes).
+
 ## 5.0.0
 
 ### Breaking Changes

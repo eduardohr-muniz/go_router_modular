@@ -1,3 +1,24 @@
+## 5.3.0
+
+### Added
+
+- **`copyWith` on the modular router**. Override individual `GoRouter` options at the point where the router is consumed, reusing everything passed to `Modular.configure(...)`. Useful when `ModularApp.router` doesn't expose an option you need — for example attaching a `NavigatorObserver`:
+
+  ```dart
+  MaterialApp.router(
+    routerConfig: Modular.routerConfig.copyWith(
+      observers: [MyAnalyticsObserver()],
+    ),
+    builder: (context, child) => ModularLoader.builder(context, child),
+  );
+  ```
+
+  Overridable options include `observers`, `redirect`, `refreshListenable`, `errorBuilder`, `errorPageBuilder`, `redirectLimit`, `navigatorKey`, `restorationScopeId`, and more. The derived router is memoized, so widget rebuilds reuse the same instance and navigation state is preserved.
+
+### Changed
+
+- Bumped the `go_router` constraint to `^17.3.0`, pulling in the chained top-level redirect resolution fix (17.2.1) and the `pop()` + `onExit` stale-configuration fix (17.2.2).
+
 ## 5.2.0
 
 ### Breaking
