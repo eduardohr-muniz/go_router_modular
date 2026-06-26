@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
+import 'package:go_router_modular/src/widgets/once_builder.dart';
 import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
 import 'package:go_transitions/go_transitions.dart';
 
@@ -52,7 +53,9 @@ class ModularRouteBuilder {
         path: childRoute.path,
         name: childRoute.name,
         transition: transition,
-        builder: (context, state) => childRoute.child(context, state),
+        builder: (context, state) => OnceBuilder(
+          builder: (_) => childRoute.child(context, state),
+        ),
         parentNavigatorKey: childRoute.parentNavigatorKey,
         redirect: childRoute.redirect,
         topLevel: topLevel,
@@ -64,7 +67,9 @@ class ModularRouteBuilder {
     return GoRoute(
       path: _normalizePath(path: childRoute.path, topLevel: topLevel),
       name: childRoute.name,
-      builder: (context, state) => childRoute.child(context, state),
+      builder: (context, state) => OnceBuilder(
+        builder: (_) => childRoute.child(context, state),
+      ),
       parentNavigatorKey: childRoute.parentNavigatorKey,
       redirect: childRoute.redirect,
       onExit: childRoute.onExit,
@@ -161,7 +166,7 @@ class ModularRouteBuilder {
           didChangeDependencies: (mod) =>
               this.module.onDidChangeGoingReference(mod),
           module: module.module,
-          child: nonNullChildRoute.child(context, state),
+          childBuilder: (_) => nonNullChildRoute.child(context, state),
         );
 
     final fullPath = module.path + nonNullChildRoute.path;

@@ -52,6 +52,7 @@ class BindRegistry {
   /// means cross-references inside the batch (e.g. `i.get<Dep>()` from another
   /// factory) resolve regardless of declaration order.
   void registerBatch(List<Bind<Object>> binds) {
+    _storage.negativeLookupCache.clear();
     for (final bind in binds) {
       _uncommittedBatch.add(bind);
       _routeKeyedBindToKeyMap(bind);
@@ -89,29 +90,39 @@ class BindRegistry {
 
   /// Registers [bind] eagerly, discovering its real type via the factory when
   /// possible. Kept for direct callers; new code should prefer [registerBatch].
+  ///
+  /// The **canonical slot** is the bind's declared generic type when it is
+  /// known (`Bind<T>` with `T != Object`); only untyped binds (`Bind<Object>`)
+  /// fall back to the discovered runtime type. Without this, a typed factory
+  /// like `Bind.factory<IService>((i) => ServiceImpl())` would be indexed
+  /// under `ServiceImpl` and `get<IService>` would miss Strategy 2, forcing
+  /// the (now-removed) probe path through compatibility search.
   void register(dynamic bind) {
     if (bind is! Bind) {
       throw ArgumentError('Bind.register expects a Bind, but received ${bind.runtimeType}');
     }
+    _storage.negativeLookupCache.clear();
 
-    Type registrationType = bind.type;
+    Type discoveredType = bind.type;
 
     try {
       final instance = bind.factoryFunction(Injector());
-      registrationType = instance.runtimeType;
+      discoveredType = instance.runtimeType;
       _processInstance(bind, instance);
     } catch (e, s) {
       _swallowError(e, s, context: 'register.factory');
-      if (registrationType == Object) {
+      if (discoveredType == Object) {
         _storage.pendingObjectBinds.add(bind);
       }
     }
 
-    if (_isSingletonAlreadyRegistered(registrationType, bind)) return;
-    if (_resolveSlotConflict(registrationType, bind) != _SlotConflictResolution.empty) return;
+    final canonicalType = bind.type != Object ? bind.type : discoveredType;
 
-    _writeToCanonicalSlot(registrationType, bind);
-    _indexDiscoveredType(registrationType, bind);
+    if (_isSingletonAlreadyRegistered(canonicalType, bind)) return;
+    if (_resolveSlotConflict(canonicalType, bind) != _SlotConflictResolution.empty) return;
+
+    _writeToCanonicalSlot(canonicalType, bind);
+    _indexDiscoveredType(discoveredType, bind);
   }
 
   /// Generic version of [register] used when the type is statically known.

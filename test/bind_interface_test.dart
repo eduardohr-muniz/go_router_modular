@@ -302,19 +302,41 @@ void main() {
         expect(service.name, 'ServiceImplementation');
       });
 
-      test('should resolve with untyped factory registration', () {
-        // Arrange - Registra factory sem especificar tipo genérico
-        final bind = Bind.factory((i) => ServiceImpl());
+      test(
+        'untyped factory + interface lookup resolves without phantom instances',
+        () {
+          // Arrange - Untyped factory: Dart infers T as ServiceImpl.
+          final bind = Bind.factory((i) => ServiceImpl());
+          Bind.register(bind);
+
+          // Act - Interface lookup resolves via declared-type subtype check
+          // (<ServiceImpl>[] is List<IService>) — no factory invocation needed
+          // to discover compatibility, so no phantom instances.
+          final service = Bind.get<IService>();
+
+          // Assert
+          expect(service, isA<IService>());
+          expect(service, isA<ServiceImpl>());
+
+          // Sanity: direct lookup by the concrete type still works.
+          final concrete = Bind.get<ServiceImpl>();
+          expect(concrete, isA<ServiceImpl>());
+        },
+      );
+
+      test('typed factory<IService> auto-resolves via Strategy 2 (replacement pattern)', () {
+        // Arrange - Type the factory with the interface explicitly.
+        final bind = Bind.factory<IService>((i) => ServiceImpl());
         Bind.register(bind);
 
-        // Act - Busca pela interface
+        // Act - Interface lookup hits Strategy 2 directly, no probe.
         final service = Bind.get<IService>();
 
-        // Assert - Deve funcionar por auto-resolução
+        // Assert
         expect(service, isA<IService>());
         expect(service, isA<ServiceImpl>());
 
-        // Factory deve criar instâncias diferentes
+        // Factory semantics preserved.
         final service2 = Bind.get<IService>();
         expect(identical(service, service2), false);
       });

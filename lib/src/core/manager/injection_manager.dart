@@ -137,8 +137,9 @@ class InjectionManager {
       for (final validation in validationsToRun) {
         try {
           validation();
-        } catch (e) {
-          if (e is GoRouterModularException) rethrow;
+        } catch (_) {
+          // Validation errors must never interrupt the operation queue.
+          // Failures are already logged inside _validateModuleBinds.
         }
       }
       _bindsToValidate.clear();
@@ -183,6 +184,16 @@ class InjectionManager {
 
   void _validateModuleBinds(Module module, List<Bind<Object>> moduleBinds) {
     for (final bind in moduleBinds) {
+      // Factory binds are transient and validated lazily on first use.
+      // Attempting to instantiate them here is unsafe: their singleton
+      // dependencies may already have been disposed by _unregisterBinds.
+      if (!bind.isSingleton) continue;
+
+      // Skip singletons whose cache was already cleared by _unregisterBinds —
+      // attempting to recreate them would produce phantom instances that are
+      // never tracked and immediately discarded.
+      if (bind.cachedInstance == null) continue;
+
       Type? bindType;
       try {
         final newInstance = _singletonInstanceOrFactory(bind);
@@ -192,7 +203,8 @@ class InjectionManager {
         if (_debugLog) {
           final normalizedStack = _normalizeStackTrace(bind.stackTrace.toString());
           log('Bind validation failed: $bindType - $e \nSTACKTRACE: \n$normalizedStack', name: "GO_ROUTER_MODULAR");
-          throw GoRouterModularException('Bind not found for type ${bindType.toString()}');
+          // Do NOT throw here — a validation failure must never interrupt the
+          // OperationQueue. The log above is sufficient for debugging.
         }
       }
     }

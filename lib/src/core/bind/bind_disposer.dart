@@ -11,6 +11,8 @@ class BindDisposer {
   void dispose<T>() {
     if (T == Object) return;
 
+    _storage.negativeLookupCache.clear();
+
     final bind = _storage.bindsMap[T];
     if (bind != null) {
       _disposeBindInstance(bind);
@@ -45,6 +47,7 @@ class BindDisposer {
   }
 
   void disposeByKey(String key) {
+    _storage.negativeLookupCache.clear();
     final bind = _storage.bindsMapByKey[key];
     if (bind != null) {
       if (bind.cachedInstance != null) {
@@ -59,6 +62,7 @@ class BindDisposer {
   }
 
   void disposeByType(Type type) {
+    _storage.negativeLookupCache.clear();
     final bind = _storage.bindsMap[type];
     if (bind != null) _disposeBindInstance(bind);
     _storage.bindsMap.remove(type);
@@ -112,6 +116,7 @@ class BindDisposer {
     _storage.bindsMap.clear();
     _storage.bindsMapByKey.clear();
     _storage.pendingObjectBinds.clear();
+    _storage.negativeLookupCache.clear();
 
     for (final bind in bindsToClean) {
       _disposeBindInstance(bind);

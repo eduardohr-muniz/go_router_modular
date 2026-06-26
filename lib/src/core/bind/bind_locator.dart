@@ -15,12 +15,42 @@ class BindLocator {
   // ==================== PUBLIC API ====================
 
   T get<T>({String? key}) {
+    // Fast path: no factory executing — re-entrancy and circular deps impossible.
+    if (key == null && !_protection.hasBlockedBinds) {
+      final bind = _storage.bindsMap[T];
+      if (bind != null && bind.key == null && bind.isSingleton) {
+        final cached = bind.cachedInstance;
+        if (cached != null) {
+          _validateChangeNotifier(cached);
+          return cached as T;
+        }
+      }
+      // Negative cache: T was already searched through all strategies and not
+      // found. Skip tracking + strategy walk and go straight to the throw.
+      if (bind == null && _storage.negativeLookupCache.contains(T)) {
+        _throwNotFound(T, null);
+      }
+    }
     final instance = _find<T>(key: key);
     if (key == null) _validateChangeNotifier(instance);
     return instance;
   }
 
   T? tryGet<T>({String? key}) {
+    // Fast path: return null without throwing when T is known-not-found.
+    if (key == null && !_protection.hasBlockedBinds) {
+      final bind = _storage.bindsMap[T];
+      if (bind != null && bind.key == null && bind.isSingleton) {
+        final cached = bind.cachedInstance;
+        if (cached != null) {
+          _validateChangeNotifier(cached);
+          return cached as T;
+        }
+      }
+      if (bind == null && _storage.negativeLookupCache.contains(T)) {
+        return null;
+      }
+    }
     try {
       return get<T>(key: key);
     } catch (_) {
@@ -223,13 +253,10 @@ class BindLocator {
 
   // ==================== COMPATIBILITY SEARCH ====================
 
-  /// Last-resort: walks `bindsMap` looking for a bind whose instance satisfies
-  /// `T` (e.g. a concrete singleton registered under the implementation type
-  /// while the caller asked for the interface).
-  ///
-  /// Singletons reuse their cached instance to preserve singleton identity.
-  /// Factory binds get a typed delegate that re-invokes the original factory
-  /// on each lookup, since each call must build a new instance anyway.
+  /// Last-resort: walks `bindsMap` looking for a bind whose declared type is
+  /// a subtype of `T`. Uses Dart's reified generics (`<DeclaredType>[] is List<T>`)
+  /// to check compatibility WITHOUT invoking the factory — avoiding phantom instances.
+  /// On miss, records `T` in the negative cache so future lookups skip this walk.
   Bind? _searchCompatibleBind<T>(Type type) {
     // Iterate a snapshot — this method writes to `bindsMap`, so walking the
     // live entries view raises ConcurrentModificationError.
@@ -241,48 +268,16 @@ class BindLocator {
       if (candidate.key != null) continue;
       if (_protection.isBlocked(candidate)) continue;
 
-      if (!_candidateProducesT<T>(candidate)) continue;
+      if (!candidate.isCompatibleWith<T>()) continue;
 
-      if (candidate.isSingleton) {
-        _storage.bindsMap[type] = candidate;
-        return candidate;
-      }
-
-      final delegate = Bind<T>(
-        (injector) => candidate.factoryFunction(injector) as T,
-        isSingleton: false,
-        isLazy: candidate.isLazy,
-        key: candidate.key,
-      );
-      _storage.bindsMap[type] = delegate;
-      return delegate;
+      _storage.bindsMap[type] = candidate;
+      return candidate;
     }
 
+    // All strategies exhausted — cache this negative result so the next lookup
+    // skips tracking + strategy walk entirely.
+    _storage.negativeLookupCache.add(type);
     return null;
-  }
-
-  /// Type-checks a candidate. Singleton results are cached so later probes
-  /// (and direct lookups) reuse the same instance without re-invoking the
-  /// factory. Factory binds discard the probe instance — by definition a
-  /// factory bind must build a fresh instance on every call.
-  bool _candidateProducesT<T>(Bind candidate) {
-    final cached = candidate.cachedInstance;
-    if (cached is T) return true;
-    if (cached != null) return false;
-
-    return _withInvocation<bool>(candidate, T, () {
-      try {
-        final instance = candidate.factoryFunction(Injector());
-        if (candidate.isSingleton) {
-          // Preserve singleton identity: every subsequent probe and direct
-          // lookup must reuse this instance, not build a new one.
-          candidate.cachedInstance = instance;
-        }
-        return instance is T;
-      } catch (_) {
-        return false;
-      }
-    });
   }
 
   /// Probes an `Object`-typed bind (used by [_discoverFromObjectBinds] and

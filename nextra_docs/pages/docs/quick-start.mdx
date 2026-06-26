@@ -35,6 +35,37 @@ class AppWidget extends StatelessWidget {
 }
 ```
 
+### Overriding router options
+
+`ModularApp.router` wires the modular router for you. If you need a router option
+it doesn't expose — for example `observers`, `redirect`, or `refreshListenable` —
+use `MaterialApp.router` directly and `copyWith` on `Modular.routerConfig`.
+Everything from `configure` is reused; you override only what you list.
+
+```dart filename="lib/src/app_widget.dart"
+class AppWidget extends StatelessWidget {
+  const AppWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      // Reuses the whole modular configuration, overriding only `observers`.
+      routerConfig: Modular.routerConfig.copyWith(
+        observers: [MyAnalyticsObserver()],
+      ),
+      builder: (context, child) => ModularLoader.builder(context, child),
+    );
+  }
+}
+```
+
+You can override any router option this way — `observers`, `redirect`,
+`refreshListenable`, `errorBuilder`, `errorPageBuilder`, `redirectLimit`,
+`navigatorKey`, `restorationScopeId`, and more.
+
+> The derived router is memoized: the first `copyWith` call builds it and later
+> rebuilds return the same instance, so your navigation state is preserved.
+
 ## 3. Create Modules
 
 ```dart filename="lib/src/app_module.dart"
