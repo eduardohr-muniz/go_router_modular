@@ -43,7 +43,6 @@ void main() {
         int buildCount = 0;
 
         final module = _StubModule();
-        Module? disposedModule;
 
         // Widget pai com estado para forçar rebuilds
         final controller = ValueNotifier<int>(0);
@@ -54,7 +53,7 @@ void main() {
               valueListenable: controller,
               builder: (context, _, __) => ParentWidgetObserver(
                 module: module,
-                onDispose: (m) => disposedModule = m,
+                onDispose: (_) {},
                 didChangeDependencies: (_) {},
                 childBuilder: (_) {
                   buildCount++;
