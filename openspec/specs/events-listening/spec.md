@@ -8,9 +8,9 @@ Define a escuta de eventos: o registro de ouvintes tipados via on com callback q
 
 ### Requirement: on registra ouvinte tipado com callback que recebe contexto opcional
 
-O sistema SHALL expor, via `EventListenerMixin`, o método `on<T>(void Function(T event, BuildContext? context) callback, {bool? autoDispose, @Deprecated bool? broadcast, bool exclusive = false})`. Cada evento recebido MUST invocar o callback com o evento e o `BuildContext` atual do navegador modular (`modularNavigatorKey.currentContext`), que MAY ser nulo. Registrar `on<T>` para um tipo `T` já registrado no mesmo módulo MUST cancelar a assinatura anterior antes de criar a nova (apenas o último callback de cada tipo permanece ativo).
+O sistema SHALL expor, via `EventModule`, o método `on<T>(void Function(T event, BuildContext? context) callback, {bool? autoDispose, @Deprecated bool? broadcast, bool exclusive = false})`. Cada evento recebido MUST invocar o callback com o evento e o `BuildContext` atual do navegador modular (`modularNavigatorKey.currentContext`), que MAY ser nulo. Registrar `on<T>` para um tipo `T` já registrado no mesmo escopo (mesmo `eventBusId`) MUST cancelar a assinatura anterior antes de criar a nova (apenas o último callback de cada tipo permanece ativo).
 
-Arquivos de referência: `lib/src/events/modular_event.dart` (`on`, `_registerRegularListener`).
+Arquivos de referência: `lib/src/events/event_module.dart` (`on`, `_registerRegularListener`).
 
 #### Scenario: Callback recebe o evento disparado
 
@@ -31,7 +31,7 @@ Arquivos de referência: `lib/src/events/modular_event.dart` (`on`, `_registerRe
 
 O sistema SHALL determinar o auto-descarte de cada ouvinte por `autoDispose ?? SetupModular.instance.autoDisposeEvents` e armazenar o resultado em `disposeSubscriptions[eventBusId][T]`. Quando `autoDispose` é omitido, o ouvinte MUST seguir a configuração global; quando informado, o valor por ouvinte MUST prevalecer sobre a configuração global.
 
-Arquivos de referência: `lib/src/events/modular_event.dart` (`on`, linha de atribuição de `disposeSubscriptions`), `lib/src/internal/setup.dart`.
+Arquivos de referência: `lib/src/events/event_module.dart` (`on`, atribuição de `disposeSubscriptions`), `lib/src/internal/setup.dart`.
 
 #### Scenario: Ouvinte herda o padrão global quando autoDispose é omitido
 
@@ -47,7 +47,7 @@ Arquivos de referência: `lib/src/events/modular_event.dart` (`on`, linha de atr
 
 O sistema SHALL manter o parâmetro `broadcast` marcado como `@Deprecated('Use exclusive parameter instead.')` em `on<T>` e resolver o modo do ouvinte por `exclusive = broadcast ?? exclusive`. Quando `broadcast` é informado, ele MUST sobrepor o valor de `exclusive`; quando omitido, o valor de `exclusive` MUST ser usado.
 
-Arquivos de referência: `lib/src/events/modular_event.dart` (`on`), `lib/src/events/modular_event_listener.dart`.
+Arquivos de referência: `lib/src/events/event_module.dart` (`on`).
 
 #### Scenario: broadcast verdadeiro ativa o modo exclusivo
 
@@ -63,7 +63,7 @@ Arquivos de referência: `lib/src/events/modular_event.dart` (`on`), `lib/src/ev
 
 O sistema SHALL registrar ouvintes não exclusivos (`exclusive = false`) como assinaturas diretas de `internalEventBus.on<T>()`. Múltiplos módulos distintos com ouvintes regulares para o mesmo tipo no mesmo barramento MUST cada um receber o evento. Um ouvinte regular MUST NOT ser registrado para um tipo que já possui stream exclusivo ativo no mesmo barramento (a tentativa é silenciosamente ignorada).
 
-Arquivos de referência: `lib/src/events/modular_event.dart` (`_registerRegularListener`).
+Arquivos de referência: `lib/src/events/event_module.dart` (`_registerRegularListener`).
 
 #### Scenario: Vários módulos regulares recebem o mesmo evento
 
@@ -79,7 +79,7 @@ Arquivos de referência: `lib/src/events/modular_event.dart` (`_registerRegularL
 
 O sistema SHALL gerenciar ouvintes exclusivos (`exclusive = true`) como uma fila FIFO por par (barramento, tipo), com um único ouvinte ativo recebendo eventos. Ao registrar um ouvinte exclusivo o sistema MUST criar (se necessário) um stream broadcast para o tipo, remover qualquer entrada anterior do mesmo módulo na fila, adicionar o novo ouvinte ao fim e ativar o próximo da fila quando não houver ativo. Quando o ouvinte ativo é descartado, o sistema MUST cancelar sua assinatura e ativar o próximo da fila; quando a fila esvazia, MUST remover o stream, a fila e o registro de ativo daquele tipo.
 
-Arquivos de referência: `lib/src/events/modular_event.dart` (`_registerExclusiveListener`, `_activateNextExclusiveListener`, `_handleExclusiveListenerDisposal`), `lib/src/events/event_state.dart` (`ExclusiveListener`).
+Arquivos de referência: `lib/src/events/event_module.dart` (`_registerExclusiveListener`, `_activateNextExclusiveListener`, `_handleExclusiveListenerDisposal`), `lib/src/events/event_state.dart` (`ExclusiveListener`).
 
 #### Scenario: Apenas o ouvinte ativo recebe o evento exclusivo
 

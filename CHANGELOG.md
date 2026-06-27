@@ -1,24 +1,46 @@
 ## Unreleased
 
-### Breaking
+### 5.5.0
 
-- **Composição de `EventModule` simplificada; APIs de eventos não utilizadas removidas.** O mecanismo de composição baseado em `eventImports()` + `ModularEventListener` foi removido (era código morto, sem consumidores). Para compor os ouvintes de outro módulo, chame `OutroEventModule().listen()` de forma síncrona dentro do próprio `listen()` — os ouvintes do filho herdam o ciclo de vida do host (são descartados junto com ele, sem duplicação ao recriar).
+- **Route-state reads consolidated on the `GoRouterModular` facade with better names.** The read utilities moved off the `BuildContext` extension and onto the facade, following the `...Of(context)` convention. Beyond path and parameters, there is now explicit access to the useful `go_router` utilities (query params, uri, location, and typed `extra`) from a single entry point:
+
+  ```dart
+  final state    = GoRouterModular.routerStateOf(context);        // the GoRouterState
+  final path     = GoRouterModular.currentPathOf(context);        // the current path
+  final id       = GoRouterModular.pathParamOf(context, 'id');    // a path parameter
+  final params   = GoRouterModular.pathParamsOf(context);         // all path parameters
+  final ref      = GoRouterModular.queryParamOf(context, 'ref');  // a query parameter
+  final queries  = GoRouterModular.queryParamsOf(context);        // all query parameters
+  final uri      = GoRouterModular.currentUriOf(context);         // the current Uri
+  final location = GoRouterModular.currentLocationOf(context);    // the current location
+  final payload  = GoRouterModular.extraOf<MyPayload>(context);   // the typed extra
+  ```
+
+  The `go_router` utilities (`GoRouterState`, `context.go`, `context.push`, …) are still re-exported by the package barrel, so you can use them directly by importing only `package:go_router_modular/go_router_modular.dart`.
+
+  Deprecations (still functional, will be removed in a future major release):
+  - Extension: `context.getPathParam('id')` → `GoRouterModular.pathParamOf(context, 'id')`; `context.getPath` → `GoRouterModular.currentPathOf(context)`; `context.state` → `GoRouterModular.routerStateOf(context)`.
+  - Facade: `GoRouterModular.getCurrentPathOf(context)` → `currentPathOf(context)`; `GoRouterModular.stateOf(context)` → `routerStateOf(context)`.
+
+### 5.4.0
+
+- **Simplified `EventModule` composition; unused event APIs removed.** The composition mechanism based on `eventImports()` + `ModularEventListener` was removed (it was dead code, with no consumers). To compose another module's listeners, call `AnotherEventModule().listen()` synchronously inside your own `listen()` — the child's listeners inherit the host's lifecycle (they are disposed together with it, with no duplication when recreated).
 
   ```dart
   class EventModuleA extends EventModule {
     @override
     void listen() {
-      on<EventoDoA>((event, context) { /* ... */ });
-      EventModuleB().listen(); // composição direta
+      on<EventFromA>((event, context) { /* ... */ });
+      EventModuleB().listen(); // direct composition
     }
   }
   ```
 
-  Além disso, a lógica de escuta deixou de ser exposta como o mixin público `EventListenerMixin` — ela foi incorporada diretamente a `EventModule` (que continua sendo um `Module`). O único mixin público do subsistema de eventos passa a ser `ModularEventMixin` (para `State<StatefulWidget>`).
+  In addition, the listening logic is no longer exposed as the public `EventListenerMixin` mixin — it was incorporated directly into `EventModule` (which is still a `Module`). The only public mixin in the events subsystem is now `ModularEventMixin` (for `State<StatefulWidget>`).
 
-  Migração:
-  - Remova sobrescritas de `eventImports()` e qualquer uso de `ModularEventListener`; mova os `on<T>` para o `listen()` de um `EventModule` e componha via `OutroEventModule().listen()`.
-  - Se você referenciava `EventListenerMixin` diretamente, use `EventModule`.
+  Migration:
+  - Remove `eventImports()` overrides and any use of `ModularEventListener`; move the `on<T>` calls into the `listen()` of an `EventModule` and compose via `AnotherEventModule().listen()`.
+  - If you referenced `EventListenerMixin` directly, use `EventModule` instead.
 
 ## 5.3.0
 
@@ -103,7 +125,7 @@
 ### Fixed
 
 - **Duplicate singleton construction via imports**: `_collectImportedBinds` created new `Bind` objects with `cachedInstance == null` on every registration pass. `commitBatch` now propagates `cachedInstance` to duplicate binds before downstream methods run, preventing 2× extra factory calls.
-- **Orphaned singleton instances**: When two imported modules declare the same type, `commitBatch` now checks `_isSingletonAlreadyRegistered` *before* calling `factoryFunction`, completely preventing duplicate factory calls and leaked instances (open streams, duplicate subscriptions).
+- **Orphaned singleton instances**: When two imported modules declare the same type, `commitBatch` now checks `_isSingletonAlreadyRegistered` _before_ calling `factoryFunction`, completely preventing duplicate factory calls and leaked instances (open streams, duplicate subscriptions).
 
 ---
 
@@ -146,6 +168,7 @@
 ### Added
 
 - **`Bind.lazySingleton`**: Creates singleton instances only on first access — useful for expensive resources that may not always be needed.
+
   ```dart
   i.lazySingleton<ExpensiveService>((i) => ExpensiveService());
   ```
@@ -155,6 +178,7 @@
   - Child routes automatically inherit transitions from parent modules.
   - Platform-specific styles: Cupertino (iOS/macOS) and Material (Android).
   - Chainable effects: `GoTransitions.slide.toRight.withFade`.
+
   ```dart
   ModuleRoute('/home', module: HomeModule(),
     transition: GoTransitions.fadeUpwards,
