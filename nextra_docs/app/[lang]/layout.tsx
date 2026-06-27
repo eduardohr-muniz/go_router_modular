@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import { Footer, Layout, Navbar, LocaleSwitch } from 'nextra-theme-docs'
 import { Head } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
@@ -7,6 +6,8 @@ import type { FC, ReactNode } from 'react'
 import 'nextra-theme-docs/style.css'
 
 const REPO = 'https://github.com/eduardohr-muniz/go_router_modular'
+// Prefix static assets with the GitHub Pages basePath (empty in dev/local).
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 
 export const metadata: Metadata = {
   title: {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   },
   description:
     'Modular dependency injection and per-module routing on top of go_router for Flutter.',
-  icons: { icon: '/favicon.png' }
+  icons: { icon: `${BASE}/favicon.png` }
 }
 
 type LayoutProps = Readonly<{
@@ -29,7 +30,13 @@ const RootLayout: FC<LayoutProps> = async ({ children, params }) => {
 
   const logo = (
     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-      <Image src="/logo-small.png" alt="go_router_modular" width={28} height={28} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`${BASE}/logo-small.png`}
+        alt="go_router_modular"
+        width={28}
+        height={28}
+      />
       <b>go_router_modular</b>
     </span>
   )

@@ -17,6 +17,10 @@ export default withNextra({
   images: { unoptimized: true },
   trailingSlash: true,
   basePath,
+  // Exposed so static assets referenced by hand (logo, favicon) can be prefixed
+  // with the GitHub Pages basePath — `next/image` (unoptimized) and metadata
+  // icons do not apply it automatically.
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   typescript: { ignoreBuildErrors: true },
   // The repo lives on an external volume where webpack's filesystem cache
   // fails to snapshot dependencies; disable it to keep builds reliable.
