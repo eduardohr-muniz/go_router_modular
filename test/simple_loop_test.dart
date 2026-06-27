@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/di/dependency_analyzer.dart';
 
 class TestService {
   final String name;
@@ -11,12 +10,10 @@ void main() {
   group('Loop Infinito - Teste Simples', () {
     setUp(() {
       Bind.clearAll();
-      DependencyAnalyzer.clearAll();
     });
 
     tearDown(() {
       Bind.clearAll();
-      DependencyAnalyzer.clearAll();
     });
 
     test('Não deve entrar em loop infinito ao buscar bind não registrado', () {

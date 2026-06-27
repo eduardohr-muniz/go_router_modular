@@ -20,7 +20,6 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/di/dependency_analyzer.dart';
 import 'package:go_router_modular/src/shared/setup.dart';
 
 // ---------------------------------------------------------------------------
@@ -90,13 +89,11 @@ void main() {
 
   setUp(() {
     InjectionManager.instance.resetForTesting();
-    DependencyAnalyzer.clearAll();
     _resetCounters();
   });
 
   tearDown(() {
     InjectionManager.instance.resetForTesting();
-    DependencyAnalyzer.clearAll();
     _resetCounters();
   });
 

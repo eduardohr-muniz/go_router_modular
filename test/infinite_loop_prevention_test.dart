@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/di/dependency_analyzer.dart';
 
 // Classes de teste para simular dependências
 class TestService {
@@ -42,13 +41,11 @@ void main() {
     setUp(() {
       // Limpa tudo antes de cada teste
       Bind.clearAll();
-      DependencyAnalyzer.clearAll();
     });
 
     tearDown(() {
       // Limpa tudo após cada teste
       Bind.clearAll();
-      DependencyAnalyzer.clearAll();
     });
 
     test('Não deve entrar em loop infinito ao buscar bind não registrado', () {

@@ -12,7 +12,6 @@ export 'src/di/injection_manager.dart';
 export 'src/di/injector.dart';
 
 // Routing exports
-export 'src/routing/route_model.dart';
 export 'src/routing/child_route.dart';
 export 'src/routing/i_modular_route.dart';
 export 'src/routing/module_route.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/src/routing/route_with_completer_service.dart';
+import 'package:go_router_modular/src/ui/async_navigation_helper.dart';
 
 /// Extension to add functionalities to [BuildContext] for GoRouter.
 extension GoRouterExtension on BuildContext {
@@ -70,18 +70,17 @@ extension GoRouterExtension on BuildContext {
     Object? extra,
     VoidCallback? onComplete,
   }) {
-    RouteWithCompleterService.setCompleteRoute(routeName);
-
-    GoRouter.of(this).goNamed(
+    return AsyncNavigationHelper.run(
+      this,
+      routeName,
+      navigate: (router) => router.goNamed(
       routeName,
       pathParameters: pathParameters,
       queryParameters: queryParameters,
       extra: extra,
+      ),
+      onComplete: onComplete,
     );
-
-    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
-      onComplete?.call();
-    });
   }
 
   /// Navega para a rota [routeName] e retorna um [Future]
@@ -106,16 +105,15 @@ extension GoRouterExtension on BuildContext {
     Object? extra,
     VoidCallback? onComplete,
   }) {
-    RouteWithCompleterService.setCompleteRoute(routeName);
-
-    GoRouter.of(this).go(
+    return AsyncNavigationHelper.run(
+      this,
+      routeName,
+      navigate: (router) => router.go(
       routeName,
       extra: extra,
+      ),
+      onComplete: onComplete,
     );
-
-    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
-      onComplete?.call();
-    });
   }
 
   /// Pushes a new route onto the navigation stack and returns a [Future]
@@ -138,16 +136,15 @@ extension GoRouterExtension on BuildContext {
     Object? extra,
     VoidCallback? onComplete,
   }) {
-    RouteWithCompleterService.setCompleteRoute(routeName);
-
-    GoRouter.of(this).push(
+    return AsyncNavigationHelper.run(
+      this,
+      routeName,
+      navigate: (router) => router.push(
       routeName,
       extra: extra,
+      ),
+      onComplete: onComplete,
     );
-
-    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
-      onComplete?.call();
-    });
   }
 
   /// Pushes a named route onto the navigation stack and returns a [Future]
@@ -176,18 +173,17 @@ extension GoRouterExtension on BuildContext {
     Object? extra,
     VoidCallback? onComplete,
   }) {
-    RouteWithCompleterService.setCompleteRoute(routeName);
-
-    GoRouter.of(this).pushNamed(
+    return AsyncNavigationHelper.run(
+      this,
+      routeName,
+      navigate: (router) => router.pushNamed(
       routeName,
       pathParameters: pathParameters,
       queryParameters: queryParameters,
       extra: extra,
+      ),
+      onComplete: onComplete,
     );
-
-    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
-      onComplete?.call();
-    });
   }
 
   /// Pushes a new route onto the navigation stack and replaces the current route.
@@ -210,16 +206,15 @@ extension GoRouterExtension on BuildContext {
     Object? extra,
     VoidCallback? onComplete,
   }) {
-    RouteWithCompleterService.setCompleteRoute(routeName);
-
-    GoRouter.of(this).pushReplacement(
+    return AsyncNavigationHelper.run(
+      this,
+      routeName,
+      navigate: (router) => router.pushReplacement(
       routeName,
       extra: extra,
+      ),
+      onComplete: onComplete,
     );
-
-    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
-      onComplete?.call();
-    });
   }
 
   /// Pushes a named route onto the navigation stack and replaces the current route.
@@ -248,18 +243,17 @@ extension GoRouterExtension on BuildContext {
     Object? extra,
     VoidCallback? onComplete,
   }) {
-    RouteWithCompleterService.setCompleteRoute(routeName);
-
-    GoRouter.of(this).pushReplacementNamed(
+    return AsyncNavigationHelper.run(
+      this,
+      routeName,
+      navigate: (router) => router.pushReplacementNamed(
       routeName,
       pathParameters: pathParameters,
       queryParameters: queryParameters,
       extra: extra,
+      ),
+      onComplete: onComplete,
     );
-
-    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
-      onComplete?.call();
-    });
   }
 
   /// Replaces the current route with a new route and returns a [Future]
@@ -282,16 +276,15 @@ extension GoRouterExtension on BuildContext {
     Object? extra,
     VoidCallback? onComplete,
   }) {
-    RouteWithCompleterService.setCompleteRoute(routeName);
-
-    GoRouter.of(this).replace(
+    return AsyncNavigationHelper.run(
+      this,
+      routeName,
+      navigate: (router) => router.replace(
       routeName,
       extra: extra,
+      ),
+      onComplete: onComplete,
     );
-
-    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
-      onComplete?.call();
-    });
   }
 
   /// Replaces the current route with a named route and returns a [Future]
@@ -320,18 +313,17 @@ extension GoRouterExtension on BuildContext {
     Object? extra,
     VoidCallback? onComplete,
   }) {
-    RouteWithCompleterService.setCompleteRoute(routeName);
-
-    GoRouter.of(this).replaceNamed(
+    return AsyncNavigationHelper.run(
+      this,
+      routeName,
+      navigate: (router) => router.replaceNamed(
       routeName,
       pathParameters: pathParameters,
       queryParameters: queryParameters,
       extra: extra,
+      ),
+      onComplete: onComplete,
     );
-
-    return RouteWithCompleterService.getLastCompleteRoute().future.then((_) {
-      onComplete?.call();
-    });
   }
 
   void popUntil(String location) {

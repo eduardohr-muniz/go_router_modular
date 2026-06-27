@@ -20,6 +20,14 @@ class InjectionManager {
   final BindContextTracker _tracker = BindContextTracker();
   final List<Function> _bindsToValidate = [];
 
+  /// Contagem de referências por instância de módulo (identidade).
+  ///
+  /// Conta quantas entradas de rota ativas referenciam cada instância. O
+  /// registro real ocorre na primeira referência (0→1) e o descarte real na
+  /// última (1→0), evitando descarte prematuro quando a mesma instância aparece
+  /// mais de uma vez na pilha de navegação (ex.: A → B → A).
+  final Map<Module, int> _referenceCount = Map<Module, int>.identity();
+
   bool get _debugLog => SetupModular.instance.debugLogGoRouterModular;
 
   /// Defensive resolver for bind introspection (tracking, logging, validation).
@@ -46,6 +54,7 @@ class InjectionManager {
     Bind.clearAll();
     _tracker.clear();
     _bindsToValidate.clear();
+    _referenceCount.clear();
   }
 
   // ==================== MODULE REGISTRATION ====================
@@ -61,6 +70,12 @@ class InjectionManager {
   }
 
   Future<void> _registerBindsModuleInternal(Module module) async {
+    // Reference counting: only the first reference (0→1) does the actual
+    // registration; subsequent references of the same instance just count.
+    final referenceCount = (_referenceCount[module] ?? 0) + 1;
+    _referenceCount[module] = referenceCount;
+    if (referenceCount > 1) return;
+
     if (_tracker.moduleBindTypes.containsKey(module)) return;
 
     // Collect binds from module and its imports
@@ -130,6 +145,17 @@ class InjectionManager {
   }
 
   Future<void> _unregisterModuleInternal(Module module) async {
+    // Reference counting: only the last reference (1→0) does the actual
+    // disposal. While other route entries still reference this instance, keep
+    // its binds alive (fix for premature disposal in stacks like A → B → A).
+    final referenceCount = _referenceCount[module] ?? 0;
+    if (referenceCount == 0) return;
+    if (referenceCount > 1) {
+      _referenceCount[module] = referenceCount - 1;
+      return;
+    }
+    _referenceCount.remove(module);
+
     module.dispose();
     _unregisterBinds(module);
     _tracker.moduleBindTypes.remove(module);
