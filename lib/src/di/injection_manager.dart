@@ -6,6 +6,7 @@ import 'package:go_router_modular/src/di/injector.dart';
 import 'package:go_router_modular/src/di/bind_identifier.dart';
 import 'package:go_router_modular/src/di/operation_queue.dart';
 import 'package:go_router_modular/src/di/bind_context_tracker.dart';
+import 'package:go_router_modular/src/shared/exception.dart';
 import 'package:go_router_modular/src/shared/setup.dart';
 
 
@@ -86,14 +87,23 @@ class InjectionManager {
     final importedBinds = await _collectImportedBinds(module);
     final allBinds = [...moduleBinds, ...importedBinds];
 
-    // Register using batch strategy
+    // Register using batch strategy. As dependências resolvidas pelas factories
+    // durante o commit são gravadas (sem re-executar nada) para a validação de
+    // escopo.
+    _injector.beginScopeRecording();
     if (allBinds.isNotEmpty) {
       Bind.registerBatch(allBinds);
       Bind.commitBatch(_injector);
     }
+    final recordedDependencies = _injector.endScopeRecording();
 
     // Map binds to module context
     _tracker.moduleBindTypes[module] = _mapBindsToIdentifiers(allBinds, module);
+
+    // Scope validation (commit-time, eager): cada dependência resolvida pelos
+    // binds deste módulo só pode pertencer ao seu escopo visível (próprios +
+    // importados + AppModule).
+    _validateModuleScope(module, recordedDependencies);
 
     module.initState(_injector);
 
@@ -234,6 +244,20 @@ class InjectionManager {
           // Do NOT throw here — a validation failure must never interrupt the
           // OperationQueue. The log above is sufficient for debugging.
         }
+      }
+    }
+  }
+
+  /// Valida (commit-time) que cada dependência resolvida pelos binds de [module]
+  /// durante o commit pertence ao seu conjunto visível (próprios + importados +
+  /// AppModule). Lança [GoRouterModularException] na violação.
+  void _validateModuleScope(Module module, List<BindIdentifier> resolvedDependencies) {
+    for (final resolvedId in resolvedDependencies) {
+      if (!_tracker.isVisible(resolvedId, module)) {
+        throw GoRouterModularException(
+          '${module.runtimeType} resolveu ${resolvedId.type} que não declarou nem importou. '
+          'Importe o módulo dono de ${resolvedId.type} ou injete ${resolvedId.type} em ${module.runtimeType}.',
+        );
       }
     }
   }

@@ -13,6 +13,19 @@ class BindContextTracker {
     return modules.contains(appModule);
   }
 
+  /// `true` se [bindId] é visível ao módulo [scope]: pertence aos binds próprios
+  /// ou importados de [scope], ou aos binds do `AppModule` (o escopo global).
+  bool isVisible(BindIdentifier bindId, Module scope) {
+    final scopeSet = moduleBindTypes[scope];
+    if (scopeSet != null && scopeSet.contains(bindId)) return true;
+    final appModuleScope = appModule;
+    if (appModuleScope != null) {
+      final appSet = moduleBindTypes[appModuleScope];
+      if (appSet != null && appSet.contains(bindId)) return true;
+    }
+    return false;
+  }
+
   void addModuleToBindContext(BindIdentifier bindId, Module module) {
     _bindModuleContext.putIfAbsent(bindId, () => <Module>{}).add(module);
   }
