@@ -80,11 +80,31 @@ context.popUntilNamed('home');     // remove até esta rota nomeada ficar no top
 
 ## Lendo o estado da rota
 
+Use a fachada `GoRouterModular` para ler o estado da rota atual a partir de um
+`BuildContext`. Os métodos seguem a convenção `...Of(context)`:
+
 ```dart
-final id = context.getPathParam('id');   // um parâmetro de caminho
-final path = context.getPath;            // o caminho atual
-final state = context.state;             // o GoRouterState
+final state    = GoRouterModular.routerStateOf(context);        // o GoRouterState
+final path     = GoRouterModular.currentPathOf(context);        // o caminho atual
+final id       = GoRouterModular.pathParamOf(context, 'id');    // um parâmetro de caminho
+final params   = GoRouterModular.pathParamsOf(context);         // todos os parâmetros de caminho
+final ref      = GoRouterModular.queryParamOf(context, 'ref');  // um query parameter
+final queries  = GoRouterModular.queryParamsOf(context);        // todos os query parameters
+final uri      = GoRouterModular.currentUriOf(context);         // o Uri atual
+final location = GoRouterModular.currentLocationOf(context);    // a location atual
+final payload  = GoRouterModular.extraOf<MyPayload>(context);   // o extra tipado
 ```
+
+<Callout type="info">
+  Os atalhos por extension `context.getPathParam('id')`, `context.getPath` e
+  `context.state` continuam funcionando, mas estão **depreciados** em favor de
+  `GoRouterModular.pathParamOf`, `currentPathOf` e `routerStateOf`. Serão
+  removidos em uma major futura.
+</Callout>
+
+Se preferir, você também pode usar diretamente os utilitários do `go_router`
+(`GoRouterState`, `context.go`, `context.push`, …), que são re-exportados pelo
+barril do pacote — basta importar `package:go_router_modular/go_router_modular.dart`.
 
 ## Buscando dependências
 

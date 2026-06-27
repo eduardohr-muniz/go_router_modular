@@ -79,11 +79,31 @@ context.popUntilNamed('home');     // pop until this named route is on top
 
 ## Reading route state
 
+Use the `GoRouterModular` facade to read the current route state from a
+`BuildContext`. The methods follow the `...Of(context)` convention:
+
 ```dart
-final id = context.getPathParam('id');   // a path parameter
-final path = context.getPath;            // current path
-final state = context.state;             // the GoRouterState
+final state    = GoRouterModular.routerStateOf(context);        // the GoRouterState
+final path     = GoRouterModular.currentPathOf(context);        // current path
+final id       = GoRouterModular.pathParamOf(context, 'id');    // a path parameter
+final params   = GoRouterModular.pathParamsOf(context);         // all path parameters
+final ref      = GoRouterModular.queryParamOf(context, 'ref');  // a query parameter
+final queries  = GoRouterModular.queryParamsOf(context);        // all query parameters
+final uri      = GoRouterModular.currentUriOf(context);         // current Uri
+final location = GoRouterModular.currentLocationOf(context);    // current location
+final payload  = GoRouterModular.extraOf<MyPayload>(context);   // typed extra
 ```
+
+<Callout type="info">
+  The extension shortcuts `context.getPathParam('id')`, `context.getPath` and
+  `context.state` still work, but are **deprecated** in favor of
+  `GoRouterModular.pathParamOf`, `currentPathOf` and `routerStateOf`. They will
+  be removed in a future major release.
+</Callout>
+
+You can also use the `go_router` utilities directly (`GoRouterState`,
+`context.go`, `context.push`, …) — they are re-exported by the package barrel,
+so importing `package:go_router_modular/go_router_modular.dart` is enough.
 
 ## Dependency lookup
 

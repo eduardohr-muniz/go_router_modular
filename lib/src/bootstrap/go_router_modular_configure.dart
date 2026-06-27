@@ -88,24 +88,92 @@ class GoRouterModular {
   ///   ```
   static bool isRegistered<T>({String? key}) => Bind.isRegistered<T>(key: key);
 
-  /// Returns the current route path based on the [BuildContext].
-  ///
-  /// - **Parameters**:
-  ///   - `context`: The current [BuildContext].
-  /// - **Returns**: A `String` representing the current route path.
-  /// - **Example**:
-  ///   ```dart
-  ///   final path = GoRouterModular.getCurrentPathOf(context);
-  ///   print(path); // Prints the current path
-  ///   ```
-  static String getCurrentPathOf(BuildContext context) => GoRouterState.of(context).path ?? '';
-
-  /// Returns the current router state based on the [BuildContext].
+  /// Returns the current [GoRouterState] based on the [BuildContext].
   ///
   /// - **Parameters**:
   ///   - `context`: The current [BuildContext].
   /// - **Returns**: An instance of [GoRouterState].
-  static GoRouterState stateOf(BuildContext context) => GoRouterState.of(context);
+  /// - **Example**:
+  ///   ```dart
+  ///   final routerState = GoRouterModular.routerStateOf(context);
+  ///   print(routerState.uri);
+  ///   ```
+  static GoRouterState routerStateOf(BuildContext context) => GoRouterState.of(context);
+
+  /// Returns the current route path based on the [BuildContext].
+  ///
+  /// - **Parameters**:
+  ///   - `context`: The current [BuildContext].
+  /// - **Returns**: The current route path as a `String`, or `null` if not defined.
+  /// - **Example**:
+  ///   ```dart
+  ///   final path = GoRouterModular.currentPathOf(context);
+  ///   print(path); // Prints the current path
+  ///   ```
+  static String? currentPathOf(BuildContext context) => GoRouterState.of(context).path;
+
+  /// Returns the value of a path parameter by its name based on the [BuildContext].
+  ///
+  /// - **Parameters**:
+  ///   - `context`: The current [BuildContext].
+  ///   - `name`: The name of the path parameter to retrieve.
+  /// - **Returns**: The parameter value as a `String`, or `null` if not found.
+  /// - **Example**:
+  ///   ```dart
+  ///   final userId = GoRouterModular.pathParamOf(context, 'userId');
+  ///   ```
+  static String? pathParamOf(BuildContext context, String name) => GoRouterState.of(context).pathParameters[name];
+
+  /// Returns all path parameters of the current route based on the [BuildContext].
+  ///
+  /// - **Returns**: A read-only `Map<String, String>` of path parameters.
+  static Map<String, String> pathParamsOf(BuildContext context) => GoRouterState.of(context).pathParameters;
+
+  /// Returns all query parameters of the current route based on the [BuildContext].
+  ///
+  /// - **Returns**: A read-only `Map<String, String>` of query parameters.
+  static Map<String, String> queryParamsOf(BuildContext context) => GoRouterState.of(context).uri.queryParameters;
+
+  /// Returns the value of a query parameter by its name based on the [BuildContext].
+  ///
+  /// - **Parameters**:
+  ///   - `context`: The current [BuildContext].
+  ///   - `name`: The name of the query parameter to retrieve.
+  /// - **Returns**: The parameter value as a `String`, or `null` if not found.
+  /// - **Example**:
+  ///   ```dart
+  ///   final ref = GoRouterModular.queryParamOf(context, 'ref');
+  ///   ```
+  static String? queryParamOf(BuildContext context, String name) => GoRouterState.of(context).uri.queryParameters[name];
+
+  /// Returns the current [Uri] of the route based on the [BuildContext].
+  static Uri currentUriOf(BuildContext context) => GoRouterState.of(context).uri;
+
+  /// Returns the current matched location of the route based on the [BuildContext].
+  ///
+  /// - **Returns**: The matched location as a `String`.
+  static String currentLocationOf(BuildContext context) => GoRouterState.of(context).matchedLocation;
+
+  /// Returns the typed `extra` data passed to the current route based on the [BuildContext].
+  ///
+  /// - **Type Parameters**:
+  ///   - `T`: The expected type of the `extra` data.
+  /// - **Returns**: The `extra` value cast to `T`, or `null` if absent or of a different type.
+  /// - **Example**:
+  ///   ```dart
+  ///   final payload = GoRouterModular.extraOf<MyPayload>(context);
+  ///   ```
+  static T? extraOf<T>(BuildContext context) => GoRouterState.of(context).extra is T ? GoRouterState.of(context).extra as T : null;
+
+  /// Returns the current route path based on the [BuildContext].
+  ///
+  /// Returns an empty string when no path is defined.
+  @Deprecated('Use GoRouterModular.currentPathOf instead. Will be removed in a future major release.')
+  static String getCurrentPathOf(BuildContext context) => currentPathOf(context) ?? '';
+
+  /// Returns the current router state based on the [BuildContext].
+  @Deprecated('Use GoRouterModular.routerStateOf instead. Will be removed in a future major release.')
+  static GoRouterState stateOf(BuildContext context) => routerStateOf(context);
 
   /// Configures the modular router with the provided modules and options.
   ///

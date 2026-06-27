@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:go_router_modular/src/bootstrap/go_router_modular_configure.dart';
 import 'package:go_router_modular/src/ui/async_navigation_helper.dart';
 
 /// Extension to add functionalities to [BuildContext] for GoRouter.
@@ -14,8 +15,9 @@ extension GoRouterExtension on BuildContext {
   ///   final userId = context.getPathParam('userId');
   ///   print(userId);
   ///   ```
+  @Deprecated('Use GoRouterModular.pathParamOf(context, param) instead. Will be removed in a future major release.')
   String? getPathParam(String param) {
-    return GoRouterState.of(this).pathParameters[param];
+    return GoRouterModular.pathParamOf(this, param);
   }
 
   /// Returns the current route path.
@@ -26,8 +28,9 @@ extension GoRouterExtension on BuildContext {
   ///   final path = context.getPath;
   ///   print(path); // Prints the current path
   ///   ```
+  @Deprecated('Use GoRouterModular.currentPathOf(context) instead. Will be removed in a future major release.')
   String? get getPath {
-    return GoRouterState.of(this).path;
+    return GoRouterModular.currentPathOf(this);
   }
 
   /// Returns the current router state.
@@ -38,8 +41,9 @@ extension GoRouterExtension on BuildContext {
   ///   final state = context.state;
   ///   print(state.location); // Prints the current location
   ///   ```
+  @Deprecated('Use GoRouterModular.routerStateOf(context) instead. Will be removed in a future major release.')
   GoRouterState get state {
-    return GoRouterState.of(this);
+    return GoRouterModular.routerStateOf(this);
   }
 
   /// Navega para a rota [routeName] e retorna um [Future]

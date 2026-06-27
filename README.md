@@ -17,7 +17,7 @@
 
 **GoRouter Modular** brings modular architecture on top of **GoRouter** with per-module **dependency injection** and auto-dispose. Perfect for **micro frontends** and large-scale apps. 🚀
 
-> 📖 **[Documentation](https://eduardohr-muniz.github.io/go_router_modular)**
+> 📖 **[Documentation](https://eduardohr-muniz.github.io/go_router_modular/en)**
 
 <div align="center">
 
@@ -28,7 +28,7 @@ GoRouter Modular is inspired by the modular architecture approach from [flutter_
 
 ---
 
-<a href="https://eduardohr-muniz.github.io/go_router_modular">
+<a href="https://eduardohr-muniz.github.io/go_router_modular/en">
   <img src="https://img.shields.io/badge/📖%20Read%20the%20Docs-4A90E2?style=for-the-badge&logoColor=white" alt="Read the Docs" height="48" />
 </a>
 
@@ -61,7 +61,7 @@ This project is distributed under the **MIT** license. See [`LICENSE`](LICENSE) 
 
 ### 🎉 **Happy Coding with GoRouter Modular!** 🎉
 
-*Transform your Flutter app into a scalable, modular masterpiece* ✨
+_Transform your Flutter app into a scalable, modular masterpiece_ ✨
 
 <a href="https://github.com/eduardohr-muniz/go_router_modular/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=eduardohr-muniz/go_router_modular" alt="Contributors" />

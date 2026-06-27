@@ -99,7 +99,7 @@ class UserModule extends Module {
 You can also read the path parameter directly from the context:
 
 ```dart
-final id = context.getPathParam('id');
+final id = GoRouterModular.pathParamOf(context, 'id');
 ```
 
 Navigating to `/user/42?tab=posts` gives `id == '42'` and `tab == 'posts'`.
