@@ -47,6 +47,20 @@ GoRouter Modular is inspired by the modular architecture approach from [flutter_
 
 ---
 
+## 🤖 Agent Skill
+
+This repo ships an **Agent Skill** that teaches AI coding agents (Claude Code, Cursor, Codex, OpenCode, and others) the recommended conventions for this package — per-feature route files (`MyRouteRelative` + `MyRoute`), **named-only navigation**, typed binds via the `..` cascade, synchronous modules, and `kDebugMode`-gated logs. The agent then applies them automatically when you scaffold routes, modules, or navigation.
+
+**Install it into your project with one command** (via the [`skills`](https://github.com/vercel-labs/skills) CLI):
+
+```bash
+npx skills add eduardohr-muniz/go_router_modular
+```
+
+The CLI detects your installed agents and drops the skill into the right place (e.g. `.claude/skills/`). Add `-g` to install it globally for every project.
+
+---
+
 ## 🤝 Contributing
 
 Contributions are very welcome! Open an issue to discuss major changes and submit a PR with clear descriptions of the edits.

@@ -1,0 +1,21 @@
+[
+  {"query": "im using go_router_modular and need to add a new 'orders' section with a list page and an order detail page that takes an orderId in the url. can you scaffold the module and routes?", "should_trigger": true},
+  {"query": "add a button on my dashboard screen that opens the settings page at /settings — this app is built with go_router_modular", "should_trigger": true},
+  {"query": "set up a feature module in go_router_modular for 'wishlist' that depends on a WishlistRepository and a WishlistCubit", "should_trigger": true},
+  {"query": "how should I navigate from the product card to the product detail in my modular app? right now i'm doing context.go('/product/123') and it feels wrong", "should_trigger": true},
+  {"query": "refactor my AppModule routes — every ChildRoute is missing a name and i can't use goNamed anywhere", "should_trigger": true},
+  {"query": "my checkout module does `Future<void> binds(Injector i) async { ... }` and the first screen flashes blank for a second, is there a better way with go_router_modular?", "should_trigger": true},
+  {"query": "create a profile_route.dart for the profile feature with the path constants and a navigation helper class", "should_trigger": true},
+  {"query": "i need to pass a userId path param when navigating to the profile screen in go_router_modular, where should that map live?", "should_trigger": true},
+  {"query": "convert this raw go_router GoRoute tree into go_router_modular modules and named routes", "should_trigger": true},
+
+  {"query": "set up a basic go_router app (not modular) with a couple of GoRoute entries and a ShellRoute for the bottom nav", "should_trigger": false},
+  {"query": "explain how dependency injection scoping works internally in the go_router_modular package source so I can contribute a fix", "should_trigger": false},
+  {"query": "write a riverpod provider for my cart and wire it into the widget tree", "should_trigger": false},
+  {"query": "my flutter app throws 'Navigator operation requested with a context that does not include a Navigator' on a dialog pop", "should_trigger": false},
+  {"query": "add a deep link / app links intent filter to my AndroidManifest.xml for example.com paths", "should_trigger": false},
+  {"query": "how do I write a widget test that taps a button and verifies a SnackBar appears", "should_trigger": false},
+  {"query": "set up the EventModule for my notifications feature so two modules can react to a NewMessageEvent in go_router_modular", "should_trigger": false},
+  {"query": "bump the go_router dependency in pubspec.yaml and fix any breaking changes in my plain go_router setup", "should_trigger": false},
+  {"query": "design a REST endpoint and Postgres schema for an orders service", "should_trigger": false}
+]
