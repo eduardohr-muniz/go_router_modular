@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/events/modular_event.dart' as EventListenerMixin;
 import 'package:go_router_modular/src/shared/setup.dart';
 
 // Eventos de teste
@@ -119,7 +118,7 @@ void main() {
 
     setUp(() {
       // Clear event module state between tests to avoid interference
-      EventListenerMixin.clearEventModuleState();
+      clearEventModuleState();
 
       testModule = TestEventModule();
 

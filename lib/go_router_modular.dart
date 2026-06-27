@@ -29,9 +29,8 @@ export 'src/ui/material_app_router.dart';
 export 'src/ui/modular_loader.dart';
 
 // Event System exports
-export 'src/events/modular_event.dart' show ModularEvent, EventListenerMixin, clearEventModuleState, defaultModularEventBus;
+export 'src/events/modular_event.dart' show ModularEvent, clearEventModuleState, defaultModularEventBus;
 export 'src/events/event_module.dart' show EventModule;
-export 'src/events/modular_event_listener.dart' show ModularEventListener;
 
 // External packages
 export 'package:go_router/go_router.dart' hide GoRouter, ShellRoute;

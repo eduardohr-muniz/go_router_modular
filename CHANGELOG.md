@@ -1,3 +1,25 @@
+## Unreleased
+
+### Breaking
+
+- **Composição de `EventModule` simplificada; APIs de eventos não utilizadas removidas.** O mecanismo de composição baseado em `eventImports()` + `ModularEventListener` foi removido (era código morto, sem consumidores). Para compor os ouvintes de outro módulo, chame `OutroEventModule().listen()` de forma síncrona dentro do próprio `listen()` — os ouvintes do filho herdam o ciclo de vida do host (são descartados junto com ele, sem duplicação ao recriar).
+
+  ```dart
+  class EventModuleA extends EventModule {
+    @override
+    void listen() {
+      on<EventoDoA>((event, context) { /* ... */ });
+      EventModuleB().listen(); // composição direta
+    }
+  }
+  ```
+
+  Além disso, a lógica de escuta deixou de ser exposta como o mixin público `EventListenerMixin` — ela foi incorporada diretamente a `EventModule` (que continua sendo um `Module`). O único mixin público do subsistema de eventos passa a ser `ModularEventMixin` (para `State<StatefulWidget>`).
+
+  Migração:
+  - Remova sobrescritas de `eventImports()` e qualquer uso de `ModularEventListener`; mova os `on<T>` para o `listen()` de um `EventModule` e componha via `OutroEventModule().listen()`.
+  - Se você referenciava `EventListenerMixin` diretamente, use `EventModule`.
+
 ## 5.3.0
 
 ### Added
