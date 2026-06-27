@@ -270,23 +270,12 @@ List<Module> imports() => [SharedModule()];
 synchronous and routes register without delay.
 
 ```dart
-// lib/main.dart
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Resolve async resources up front, before configuring.
-  final prefs = await SharedPreferences.getInstance();
-
-  await Modular.configure(
-    appModule: AppModule(prefs: prefs), // pass it in
-    initialRoute: '/',
-    debugLogDiagnostics: kDebugMode,
-    debugLogDiagnosticsGoRouter: kDebugMode,
-    debugLogEventBus: kDebugMode,
-  );
-
-  runApp(const AppWidget());
-}
+// lib/main.dart — same bootstrap as above, with the resource resolved before configuring.
+final prefs = await SharedPreferences.getInstance(); // await up front
+await Modular.configure(
+  appModule: AppModule(prefs: prefs), // pass it in; other params (logs, etc.) unchanged
+  initialRoute: '/',
+);
 ```
 
 ```dart
