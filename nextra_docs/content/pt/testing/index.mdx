@@ -1,0 +1,101 @@
+---
+title: Visão Geral
+---
+
+import { Callout } from 'nextra/components'
+
+# Testes
+
+O `go_router_modular` traz uma biblioteca de testes dedicada que reinicia o
+container de DI, isola o sistema de eventos e grava os eventos disparados — para
+que cada teste rode limpo, sem boilerplate manual.
+
+```dart
+import 'package:go_router_modular/testing.dart';
+```
+
+Esse único import te dá tudo: `ModularTestScope`, `EventRecorder`,
+`RecordedEventList`, `FakeInjector`, `ModularEventBus`, além dos helpers
+`clearEventModuleState` e `defaultModularEventBus`.
+
+## ModularTestScope
+
+`ModularTestScope` é a facade para **testes de integração** — ela conecta DI,
+eventos e ciclo de vida. Use sempre que um teste exercitar o container real
+(binds reais resolvendo via `Modular`) e/ou o event bus real.
+
+Crie um scope com `ModularTestScope.fresh()` e conecte seu ciclo de vida ao
+`setUp`/`tearDown` do teste:
+
+- `setUp` reinicia o container de DI, limpa o estado de eventos e reaplica os
+  binds do template.
+- `tearDown` cancela os listeners de eventos e reinicia tudo novamente.
+
+```dart filename="test/order_service_test.dart"
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+void main() {
+  final scope = ModularTestScope.fresh()
+      .withInstance<AppConfig>(AppConfig.test())
+      .withLazySingleton<ApiClient>(() => FakeApiClient());
+
+  setUp(scope.setUp);
+  tearDown(scope.tearDown);
+
+  test('resolve uma dependência registrada', () {
+    expect(scope.isRegistered<ApiClient>(), isTrue);
+    expect(scope.get<ApiClient>(), isA<FakeApiClient>());
+  });
+
+  test('override por teste', () {
+    scope.registerInstance<ApiClient>(AnotherFakeApiClient());
+    expect(scope.get<ApiClient>(), isA<AnotherFakeApiClient>());
+  });
+}
+```
+
+### Binds de template
+
+Binds de template são declarados uma vez e **reaplicados a cada `setUp`**, então
+todo teste parte da mesma linha de base. Cada método retorna um **novo** scope,
+então eles encadeiam:
+
+- `withInstance<T>(T instance)` — registra uma instância singleton.
+- `withFactory<T>(T Function() factory)` — registra uma factory (nova instância a
+  cada resolução).
+- `withLazySingleton<T>(T Function() factory)` — registra um singleton criado de
+  forma preguiçosa.
+
+```dart
+final scope = ModularTestScope.fresh()
+    .withInstance<AppConfig>(AppConfig.test())
+    .withFactory<Uuid>(() => Uuid())
+    .withLazySingleton<ApiClient>(() => FakeApiClient());
+```
+
+### Registro por teste
+
+Para registrar algo em um único teste (após o `setUp` ter rodado), use os
+métodos diretos. Eles registram direto no container:
+
+- `registerInstance<T>(T instance)`
+- `registerFactory<T>(T Function() factory)`
+- `registerLazySingleton<T>(T Function() factory)`
+
+### Resolvendo
+
+- `get<T>({String? key})` — resolve `T` do container.
+- `isRegistered<T>({String? key})` — `true` se `T` está registrado.
+
+<Callout type="info">
+  Sempre conecte tanto `setUp(scope.setUp)` quanto `tearDown(scope.tearDown)`.
+  Sem o `tearDown`, listeners de eventos e estado do container vazam para o
+  próximo teste.
+</Callout>
+
+## Próximos passos
+
+- [Testando Eventos](/pt/testing/event-testing)
+- [Testes Unitários](/pt/testing/fake-injector)
+- [Módulo de Eventos](/pt/event-module)

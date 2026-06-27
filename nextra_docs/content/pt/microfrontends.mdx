@@ -1,0 +1,113 @@
+---
+title: Micro Frontends
+---
+
+import { Callout } from 'nextra/components'
+
+# Micro Frontends
+
+O `go_router_modular` habilita **modularidade por times dentro de um único app
+Flutter**. Cada feature é um `Module` autocontido — dono das suas rotas, das
+suas dependências e da sua lógica — que os times podem construir e evoluir de
+forma independente.
+
+<Callout type="warning">
+  Isto **não** é um sistema de micro-frontend federado / em tempo de execução.
+  Não há carregamento remoto entre pacotes nem registro de módulos: todo módulo é
+  importado estaticamente em uma única base de código Dart e compilado junto. O
+  que você ganha é uma forte modularidade *dentro do app*, não frontends
+  publicados de forma independente.
+</Callout>
+
+## Um módulo de feature é dono da sua fronteira
+
+A feature de cada time é um `Module` que declara as próprias rotas e binds. Nada
+vaza para fora a menos que seja exportado, e as dependências são descartadas
+automaticamente quando a feature é deixada:
+
+```dart filename="lib/src/modules/checkout/checkout_module.dart"
+class CheckoutModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    i
+      ..addSingleton<CheckoutController>((i) => CheckoutController())
+      ..addLazySingleton<PaymentGateway>((i) => StripeGateway());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute('/', child: (context, state) => const CheckoutPage()),
+      ];
+}
+```
+
+## Montando os módulos dos times no AppModule
+
+O `AppModule` compõe o app montando o módulo de cada time sob uma rota via
+`ModuleRoute`. Os times são donos das suas pastas de módulo; o app apenas os
+conecta:
+
+```dart filename="lib/src/app_module.dart"
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        ModuleRoute('/', module: HomeModule()),
+        ModuleRoute('/cart', module: CartModule()),       // time: cart
+        ModuleRoute('/checkout', module: CheckoutModule()), // time: checkout
+        ModuleRoute('/account', module: AccountModule()),  // time: account
+      ];
+}
+```
+
+Cada módulo carrega sob demanda quando sua rota é acessada e é descartado ao
+sair, então as dependências de um time nunca persistem nas telas de outro time.
+
+## Comunicação entre módulos sem acoplamento
+
+Módulos não devem se importar diretamente. Em vez disso, eles se comunicam pelo
+[sistema de eventos](/pt/event-module): um módulo dispara um evento tipado, outro
+reage a ele — nenhum sabe que o outro existe.
+
+```dart filename="lib/src/modules/cart/cart_module.dart"
+// O time do carrinho dispara um evento quando um item é adicionado.
+ModularEvent.fire<ProductAdded>(ProductAdded(productId: '42'));
+```
+
+```dart filename="lib/src/modules/account/account_module.dart"
+// O time de conta reage, sem nenhum import do módulo de carrinho.
+class AccountModule extends EventModule {
+  @override
+  void listen() {
+    on<ProductAdded>((event, context) {
+      // ex.: atualizar pontos de fidelidade
+    });
+  }
+}
+```
+
+Isso mantém as fronteiras de domínio limpas: a única superfície compartilhada é
+o tipo do evento.
+
+## Quando esse padrão ajuda
+
+- **Times grandes** trabalhando no mesmo app que precisam de fronteiras claras de
+  responsabilidade.
+- **Fronteiras de domínio claras** (cart, checkout, account, …) onde cada domínio
+  tem suas próprias rotas, estado e dependências.
+- Querer **ciclo de vida automático por feature** para que as dependências sejam
+  isoladas e descartadas sem limpeza manual.
+
+## O que não é
+
+- Não são frontends publicáveis de forma independente — é um único binário
+  compilado.
+- Sem carregamento de módulos remoto / em tempo de execução e sem registro de
+  módulos.
+- Não substitui a orquestração de micro-frontends no estilo de backend; é um
+  padrão de arquitetura dentro do app.
+
+## Próximos passos
+
+- [Rotas e Módulos](/pt/routes/routes-system)
+- [Módulo de Eventos](/pt/event-module)
+- [Injeção de Dependência](/pt/dependency-injection)

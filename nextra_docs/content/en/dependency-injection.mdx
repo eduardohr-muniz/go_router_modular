@@ -1,0 +1,155 @@
+---
+title: Dependency Injection
+---
+
+import { Callout } from 'nextra/components'
+
+# Dependency Injection
+
+Every module declares its dependencies in `binds`. The package registers them when
+the module is entered, resolves them on demand, and disposes them when the module
+is left.
+
+## Register
+
+Declare binds inside `Module.binds(Injector i)`. There are three kinds:
+
+```dart filename="lib/src/modules/home/home_module.dart"
+class HomeModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    i
+      ..addSingleton<AppDatabase>((i) => AppDatabase())
+      ..addLazySingleton<HomeRepository>((i) => HomeRepository(i.get<AppDatabase>()))
+      ..addFactory<HomeController>((i) => HomeController(i.get<HomeRepository>()));
+  }
+}
+```
+
+A factory receives the `Injector`, so binds can depend on other binds via
+`i.get<T>()`.
+
+| Method | When it's created | Reuse | Disposed on unregister |
+| --- | --- | --- | --- |
+| `addSingleton<T>` | Eagerly, when the module registers | Same instance | Yes |
+| `addLazySingleton<T>` | On first resolution | Same instance after | Yes |
+| `addFactory<T>` (alias `add<T>`) | Every resolution | New instance each time | No |
+
+<Callout type="info">
+  `binds` may be async — its return type is `FutureOr<void>`, so you can `await`
+  inside it. The module loader waits for async registration to finish before the
+  routes are shown.
+</Callout>
+
+## Resolve
+
+From a widget, use the `context` extension:
+
+```dart
+final controller = context.read<HomeController>();
+```
+
+Anywhere — including outside the widget tree — use the static API:
+
+```dart
+final controller = Modular.get<HomeController>();
+final maybe = Modular.tryGet<HomeController>(); // null if not registered
+if (Modular.isRegistered<HomeController>()) {
+  // ...
+}
+```
+
+Inside `initState`, resolve through the provided `InjectorReader`:
+
+```dart
+@override
+void initState(InjectorReader i) {
+  super.initState(i);
+  _controller = i.get<HomeController>();
+}
+```
+
+## Named binds
+
+Register multiple binds of the same type by giving each a `key`:
+
+```dart
+i
+  ..addSingleton<Dio>((i) => Dio(local), key: 'local')
+  ..addFactory<Dio>((i) => Dio(remote), key: 'remote');
+// ...
+final dio = Modular.get<Dio>(key: 'local');
+```
+
+The `key` works on every register and resolve call: `addSingleton`,
+`addLazySingleton`, `addFactory`, `Modular.get`, `Modular.tryGet`,
+`Modular.isRegistered`, and `context.read` via `i.get`.
+
+## Module scope
+
+A module can only resolve binds from its **visible scope**:
+
+- its own binds,
+- binds from modules it returns in `imports()`,
+- the `AppModule`'s binds (the only globally-visible scope).
+
+If a bind tries to resolve a dependency the module neither declared nor imported,
+the package throws a `GoRouterModularException` **at module registration time** —
+before the route is ever shown.
+
+```dart filename="❌ violation"
+class ProfileModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    // AuthService lives in AuthModule, which is not imported here.
+    i.addFactory<ProfileController>((i) => ProfileController(i.get<AuthService>()));
+  }
+}
+```
+
+Fix it by importing the owning module — or declare the bind in this module:
+
+```dart filename="✅ fix"
+class ProfileModule extends Module {
+  @override
+  List<Module> imports() => [AuthModule()];
+
+  @override
+  FutureOr<void> binds(Injector i) {
+    i.addFactory<ProfileController>((i) => ProfileController(i.get<AuthService>()));
+  }
+}
+```
+
+<Callout type="warning">
+  Static resolution (`Modular.get<T>()` and `context.read<T>()`) stays **global**
+  and is **not** scope-enforced at runtime. It's a deliberate escape hatch — but
+  prefer respecting module scope so dependencies stay encapsulated.
+</Callout>
+
+### Resolving by interface
+
+Since v5.2.0, untyped factory binds no longer auto-resolve through supertypes.
+Register the factory with an explicit type when you resolve by interface:
+
+```dart
+i.addFactory<IService>((i) => ServiceImpl()); // ✅ Modular.get<IService>()
+```
+
+<Callout type="info">
+  An untyped `i.addFactory((i) => ServiceImpl())` still resolves by its concrete
+  type (`Modular.get<ServiceImpl>()`), but not by a supertype. The old supertype
+  probe instantiated factories as a side effect; the explicit type avoids that.
+</Callout>
+
+## Disposal
+
+When a module unregisters, its singletons are disposed automatically: the package
+calls `dispose()` if present, otherwise `close()`, otherwise `cancel()`. Factory
+instances are not tracked — disposing them is your responsibility.
+
+## Next steps
+
+- [Routes & Modules](/en/routes/routes-system)
+- [Testing](/en/testing)
+- [Event Module](/en/event-module)

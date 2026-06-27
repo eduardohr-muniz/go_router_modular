@@ -1,0 +1,158 @@
+---
+title: Injeção de Dependência
+---
+
+import { Callout } from 'nextra/components'
+
+# Injeção de Dependência
+
+Todo módulo declara suas dependências em `binds`. O pacote as registra quando o
+módulo é acessado, as resolve sob demanda e as descarta quando o módulo é deixado.
+
+## Registrar
+
+Declare os binds dentro de `Module.binds(Injector i)`. Existem três tipos:
+
+```dart filename="lib/src/modules/home/home_module.dart"
+class HomeModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    i
+      ..addSingleton<AppDatabase>((i) => AppDatabase())
+      ..addLazySingleton<HomeRepository>((i) => HomeRepository(i.get<AppDatabase>()))
+      ..addFactory<HomeController>((i) => HomeController(i.get<HomeRepository>()));
+  }
+}
+```
+
+Uma factory recebe o `Injector`, então um bind pode depender de outros binds via
+`i.get<T>()`.
+
+| Método | Quando é criado | Reuso | Descartado ao desregistrar |
+| --- | --- | --- | --- |
+| `addSingleton<T>` | Imediatamente, ao registrar o módulo | Mesma instância | Sim |
+| `addLazySingleton<T>` | Na primeira resolução | Mesma instância depois | Sim |
+| `addFactory<T>` (alias `add<T>`) | A cada resolução | Nova instância sempre | Não |
+
+<Callout type="info">
+  `binds` pode ser assíncrono — seu tipo de retorno é `FutureOr<void>`, então você
+  pode usar `await` dentro dele. O loader do módulo aguarda o registro assíncrono
+  terminar antes de exibir as rotas.
+</Callout>
+
+## Resolver
+
+A partir de um widget, use a extensão de `context`:
+
+```dart
+final controller = context.read<HomeController>();
+```
+
+Em qualquer lugar — inclusive fora da árvore de widgets — use a API estática:
+
+```dart
+final controller = Modular.get<HomeController>();
+final maybe = Modular.tryGet<HomeController>(); // null se não registrado
+if (Modular.isRegistered<HomeController>()) {
+  // ...
+}
+```
+
+Dentro de `initState`, resolva pelo `InjectorReader` fornecido:
+
+```dart
+@override
+void initState(InjectorReader i) {
+  super.initState(i);
+  _controller = i.get<HomeController>();
+}
+```
+
+## Binds nomeados
+
+Registre múltiplos binds do mesmo tipo dando uma `key` a cada um:
+
+```dart
+i
+  ..addSingleton<Dio>((i) => Dio(local), key: 'local')
+  ..addFactory<Dio>((i) => Dio(remote), key: 'remote');
+// ...
+final dio = Modular.get<Dio>(key: 'local');
+```
+
+A `key` funciona em toda chamada de registro e de resolução: `addSingleton`,
+`addLazySingleton`, `addFactory`, `Modular.get`, `Modular.tryGet`,
+`Modular.isRegistered` e `context.read` via `i.get`.
+
+## Escopo de módulo
+
+Um módulo só pode resolver binds do seu **escopo visível**:
+
+- seus próprios binds,
+- binds dos módulos que ele retorna em `imports()`,
+- os binds do `AppModule` (o único escopo globalmente visível).
+
+Se um bind tentar resolver uma dependência que o módulo não declarou nem importou,
+o pacote lança uma `GoRouterModularException` **no momento do registro do módulo**
+— antes mesmo de a rota ser exibida.
+
+```dart filename="❌ violação"
+class ProfileModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    // AuthService vive em AuthModule, que não é importado aqui.
+    i.addFactory<ProfileController>((i) => ProfileController(i.get<AuthService>()));
+  }
+}
+```
+
+Corrija importando o módulo dono — ou declare o bind neste módulo:
+
+```dart filename="✅ correção"
+class ProfileModule extends Module {
+  @override
+  List<Module> imports() => [AuthModule()];
+
+  @override
+  FutureOr<void> binds(Injector i) {
+    i.addFactory<ProfileController>((i) => ProfileController(i.get<AuthService>()));
+  }
+}
+```
+
+<Callout type="warning">
+  A resolução estática (`Modular.get<T>()` e `context.read<T>()`) permanece
+  **global** e **não** é validada por escopo em runtime. É um escape hatch
+  deliberado — mas prefira respeitar o escopo do módulo para manter as
+  dependências encapsuladas.
+</Callout>
+
+### Resolver por interface
+
+Desde a v5.2.0, binds de factory sem tipo não resolvem mais automaticamente por
+supertipos. Registre a factory com um tipo explícito quando você resolve por
+interface:
+
+```dart
+i.addFactory<IService>((i) => ServiceImpl()); // ✅ Modular.get<IService>()
+```
+
+<Callout type="info">
+  Um `i.addFactory((i) => ServiceImpl())` sem tipo ainda resolve pelo tipo
+  concreto (`Modular.get<ServiceImpl>()`), mas não por um supertipo. A antiga
+  sondagem por supertipo instanciava factories como efeito colateral; o tipo
+  explícito evita isso.
+</Callout>
+
+## Descarte
+
+Quando um módulo é desregistrado, seus singletons são descartados
+automaticamente: o pacote chama `dispose()` se existir, senão `close()`, senão
+`cancel()`. Instâncias de factory não são rastreadas — descartá-las é sua
+responsabilidade.
+
+## Próximos passos
+
+- [Rotas e Módulos](/pt/routes/routes-system)
+- [Testes](/pt/testing)
+- [Módulo de Eventos](/pt/event-module)

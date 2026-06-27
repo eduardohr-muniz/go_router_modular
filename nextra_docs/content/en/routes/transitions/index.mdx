@@ -1,0 +1,97 @@
+---
+title: Overview
+---
+
+import { Callout } from 'nextra/components'
+
+# Page Transitions
+
+Page transitions in `go_router_modular` come from the
+[`go_transitions`](https://pub.dev/packages/go_transitions) package, which is
+re-exported by `go_router_modular`. You don't need an extra import — `GoTransitions`
+is available as soon as you import `package:go_router_modular/go_router_modular.dart`.
+
+## Three ways to apply a transition
+
+### 1. Per route
+
+Set `transition` (and optionally `transitionDuration`) directly on a `ChildRoute`:
+
+```dart filename="lib/src/modules/home/home_module.dart"
+ChildRoute(
+  '/details',
+  child: (context, state) => const DetailsPage(),
+  transition: GoTransitions.fade,
+  transitionDuration: const Duration(milliseconds: 300),
+)
+```
+
+### 2. Global default
+
+Set a default transition for every route in `Modular.configure`:
+
+```dart filename="lib/main.dart"
+await Modular.configure(
+  appModule: AppModule(),
+  initialRoute: '/',
+  defaultTransition: GoTransitions.fadeUpwards,
+  defaultTransitionDuration: const Duration(milliseconds: 600),
+);
+```
+
+Any route that doesn't declare its own `transition` falls back to this default.
+
+### 3. Stateful shell branches
+
+To animate switching between branches of a
+[stateful shell route](/en/routes/shell-route), pass a container builder from
+`StatefulShellBranchTransitions`:
+
+```dart filename="lib/src/app_module.dart"
+StatefulShellModularRoute(
+  builder: (context, state, navigationShell) =>
+      ScaffoldWithNavBar(navigationShell: navigationShell),
+  navigatorContainerBuilder: StatefulShellBranchTransitions.withGoTransition(
+    GoTransitions.scale.withRotation,
+    transitionDuration: const Duration(milliseconds: 400),
+  ),
+  branches: [
+    // ...
+  ],
+)
+```
+
+## Inheritance
+
+Routes inside a `ModuleRoute` inherit the parent's transition unless they set
+their own. The resolution order for a given route is:
+
+1. The route's own `transition` / `transitionDuration`.
+2. The transition inherited from its parent `ModuleRoute`.
+3. The global default from `Modular.configure`.
+
+<Callout type="info">
+  `defaultTransitionDuration` also sets `GoTransition.defaultDuration`, which is
+  used by routes and stateful shells that don't declare an explicit duration.
+</Callout>
+
+## Common transitions
+
+These are the transitions used throughout the example app:
+
+| Transition | Effect |
+| --- | --- |
+| `GoTransitions.fade` | Simple cross-fade |
+| `GoTransitions.fadeUpwards` | Fade while sliding up |
+| `GoTransitions.slide.toRight.withFade` | Slide to the right combined with a fade |
+| `GoTransitions.slide.toLeft.withFade` | Slide to the left combined with a fade |
+| `GoTransitions.scale.withRotation` | Scale combined with rotation |
+| `GoTransitions.rotate.withScale` | Rotation combined with scale |
+| `GoTransitions.rotate.withScale.withFade` | Rotation + scale + fade |
+| `GoTransitions.theme` | Platform default (Material/Cupertino) |
+
+## Next steps
+
+- [Transition examples](/en/routes/transitions/examples)
+- [Shell Routes](/en/routes/shell-route)
+- [Routes & Modules](/en/routes/routes-system)

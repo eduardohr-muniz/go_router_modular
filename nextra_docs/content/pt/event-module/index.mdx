@@ -1,0 +1,156 @@
+---
+title: Visão Geral
+---
+
+import { Callout } from 'nextra/components'
+
+# Módulo de Eventos
+
+O `EventModule` permite que um módulo reaja a eventos tipados atrelados ao seu
+próprio ciclo de vida. Registre handlers quando o módulo é acessado, dispare
+eventos de qualquer lugar e deixe o pacote cancelar tudo automaticamente quando
+o módulo é descartado.
+
+## EventModule
+
+Estenda `EventModule` (um `Module` com suporte a eventos) e sobrescreva
+`listen()` para registrar handlers:
+
+```dart filename="lib/src/modules/cart/cart_module.dart"
+class CartModule extends EventModule {
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute('/', child: (context, state) => const CartPage()),
+      ];
+
+  @override
+  void listen() {
+    on<ProductAdded>((event, context) {
+      // reage ao evento
+    });
+  }
+}
+```
+
+O `listen()` roda quando o módulo inicializa. O opcional `onAfterListen()` roda
+logo após o `listen()`, caso você precise de um hook pós-registro.
+
+### Registrando handlers
+
+```dart
+on<T>(
+  void Function(T event, BuildContext? context) callback, {
+  bool? autoDispose,
+  bool exclusive = false,
+});
+```
+
+- `context` é o contexto atual do navegador modular e **pode ser nulo** (o
+  navegador pode ainda não estar montado). Sempre verifique nulo antes de usar.
+- `autoDispose`: quando omitido, segue a configuração global
+  (`autoDisposeEventsBus` de `Modular.configure`, padrão `true`) — o ouvinte é
+  cancelado quando o módulo é descartado. Passe `false` para mantê-lo ativo após
+  o descarte.
+- `exclusive`: veja [Ouvintes regulares vs exclusivos](#ouvintes-regulares-vs-exclusivos).
+- Registrar `on<T>` duas vezes para o mesmo tipo no mesmo módulo substitui o
+  handler anterior.
+
+<Callout type="info">
+  Existe um parâmetro `broadcast` depreciado que mapeia para `exclusive` — use
+  `exclusive` em seu lugar.
+</Callout>
+
+## Disparando eventos
+
+Dispare um evento de qualquer lugar — um controller, um widget, outro módulo:
+
+```dart
+ModularEvent.fire<ProductAdded>(ProductAdded(product));
+```
+
+`ModularEvent.fire<T>(T event, {EventBus? eventBus})` dispara no barramento
+global `defaultModularEventBus`, a menos que você passe um barramento
+customizado.
+
+## Barramento de eventos customizado
+
+Por padrão, todo `EventModule` compartilha o barramento global
+`defaultModularEventBus`. Passe um `EventBus` customizado para isolar os eventos
+de um módulo do restante do app:
+
+```dart
+class CartModule extends EventModule {
+  CartModule() : super(eventBus: cartEventBus);
+  // ...
+}
+```
+
+Eventos disparados em um barramento nunca alcançam ouvintes de outro barramento,
+mesmo para o mesmo tipo de evento.
+
+## Composição
+
+Para fazer um módulo também rodar os handlers de outro módulo de eventos, chame
+o `listen()` do outro módulo de forma **síncrona** dentro do seu próprio
+`listen()`:
+
+```dart
+class EventModuleA extends EventModule {
+  @override
+  void listen() {
+    on<EventA>((event, context) { /* ... */ });
+    EventModuleB().listen(); // compõe os handlers de B em A
+  }
+}
+```
+
+Os handlers compostos (filhos) herdam o escopo de descarte do módulo **host**:
+são cancelados junto com o host, e recriar o host não os duplica.
+
+<Callout type="warning">
+  A chamada de `listen()` composta deve ser **síncrona** dentro do seu
+  `listen()` — não dentro de um `await` ou callback de `Future`. Caso contrário
+  os handlers filhos não se atrelam ao escopo do host e não serão descartados
+  com ele.
+</Callout>
+
+## Ouvintes regulares vs exclusivos
+
+- **Regular** (`exclusive: false`, o padrão): todo módulo que escuta um tipo
+  recebe o evento.
+- **Exclusivo** (`exclusive: true`): uma fila FIFO por (barramento, tipo) —
+  apenas **um** ouvinte fica ativo e recebe eventos por vez. Quando o ativo é
+  descartado, o próximo da fila se torna ativo automaticamente. Útil quando
+  apenas a tela atual / mais ao topo deve tratar um evento.
+
+## Ouvintes globais
+
+Para escutar sem um módulo — com limpeza manual — use o singleton
+`ModularEvent`:
+
+```dart
+ModularEvent.instance.on<ProductAdded>((event, context) {
+  // ...
+});
+
+// depois
+ModularEvent.instance.dispose<ProductAdded>();
+```
+
+`ModularEvent.instance.on<T>(callback, {EventBus? eventBus, bool exclusive = false})`
+registra o ouvinte e `dispose<T>({EventBus? eventBus})` o cancela. Eles não estão
+atrelados a nenhum ciclo de vida de módulo, então você mesmo deve descartá-los.
+
+## Escolhendo uma abordagem
+
+| Abordagem | Escopo | Limpeza |
+| --- | --- | --- |
+| `EventModule` | Reações de negócio no escopo do módulo | Atrelada ao ciclo de vida do módulo |
+| [`ModularEventMixin`](/pt/event-module/widget-mixin) | Reações de UI no escopo do widget | Atrelada ao ciclo de vida do widget |
+| `ModularEvent.instance` | Global | Manual |
+
+## Próximos passos
+
+- [ModularEventMixin](/pt/event-module/widget-mixin)
+- [Testes de Eventos](/pt/testing/event-testing)
+- [Injeção de Dependência](/pt/dependency-injection)

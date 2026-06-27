@@ -1,0 +1,57 @@
+---
+title: Changelog
+---
+
+import { Callout } from 'nextra/components'
+
+# Changelog
+
+Highlights of recent releases. The full, authoritative history lives in
+[`CHANGELOG.md`](https://github.com/eduardohr-muniz/go_router_modular/blob/master/CHANGELOG.md)
+on GitHub.
+
+## Unreleased
+
+### Breaking
+
+- **Event module composition simplified.** The unused `eventImports()` +
+  `ModularEventListener` mechanism and the public `EventListenerMixin` were
+  removed. To compose another module's listeners, call `OtherEventModule().listen()`
+  synchronously inside your own `listen()` — the composed listeners inherit the
+  host module's dispose scope. The only public event mixin is now
+  `ModularEventMixin`. See [Event Module](/en/event-module).
+
+## 5.3.0
+
+### Added
+
+- **`copyWith` on the modular router.** Override individual `GoRouter` options at
+  the point where the router is consumed, reusing everything passed to
+  `Modular.configure(...)` — useful for options `ModularApp.router` doesn't
+  expose (e.g. `observers`). The derived router is memoized, so navigation state
+  is preserved across rebuilds. See [Quick Start](/en/getting-started/quick-start).
+
+### Changed
+
+- Bumped the `go_router` constraint to `^17.3.0`.
+
+## 5.2.0
+
+### Breaking
+
+- **Untyped factory binds no longer auto-resolve through supertypes.** Register
+  factories with an explicit type when resolving by interface:
+  `i.addFactory<IService>((i) => ServiceImpl())`. This removes phantom factory
+  instantiations that ran constructor side effects during unrelated lookups. See
+  [Dependency Injection](/en/dependency-injection).
+
+### Fixed
+
+- Cross-type circular dependencies now surface a clear
+  `GoRouterModularException` with the dependency chain instead of a misleading
+  "Bind not found" error.
+
+<Callout type="info">
+  For every release and the complete list of fixes, read the
+  [full changelog on GitHub](https://github.com/eduardohr-muniz/go_router_modular/blob/master/CHANGELOG.md).
+</Callout>

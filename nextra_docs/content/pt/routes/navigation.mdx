@@ -1,0 +1,117 @@
+---
+title: Navegação
+---
+
+import { Callout } from 'nextra/components'
+
+# Navegação
+
+É `go_router` por baixo, então os métodos padrão de navegação no `BuildContext`
+funcionam como você espera. Além disso, o `go_router_modular` adiciona variantes
+**assíncronas** que aguardam as dependências do módulo de destino terminarem de
+ser registradas.
+
+## Navegação padrão
+
+```dart
+context.go('/home');                 // substitui a pilha
+context.push('/details');            // empilha por cima
+context.pop();                       // remove a rota atual
+context.replace('/settings');        // substitui a rota atual
+
+context.goNamed(
+  'user',
+  pathParameters: {'id': '42'},
+  queryParameters: {'tab': 'posts'},
+);
+```
+
+## Navegação assíncrona
+
+As variantes assíncronas retornam um `Future` que completa apenas depois que os
+binds do módulo de destino foram registrados e a nova página foi construída. Cada
+uma recebe um payload `extra` opcional e um callback `onComplete`.
+
+```dart
+await context.goAsync('/dashboard');
+
+await context.goNamedAsync(
+  'user',
+  pathParameters: {'id': '42'},
+  queryParameters: {'tab': 'posts'},
+  onComplete: () => print('dependências prontas'),
+);
+```
+
+Os mesmos formatos existem para cada verbo de navegação:
+
+- `goAsync` / `goNamedAsync`
+- `pushAsync` / `pushNamedAsync`
+- `pushReplacementAsync` / `pushReplacementNamedAsync`
+- `replaceAsync` / `replaceNamedAsync`
+
+Assinaturas:
+
+```dart
+Future<void> goAsync(String route, {Object? extra, VoidCallback? onComplete});
+
+Future<void> goNamedAsync(
+  String name, {
+  Map<String, String> pathParameters = const {},
+  Map<String, String> queryParameters = const {},
+  Object? extra,
+  VoidCallback? onComplete,
+});
+```
+
+<Callout type="info">
+  Prefira `goAsync` em vez de `go` quando precisar rodar código logo após as
+  dependências do destino estarem prontas — por exemplo, ler um controller que o
+  módulo de destino registra, ou aguardar a navegação em um fluxo. Para navegação
+  simples, `go` resolve.
+</Callout>
+
+## Voltando até uma localização
+
+```dart
+context.popUntil('/home');         // remove até esta localização ficar no topo
+context.popUntilNamed('home');     // remove até esta rota nomeada ficar no topo
+```
+
+## Lendo o estado da rota
+
+```dart
+final id = context.getPathParam('id');   // um parâmetro de caminho
+final path = context.getPath;            // o caminho atual
+final state = context.state;             // o GoRouterState
+```
+
+## Buscando dependências
+
+Resolva uma dependência registrada a partir de um widget com `context.read<T>()`:
+
+```dart
+final controller = context.read<HomeController>();
+```
+
+## Navegando fora da árvore de widgets
+
+`modularNavigatorKey` é uma `GlobalKey<NavigatorState>` que te dá o context do
+navigator atual em qualquer lugar — services, interceptors, callbacks em segundo
+plano.
+
+```dart
+final context = modularNavigatorKey.currentContext;
+context?.go('/login');
+```
+
+## Na web
+
+Deep links, a barra de URL e o voltar/avançar do navegador funcionam — é
+`go_router` por baixo, então parâmetros de caminho e de query trafegam pela URL.
+
+## Próximos passos
+
+- [Rotas e Módulos](/pt/routes/routes-system)
+- [Shell Routes](/pt/routes/shell-route)
+- [Redirecionamentos](/pt/routes/redirects)

@@ -1,0 +1,83 @@
+---
+title: Unit Testing
+---
+
+import { Callout } from 'nextra/components'
+
+# Unit Testing
+
+`FakeInjector` is a tiny, in-memory injector for **pure unit tests**. It feeds
+fakes to the class under test without touching the global container — no
+`Modular.configure`, no reset, no leaks between tests.
+
+## FakeInjector
+
+Build an injector by chaining `add`, then resolve with `get`:
+
+```dart filename="test/order_service_test.dart"
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+void main() {
+  test('OrderService charges through the gateway', () {
+    final injector = FakeInjector.empty()
+        .add<PaymentGateway>(FakePaymentGateway())
+        .add<UserRepository>(FakeUserRepository());
+
+    final service = OrderService(
+      injector.get<PaymentGateway>(),
+      injector.get<UserRepository>(),
+    );
+
+    expect(service.checkout(), isTrue);
+  });
+}
+```
+
+- `FakeInjector.empty()` — creates an empty injector.
+- `add<T>(T instance)` — **immutable**: returns a *new* injector with `T`
+  registered. The original is unchanged, so the methods chain.
+- `get<T>({String? key})` — resolves `T`.
+
+## Missing dependencies fail loudly
+
+If you `get<T>()` a type you never registered, `FakeInjector` throws
+`FakeInjectorMissingBindError` with a message telling you exactly which type is
+missing and how to add it — no silent `null`:
+
+```dart
+FakeInjector.empty().get<PaymentGateway>();
+// throws FakeInjectorMissingBindError:
+// "nenhum bind registrado para o tipo PaymentGateway."
+```
+
+## It is an InjectorReader
+
+`FakeInjector` implements `InjectorReader`, so you can pass it anywhere one is
+expected — for example, to a module's `initState`:
+
+```dart
+final module = CartModule();
+module.initState(FakeInjector.empty().add<CartRepository>(FakeCartRepository()));
+```
+
+## FakeInjector vs ModularTestScope
+
+| | FakeInjector | ModularTestScope |
+| --- | --- | --- |
+| Use for | Pure unit test of one class | Integration test of real DI + events |
+| Global state | None | Resets the real container each `setUp` |
+| Setup | None — just build and pass | `setUp`/`tearDown` lifecycle |
+| Events | No | Yes (records the real bus) |
+
+<Callout type="info">
+  Reach for `FakeInjector` first when you're testing a single service or use
+  case. Use [`ModularTestScope`](/en/testing) when the test must exercise the
+  real container wiring or the event system.
+</Callout>
+
+## Next steps
+
+- [Overview](/en/testing)
+- [Testing Events](/en/testing/event-testing)
+- [Dependency Injection](/en/dependency-injection)

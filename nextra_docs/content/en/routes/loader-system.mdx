@@ -1,0 +1,104 @@
+---
+title: Loader System
+---
+
+import { Callout } from 'nextra/components'
+
+# Loader System
+
+`ModularLoader` is a built-in full-screen loading overlay. It appears
+automatically while a module's dependencies are being registered, and you can
+also drive it manually for your own async work.
+
+## When it shows automatically
+
+When you enter a `ModuleRoute`, the module's binds are registered before its
+first page is built. If any of those binds are asynchronous, `ModularLoader`
+covers the screen until registration finishes. The async navigation helpers
+(`goAsync`, `pushAsync`, and friends) trigger the same behavior.
+
+| Scenario | Does the loader show? |
+| --- | --- |
+| Sync binds | Briefly or not at all |
+| Async binds | Yes, until registration finishes |
+| `goAsync` / `pushAsync` | Yes, until the new page is built |
+| Manual `show()` / `hide()` | When you call it |
+
+## Manual control
+
+Use the static API to show the loader around your own work:
+
+```dart
+ModularLoader.show();
+await loadSomething();
+ModularLoader.hide();
+```
+
+The static API:
+
+- `ModularLoader.show()` — show the overlay.
+- `ModularLoader.hide()` — hide the overlay.
+- `ModularLoader.controller` — the underlying `ModularLoaderController`
+  (a `ValueNotifier<bool>`).
+
+## Wiring the loader
+
+The loader needs to be mounted above your app. If you build your app with
+`ModularApp.router`, it is wired for you. If you use `MaterialApp.router`
+directly, add it through the `builder`:
+
+```dart filename="lib/src/app_widget.dart"
+MaterialApp.router(
+  routerConfig: Modular.routerConfig,
+  builder: (context, child) => ModularLoader.builder(context, child),
+)
+```
+
+## Custom loader
+
+Implement `CustomModularLoader` to replace the default spinner and background:
+
+```dart filename="lib/src/my_loader.dart"
+import 'package:flutter/material.dart';
+import 'package:go_router_modular/go_router_modular.dart';
+
+class MyLoader implements CustomModularLoader {
+  @override
+  Color get backgroundColor => Colors.black54;
+
+  @override
+  Widget get child => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+}
+```
+
+Wire it through `ModularApp.router`:
+
+```dart filename="lib/src/app_widget.dart"
+ModularApp.router(
+  title: 'My App',
+  customModularLoader: MyLoader(),
+)
+```
+
+Or through `MaterialApp.router`'s `builder`:
+
+```dart filename="lib/src/app_widget.dart"
+MaterialApp.router(
+  routerConfig: Modular.routerConfig,
+  builder: (context, child) =>
+      ModularLoader.builder(context, child, customModularLoader: MyLoader()),
+)
+```
+
+<Callout type="info">
+  The automatic loader and your manual `show()` / `hide()` share the same
+  controller, so they never stack — there is only ever one overlay.
+</Callout>
+
+## Next steps
+
+- [Redirects](/en/routes/redirects)
+- [Routes & Modules](/en/routes/routes-system)
+- [Dependency Injection](/en/dependency-injection)

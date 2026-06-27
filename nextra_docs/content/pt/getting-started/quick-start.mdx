@@ -1,0 +1,139 @@
+---
+title: Início Rápido
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Início Rápido
+
+Coloque um app modular no ar em três passos: instale o pacote, configure o
+roteador e divida seu app em módulos.
+
+<Steps>
+
+### Instalar
+
+Adicione o pacote ao seu projeto:
+
+```bash
+flutter pub add go_router_modular
+```
+
+### Configurar
+
+Chame `Modular.configure` dentro do `main()`, depois que o binding do Flutter
+estiver pronto, e então renderize `ModularApp.router`:
+
+```dart filename="lib/main.dart"
+import 'package:flutter/material.dart';
+import 'package:go_router_modular/go_router_modular.dart';
+
+import 'src/app_module.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Modular.configure(
+    appModule: AppModule(),
+    initialRoute: '/',
+  );
+  runApp(const AppWidget());
+}
+
+class AppWidget extends StatelessWidget {
+  const AppWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) => ModularApp.router(title: 'My App');
+}
+```
+
+`ModularApp.router` conecta o `Modular.routerConfig` e a overlay de carregamento
+por você. `Modular.configure` é idempotente — chamar duas vezes retorna o mesmo
+roteador.
+
+<Callout type="info">
+  Precisa de opções de roteador que o `ModularApp.router` não expõe
+  (`observers` customizados, um `redirect`, um `errorBuilder`)? Passe direto para
+  o `Modular.configure`, ou sobrescreva apenas o que precisa com
+  `Modular.routerConfig.copyWith(...)`.
+</Callout>
+
+### Criar módulos
+
+O app module é a raiz da árvore. Ele monta módulos de feature com `ModuleRoute`:
+
+```dart filename="lib/src/app_module.dart"
+import 'package:go_router_modular/go_router_modular.dart';
+
+import 'modules/home/home_module.dart';
+
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        ModuleRoute('/', module: HomeModule()),
+      ];
+}
+```
+
+Cada módulo de feature é dono das suas dependências e das suas páginas. Registre
+dependências em `binds` com o `Injector` e declare páginas com `ChildRoute`:
+
+```dart filename="lib/src/modules/home/home_module.dart"
+import 'package:go_router_modular/go_router_modular.dart';
+
+import 'home_controller.dart';
+import 'pages/home_page.dart';
+
+class HomeModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<HomeController>((i) => HomeController());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute('/', child: (context, state) => const HomePage()),
+      ];
+}
+```
+
+Leia uma dependência com `context.read<T>()` (ou `Modular.get<T>()` fora de um
+widget):
+
+```dart filename="lib/src/modules/home/pages/home_page.dart"
+@override
+Widget build(BuildContext context) {
+  final controller = context.read<HomeController>();
+  // ...
+}
+```
+
+</Steps>
+
+## Estrutura do projeto
+
+Um layout orientado a módulos mantém cada feature independente:
+
+```text
+lib/
+├── main.dart
+└── src/
+    ├── app_module.dart
+    ├── app_widget.dart
+    └── modules/
+        └── home/
+            ├── home_module.dart
+            ├── home_controller.dart
+            └── pages/
+                └── home_page.dart
+```
+
+Os binds do `HomeModule` são registrados ao entrar no módulo e descartados ao
+sair dele — sem limpeza manual.
+
+## Próximos passos
+
+- [Rotas e Módulos](/pt/routes/routes-system) — cada tipo de rota em detalhe.
+- [Injeção de Dependência](/pt/dependency-injection) — binds, escopos e busca.
+- [Guia de Migração](/pt/getting-started/migration-guide) — atualizando de uma
+  versão antiga.

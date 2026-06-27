@@ -1,135 +1,46 @@
-# 🚀 Deployment Guide
+# Deployment
 
-Guia para fazer deploy da documentação do GoRouter Modular.
+The documentation is a **static export** (`output: 'export'`) deployed to
+**GitHub Pages** by `.github/workflows/deploy.yml` on every push to `master`.
 
-## 📦 Opções de Deploy
+## Automatic (GitHub Pages)
 
-### 1. Vercel (Recomendado)
+The workflow:
 
-```bash
-# Instalar Vercel CLI
-npm i -g vercel
+1. Checks out the repo and sets up Node 20.
+2. Runs `npm ci` in `nextra_docs/`.
+3. Builds with the repository `basePath`:
+   `GITHUB_ACTIONS=true GITHUB_REPOSITORY=<owner>/<repo> npm run build`.
+4. Creates `out/.nojekyll` and publishes `nextra_docs/out` to GitHub Pages.
 
-# Deploy
-vercel
+Nothing else is required — push to `master` and the site updates. Published at
+`https://eduardohr-muniz.github.io/go_router_modular`.
 
-# Deploy de produção
-vercel --prod
-```
-
-### 2. Netlify
-
-```bash
-# Build local
-npm run build
-
-# Deploy no Netlify
-# Faça upload da pasta .next para o Netlify
-```
-
-### 3. GitHub Pages
+## Manual / local
 
 ```bash
-# Configurar para static export
-# Adicionar ao next.config.js:
-module.exports = withNextra({
-  output: 'export',
-  trailingSlash: true,
-  images: {
-    unoptimized: true
-  }
-})
+cd nextra_docs
+npm ci
+npm run build            # static site in ./out
 
-# Build estático
-npm run build
-
-# Deploy na pasta out/
+# Preview the export locally
+npx serve out            # (or any static file server)
 ```
 
-### 4. Firebase Hosting
+To reproduce the exact GitHub Pages output (with the `/repo` basePath):
 
 ```bash
-# Instalar Firebase CLI
-npm install -g firebase-tools
-
-# Login
-firebase login
-
-# Inicializar projeto
-firebase init hosting
-
-# Build
-npm run build
-
-# Deploy
-firebase deploy
+GITHUB_ACTIONS=true GITHUB_REPOSITORY=eduardohr-muniz/go_router_modular npm run build
+touch out/.nojekyll
 ```
 
-## 🌐 URLs Sugeridas
+## Notes
 
-- **Produção**: `https://go-router-modular-docs.vercel.app`
-- **Staging**: `https://go-router-modular-docs-staging.vercel.app`
-- **GitHub Pages**: `https://eduardohr-muniz.github.io/go_router_modular`
-
-## ⚙️ Configurações de Ambiente
-
-```bash
-# .env.local
-NEXT_PUBLIC_SITE_URL=https://go-router-modular-docs.vercel.app
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX  # Google Analytics
-```
-
-## 🔄 CI/CD
-
-### GitHub Actions
-
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy Documentation
-on:
-  push:
-    branches: [main]
-    paths: ['nextra_docs/**']
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '18'
-      - name: Install dependencies
-        run: cd nextra_docs && npm ci
-      - name: Build
-        run: cd nextra_docs && npm run build
-      - name: Deploy to Vercel
-        run: cd nextra_docs && vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
-```
-
-## 📊 Analytics
-
-Para adicionar Google Analytics:
-
-```tsx
-// theme.config.tsx
-head: () => (
-  <>
-    <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', '${GA_ID}');
-        `,
-      }}
-    />
-  </>
-)
-```
-
----
-
-**Recomendação**: Use Vercel para facilidade e performance otimizada.
+- The site is bilingual: `/en` and `/pt`, with `/` redirecting to `/en` via
+  `public/index.html`.
+- Requirements: Node ≥ 20 (Nextra 4 / Next 15).
+- Zod is pinned to `4.3.6` through `overrides` in `package.json`; do not bump it
+  to `4.4.x` (a regression there breaks Nextra's prop validation).
+- Any host that serves a static folder works (Netlify, Cloudflare Pages, Firebase
+  Hosting, etc.) — point it at `nextra_docs/out`. For hosts without a `basePath`,
+  build without the `GITHUB_ACTIONS` / `GITHUB_REPOSITORY` env vars.

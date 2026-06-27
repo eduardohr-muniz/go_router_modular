@@ -1,0 +1,115 @@
+---
+title: Navigation
+---
+
+import { Callout } from 'nextra/components'
+
+# Navigation
+
+It's `go_router` underneath, so the standard `BuildContext` navigation methods
+work as you expect. On top of that, `go_router_modular` adds **async** variants
+that wait for the destination module's dependencies to finish registering.
+
+## Standard navigation
+
+```dart
+context.go('/home');                 // replace the stack
+context.push('/details');            // push on top
+context.pop();                       // pop the current route
+context.replace('/settings');        // replace the current route
+
+context.goNamed(
+  'user',
+  pathParameters: {'id': '42'},
+  queryParameters: {'tab': 'posts'},
+);
+```
+
+## Async navigation
+
+The async variants return a `Future` that completes only after the destination
+module's binds have registered and the new page is built. Each takes an optional
+`extra` payload and an `onComplete` callback.
+
+```dart
+await context.goAsync('/dashboard');
+
+await context.goNamedAsync(
+  'user',
+  pathParameters: {'id': '42'},
+  queryParameters: {'tab': 'posts'},
+  onComplete: () => print('dependencies ready'),
+);
+```
+
+The same shapes exist for every navigation verb:
+
+- `goAsync` / `goNamedAsync`
+- `pushAsync` / `pushNamedAsync`
+- `pushReplacementAsync` / `pushReplacementNamedAsync`
+- `replaceAsync` / `replaceNamedAsync`
+
+Signatures:
+
+```dart
+Future<void> goAsync(String route, {Object? extra, VoidCallback? onComplete});
+
+Future<void> goNamedAsync(
+  String name, {
+  Map<String, String> pathParameters = const {},
+  Map<String, String> queryParameters = const {},
+  Object? extra,
+  VoidCallback? onComplete,
+});
+```
+
+<Callout type="info">
+  Prefer `goAsync` over `go` when you need to run code right after the
+  destination's dependencies are ready — for example, reading a controller the
+  destination module registers, or awaiting navigation in a flow. For plain
+  navigation, `go` is fine.
+</Callout>
+
+## Popping to a location
+
+```dart
+context.popUntil('/home');         // pop until this location is on top
+context.popUntilNamed('home');     // pop until this named route is on top
+```
+
+## Reading route state
+
+```dart
+final id = context.getPathParam('id');   // a path parameter
+final path = context.getPath;            // current path
+final state = context.state;             // the GoRouterState
+```
+
+## Dependency lookup
+
+Resolve a registered dependency from a widget with `context.read<T>()`:
+
+```dart
+final controller = context.read<HomeController>();
+```
+
+## Navigating outside the widget tree
+
+`modularNavigatorKey` is a `GlobalKey<NavigatorState>` that gives you the current
+navigator context anywhere — services, interceptors, background callbacks.
+
+```dart
+final context = modularNavigatorKey.currentContext;
+context?.go('/login');
+```
+
+## On the web
+
+Deep links, the URL bar, and browser back/forward all work — it's `go_router`
+under the hood, so path and query parameters round-trip through the URL.
+
+## Next steps
+
+- [Routes & Modules](/en/routes/routes-system)
+- [Shell Routes](/en/routes/shell-route)
+- [Redirects](/en/routes/redirects)

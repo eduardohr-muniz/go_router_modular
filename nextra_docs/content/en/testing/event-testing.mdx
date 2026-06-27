@@ -1,0 +1,156 @@
+---
+title: Testing Events
+---
+
+import { Callout } from 'nextra/components'
+
+# Testing Events
+
+The testing library records events fired on the bus so you can assert exactly
+what was emitted. Use `ModularTestScope` for integration tests, or the
+standalone `EventRecorder` when you don't need DI.
+
+<Callout type="warning">
+  Events are **async**. Always `await` a short delay (or `tester.pump()`) after
+  firing, before asserting.
+</Callout>
+
+## With a scope
+
+A `ModularTestScope` records events through the same lifecycle as DI. Start
+recording with `listenFor`, fire with `fireEvent`, then read back with
+`eventsOf`:
+
+```dart filename="test/cart_events_test.dart"
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+void main() {
+  final scope = ModularTestScope.fresh();
+
+  setUp(scope.setUp);
+  tearDown(scope.tearDown);
+
+  test('records a fired event', () async {
+    scope.listenFor<ProductAdded>();
+
+    scope.fireEvent<ProductAdded>(ProductAdded(productId: '42'));
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    final events = scope.eventsOf<ProductAdded>();
+    expect(events.length, 1);
+    expect(events.first.productId, '42');
+  });
+}
+```
+
+Scope event API:
+
+- `listenFor<E>({EventBus? eventBus})` — start recording events of type `E`.
+- `fireEvent<E>(E event)` — fire an event on the bus.
+- `eventsOf<E>()` — returns a `RecordedEventList<E>` of what was recorded.
+- `clearRecordedEvents()` — drop recorded events without cancelling listeners.
+
+## RecordedEventList
+
+`eventsOf<E>()` returns a read-only `RecordedEventList<E>`:
+
+```dart
+final events = scope.eventsOf<ProductAdded>();
+
+events.length;          // int
+events.isEmpty;         // bool
+events.isNotEmpty;      // bool
+events.first;           // E
+events.last;            // E
+events[0];              // E
+events.any((e) => e.productId == '42');     // bool
+events.where((e) => e.qty > 1);             // RecordedEventList<E>
+events.toList();        // List<E> (unmodifiable)
+```
+
+## Standalone EventRecorder
+
+When you only need to record events — no DI container — use `EventRecorder`
+directly. Remember to `dispose()` it:
+
+```dart filename="test/recorder_test.dart"
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+void main() {
+  test('standalone recorder', () async {
+    final recorder = EventRecorder.fresh();
+    recorder.listenFor<ProductAdded>();
+
+    ModularEventBus.fire(ProductAdded(productId: '7'));
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    expect(recorder.eventsOf<ProductAdded>().length, 1);
+
+    recorder.clear();    // drop events, keep listening
+    recorder.dispose();  // cancel listeners
+  });
+}
+```
+
+`ModularEventBus.fire(event)` dispatches on the global bus (the same one used in
+production). It's a thin wrapper so you don't need the main barrel import in
+tests.
+
+## Testing an EventModule
+
+You can test a module's handlers in isolation. Initialize it with an empty
+`FakeInjector`, fire the event, await, then assert and `dispose()`:
+
+```dart filename="test/cart_module_test.dart"
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+void main() {
+  setUp(clearEventModuleState); // isolate event state between tests
+
+  test('CartModule reacts to ProductAdded', () async {
+    final module = CartModule();
+    module.initState(FakeInjector.empty());
+
+    ModularEvent.fire(ProductAdded(productId: '1'));
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    // assert the module's side effect here
+
+    module.dispose();
+  });
+}
+```
+
+Call `clearEventModuleState()` in `setUp` to keep the global event state clean
+between tests.
+
+## Testing a ModularEventMixin widget
+
+For a widget that uses [`ModularEventMixin`](/en/event-module/widget-mixin),
+pump it, fire the event, pump again, then assert the UI:
+
+```dart filename="test/cart_badge_test.dart"
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+void main() {
+  testWidgets('badge increments on ProductAdded', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: CartBadge()));
+
+    ModularEvent.fire(ProductAdded(productId: '1'));
+    await tester.pump();
+
+    expect(find.text('1'), findsOneWidget);
+  });
+}
+```
+
+## Next steps
+
+- [Unit Testing](/en/testing/fake-injector)
+- [Event Module](/en/event-module)
+- [ModularEventMixin](/en/event-module/widget-mixin)

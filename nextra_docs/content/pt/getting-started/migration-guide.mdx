@@ -1,0 +1,124 @@
+---
+title: Guia de Migração
+---
+
+import { Callout } from 'nextra/components'
+
+# Guia de Migração
+
+O que mudou ao atualizar para a versão mais recente do `go_router_modular` e como
+atualizar seu código. Os três pontos a ajustar são **binds**, **transições** e
+(se você usa) **eventos**.
+
+## Binds: de `List<Bind>` para `Injector`
+
+Antes, `binds` retornava uma `List<Bind>`. Agora retorna `void` (ou
+`FutureOr<void>`) e você registra dependências chamando métodos no `Injector`
+recebido.
+
+```dart filename="antes"
+@override
+List<Bind> binds() => [
+      Bind.singleton((i) => AuthService()),
+      Bind.lazySingleton((i) => UserRepository()),
+      Bind.factory((i) => LoginController()),
+    ];
+```
+
+```dart filename="depois"
+@override
+FutureOr<void> binds(Injector i) {
+  i
+    ..addSingleton<AuthService>((i) => AuthService())
+    ..addLazySingleton<UserRepository>((i) => UserRepository())
+    ..addFactory<LoginController>((i) => LoginController());
+}
+```
+
+O mapeamento é direto:
+
+| Antes | Depois |
+| --- | --- |
+| `Bind.singleton((i) => X())` | `i.addSingleton<X>((i) => X())` |
+| `Bind.lazySingleton((i) => X())` | `i.addLazySingleton<X>((i) => X())` |
+| `Bind.factory((i) => X())` | `i.addFactory<X>((i) => X())` |
+
+<Callout type="info">
+  `i.add<X>(...)` é um alias para `i.addFactory<X>(...)`. Sempre passe o
+  argumento de tipo (`<X>`) para que a dependência seja registrada sob o tipo
+  correto.
+</Callout>
+
+## Transições: de `PageTransition` para `go_transitions`
+
+O enum customizado `PageTransition` foi substituído pelo pacote
+[`go_transitions`](https://pub.dev/packages/go_transitions), reexportado pelo
+`go_router_modular`. Troque `PageTransition.x` por `GoTransitions.x`.
+
+```dart filename="antes"
+ChildRoute(
+  '/details',
+  child: (context, state) => const DetailsPage(),
+  transition: PageTransition.fade,
+);
+```
+
+```dart filename="depois"
+ChildRoute(
+  '/details',
+  child: (context, state) => const DetailsPage(),
+  transition: GoTransitions.fade,
+);
+```
+
+Defina um padrão para todo o app no `Modular.configure`:
+
+```dart
+await Modular.configure(
+  appModule: AppModule(),
+  initialRoute: '/',
+  defaultTransition: GoTransitions.fade,
+  defaultTransitionDuration: const Duration(milliseconds: 300),
+);
+```
+
+## Busca de dependências
+
+Ler uma dependência não mudou: use `context.read<T>()` dentro de widgets e
+`Modular.get<T>()` em outros lugares.
+
+```dart
+final auth = context.read<AuthService>();
+final repo = Modular.get<UserRepository>();
+```
+
+## Eventos
+
+O antigo mecanismo de composição de eventos — `eventImports()`,
+`ModularEventListener` e o `EventListenerMixin` — foi removido. Para reaproveitar
+os listeners de outro módulo de eventos, chame o `listen()` dele de forma
+síncrona dentro do seu próprio `listen()`:
+
+```dart
+class AppEventModule extends EventModule {
+  @override
+  void listen() {
+    AuthEventModule().listen();
+    // ...seus próprios listeners
+  }
+}
+```
+
+<Callout type="warning">
+  Se seu código ainda referencia `eventImports`, `ModularEventListener` ou
+  `EventListenerMixin`, remova-os — eles não existem mais.
+</Callout>
+
+Veja a página [Módulo de Eventos](/pt/event-module) para a API completa de
+eventos.
+
+## Próximos passos
+
+- [Injeção de Dependência](/pt/dependency-injection) — a API completa de binds.
+- [Rotas e Módulos](/pt/routes/routes-system) — transições por rota.
+- [Módulo de Eventos](/pt/event-module) — compondo listeners.

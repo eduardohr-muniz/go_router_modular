@@ -1,0 +1,79 @@
+---
+title: ModularEventMixin
+---
+
+import { Callout } from 'nextra/components'
+
+# ModularEventMixin
+
+`ModularEventMixin` lets a widget react to typed events tied to its own
+lifecycle. Register listeners in `initState` and the mixin cancels all of them
+automatically in `dispose()` — no manual cleanup.
+
+## Usage
+
+Apply the mixin to a `State` and register listeners with `on`:
+
+```dart filename="lib/src/widgets/cart_badge.dart"
+class CartBadge extends StatefulWidget {
+  const CartBadge({super.key});
+
+  @override
+  State<CartBadge> createState() => _CartBadgeState();
+}
+
+class _CartBadgeState extends State<CartBadge> with ModularEventMixin {
+  int _count = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    on<ProductAdded>((event, context) {
+      setState(() => _count++);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Text('$_count');
+}
+```
+
+Fire events to it from anywhere:
+
+```dart
+ModularEvent.fire<ProductAdded>(ProductAdded(product));
+```
+
+## Registering listeners
+
+```dart
+on<E>(
+  void Function(E event, BuildContext? context) callback, {
+  EventBus? eventBus,
+  bool exclusive = false,
+});
+```
+
+- `context` is `mounted ? context : null` — always null-check before using it.
+- Registering `on<E>` twice for the same type replaces the previous listener.
+- `eventBus`: omit to use the global `defaultModularEventBus`; pass a custom
+  `EventBus` to isolate this widget's listeners.
+- `exclusive`: when `true`, uses a broadcast stream for the type.
+
+<Callout type="info">
+  All subscriptions registered through the mixin are cancelled automatically in
+  the widget's `dispose()`. You never cancel them yourself.
+</Callout>
+
+## Choosing an approach
+
+| Approach | Scope | Cleanup |
+| --- | --- | --- |
+| [`EventModule`](/en/event-module) | Module-scoped business reactions | Tied to module lifecycle |
+| `ModularEventMixin` | Widget-scoped UI reactions | Tied to widget lifecycle |
+| `ModularEvent.instance` | Global | Manual |
+
+## Next steps
+
+- [Event Module](/en/event-module)
+- [Testing Events](/en/testing/event-testing)

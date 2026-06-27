@@ -1,0 +1,124 @@
+---
+title: Routes & Modules
+---
+
+import { Callout } from 'nextra/components'
+
+# Routes & Modules
+
+Every module exposes a `List<ModularRoute> get routes`. A route is one of four
+types: a leaf page, a nested module, or one of two shell layouts. This page
+covers the route model and how modules nest.
+
+## The four route types
+
+| Type | Use it for |
+| --- | --- |
+| `ChildRoute` | A single page (the leaf of a route). |
+| `ModuleRoute` | Mount another module under a path prefix. |
+| `ShellModularRoute` | A shared layout (one Navigator) around a set of routes. |
+| `StatefulShellModularRoute` | Tabs/bottom nav with per-branch persistent state. |
+
+The two shell types are covered in detail on [Shell Routes](/en/routes/shell-route).
+
+## A basic module
+
+A module declares its dependencies in `binds` and its pages in `routes`.
+
+```dart filename="lib/src/modules/home/home_module.dart"
+class HomeModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<HomeController>((i) => HomeController());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute('/', child: (context, state) => const HomePage()),
+        ChildRoute('/details', child: (context, state) => const DetailsPage()),
+      ];
+}
+```
+
+`ChildRoute` is the leaf page. The `child` builder receives the `BuildContext`
+and the current `GoRouterState`.
+
+```dart
+ChildRoute(
+  '/details',
+  name: 'details',
+  child: (context, state) => const DetailsPage(),
+)
+```
+
+<Callout type="info">
+  You can attach a per-route animation with the `transition` parameter. See
+  [Page Transitions](/en/routes/transitions).
+</Callout>
+
+## Nesting modules
+
+Use `ModuleRoute` to mount a module under a path prefix. The child module's
+routes are appended to that prefix, and its binds register when you enter it and
+dispose when you leave.
+
+```dart filename="lib/src/app_module.dart"
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        ModuleRoute('/', module: HomeModule()),
+        ModuleRoute('/profile', module: ProfileModule()),
+      ];
+}
+```
+
+With the example above, `ProfileModule`'s `ChildRoute('/edit', ...)` is reachable
+at `/profile/edit`.
+
+## Path & query parameters
+
+Declare path parameters with `:name` in the path, then read them from the
+`GoRouterState`.
+
+```dart filename="lib/src/modules/user/user_module.dart"
+class UserModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute(
+          '/user/:id',
+          child: (context, state) {
+            final id = state.pathParameters['id'];
+            final tab = state.uri.queryParameters['tab'];
+            return UserPage(id: id, tab: tab);
+          },
+        ),
+      ];
+}
+```
+
+You can also read the path parameter directly from the context:
+
+```dart
+final id = context.getPathParam('id');
+```
+
+Navigating to `/user/42?tab=posts` gives `id == '42'` and `tab == 'posts'`.
+
+## Shell routes
+
+When several pages share a layout (a bottom bar, a side rail), wrap them in a
+shell instead of repeating the scaffold on every page:
+
+- `ShellModularRoute` — one Navigator, a shared layout, no preserved state
+  between siblings.
+- `StatefulShellModularRoute` — independent navigation stacks with state
+  preserved per branch (tabs).
+
+Both are explained on [Shell Routes](/en/routes/shell-route).
+
+## Next steps
+
+- [Shell Routes](/en/routes/shell-route)
+- [Navigation](/en/routes/navigation)
+- [Page Transitions](/en/routes/transitions)
+- [Redirects](/en/routes/redirects)

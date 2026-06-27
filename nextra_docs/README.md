@@ -1,64 +1,56 @@
-# GoRouter Modular Documentation
+# go_router_modular documentation
 
-Este é o site de documentação oficial do **GoRouter Modular** construído com [Nextra](https://nextra.site).
+Documentation site for [`go_router_modular`](https://pub.dev/packages/go_router_modular),
+built with [Nextra 4](https://nextra.site) (Next.js App Router) and published to
+GitHub Pages as a static export.
 
-## 🚀 Desenvolvimento
+## Languages
 
-Para executar o site de documentação localmente:
+The docs are bilingual — **English** (`/en`) and **Portuguese** (`/pt`). The site
+root (`/`) redirects to `/en`.
+
+Content lives under `content/<locale>/`:
+
+```
+content/
+  en/...   # English pages (.mdx) + _meta.ts navigation
+  pt/...   # Portuguese pages — same file tree as en/
+```
+
+Every page must exist in **both** locales with the same relative path, and the
+`_meta.ts` files in each locale must list the same keys in the same order
+(only the labels differ).
+
+## Develop
 
 ```bash
-# Instalar dependências
 npm install
-
-# Executar em modo de desenvolvimento
-npm run dev
+npm run dev      # http://localhost:3000 (open /en or /pt)
 ```
 
-O site estará disponível em `http://localhost:3000`.
-
-## 🏗️ Build
-
-Para fazer build da documentação:
+## Build (static export)
 
 ```bash
-# Build de produção
-npm run build
-
-# Executar a versão built
-npm start
+npm run build    # outputs the static site to ./out
 ```
 
-## 📁 Estrutura
+For a GitHub Pages build (applies the repository `basePath`):
 
-```
-nextra_docs/
-├── pages/              # Páginas da documentação
-│   ├── docs/           # Documentação técnica
-│   ├── guides/         # Guias e tutoriais
-│   ├── examples/       # Exemplos práticos
-│   └── _meta.json      # Configuração de navegação
-├── public/             # Assets estáticos
-├── theme.config.tsx    # Configuração do tema Nextra
-├── next.config.js      # Configuração do Next.js
-└── package.json        # Dependências do projeto
+```bash
+GITHUB_ACTIONS=true GITHUB_REPOSITORY=eduardohr-muniz/go_router_modular npm run build
 ```
 
-## 📚 Contribuindo
+## Architecture notes
 
-Para contribuir com a documentação:
+- **App Router + `[lang]` segment.** `app/[lang]/layout.tsx` builds the per-locale
+  sidebar via `getPageMap('/<lang>')`; `app/[lang]/[[...mdxPath]]/page.tsx` renders
+  the MDX and generates static params for every locale + path.
+- **i18n via folders, not Nextra's middleware.** Nextra's middleware-based i18n is
+  incompatible with `output: 'export'`, so each locale is an ordinary content
+  folder. This keeps the `/en` and `/pt` prefixes on every link in the static build.
+- **Root redirect.** `public/index.html` does a relative redirect to `en/`, which
+  stays correct under the GitHub Pages `basePath`.
+- **Zod pinned to `4.3.6`** via `overrides` in `package.json` — Zod `4.4.x` has a
+  regression that breaks Nextra's prop validation.
 
-1. Edite os arquivos MDX em `pages/`
-2. Adicione novos assets em `public/`
-3. Atualize a navegação em `_meta.json`
-4. Teste localmente com `npm run dev`
-5. Faça commit e push das mudanças
-
-## 🔗 Links Úteis
-
-- [GoRouter Modular no GitHub](https://github.com/Flutterando/go_router_modular)
-- [Nextra Documentation](https://nextra.site)
-- [Next.js Documentation](https://nextjs.org/docs)
-
----
-
-Desenvolvido com ❤️ pela comunidade [Flutterando](https://flutterando.com.br)
+Deployment is automated by `.github/workflows/deploy.yml` on pushes to `master`.
