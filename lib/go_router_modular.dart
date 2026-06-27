@@ -1,10 +1,12 @@
 library go_router_modular;
 
 // Core exports
-export 'src/core/bind/bind.dart';
-export 'src/core/config/go_router_modular_configure.dart';
-export 'src/core/module/module.dart';
-export 'src/core/manager/injection_manager.dart';
+export 'src/di/bind.dart';
+export 'src/bootstrap/go_router_modular_configure.dart';
+export 'src/routing/route_with_completer_service.dart';
+export 'src/routing/modular_router_runtime.dart' show modularNavigatorKey;
+export 'src/module/module.dart';
+export 'src/di/injection_manager.dart';
 
 // Dependency Injection exports
 export 'src/di/injector.dart';
@@ -17,15 +19,15 @@ export 'src/routing/module_route.dart';
 export 'src/routing/shell_modular_route.dart';
 export 'src/routing/stateful_shell_modular_route.dart';
 export 'src/routing/stateful_shell_branch_transitions.dart';
-export 'src/extensions/context_extension.dart';
-export 'src/extensions/route_extension.dart';
+export 'src/ui/context_extension.dart';
+export 'src/ui/route_extension.dart';
 
 // Exceptions exports
-export 'src/exceptions/exception.dart';
+export 'src/shared/exception.dart';
 
 // Widgets exports
-export 'src/widgets/material_app_router.dart';
-export 'src/widgets/modular_loader.dart';
+export 'src/ui/material_app_router.dart';
+export 'src/ui/modular_loader.dart';
 
 // Event System exports
 export 'src/events/modular_event.dart' show ModularEvent, EventListenerMixin, clearEventModuleState, defaultModularEventBus;

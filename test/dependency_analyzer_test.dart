@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/dependency_analyzer/dependency_analyzer.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/dependency_analyzer.dart';
+import 'package:go_router_modular/src/di/bind.dart';
 
 // Classes de teste
 class ServiceA {}

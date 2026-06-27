@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router/go_router.dart';
+import 'package:go_router_modular/src/routing/i_modular_route.dart';
 
 class ShellModularRoute extends ModularRoute {
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;

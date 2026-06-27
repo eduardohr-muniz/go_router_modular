@@ -2,10 +2,21 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/internal/asserts/module_assert.dart';
-import 'package:go_router_modular/src/widgets/once_builder.dart';
-import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
+import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
+import 'package:go_router_modular/src/routing/route_with_completer_service.dart';
+import 'package:go_router_modular/src/di/injection_manager.dart';
+import 'package:go_router_modular/src/module/module.dart';
+import 'package:go_router_modular/src/shared/exception.dart';
+import 'package:go_router_modular/src/shared/asserts/module_assert.dart';
+import 'package:go_router_modular/src/routing/child_route.dart';
+import 'package:go_router_modular/src/routing/i_modular_route.dart';
+import 'package:go_router_modular/src/routing/module_route.dart';
+import 'package:go_router_modular/src/routing/shell_modular_route.dart';
+import 'package:go_router_modular/src/routing/stateful_shell_branch_transitions.dart';
+import 'package:go_router_modular/src/routing/stateful_shell_modular_route.dart';
+import 'package:go_router_modular/src/ui/modular_loader.dart';
+import 'package:go_router_modular/src/ui/once_builder.dart';
+import 'package:go_router_modular/src/ui/parent_widget_observer.dart';
 import 'package:go_transitions/go_transitions.dart';
 
 /// Builds GoRouter routes from a Module's route definitions.
@@ -46,7 +57,7 @@ class ModularRouteBuilder {
       );
     }
 
-    final transition = childRoute.transition ?? Modular.getDefaultTransition;
+    final transition = childRoute.transition ?? modularDefaultTransition;
 
     if (transition != null) {
       return _buildGoRouteWithTransition(
@@ -114,8 +125,7 @@ class ModularRouteBuilder {
       return GoRoute(
         path: _normalizePath(path: module.path, topLevel: topLevel),
         name: module.name,
-        routes: module.module
-            .configureRoutes(modulePath: module.path, topLevel: false),
+        routes: ModularRouteBuilder(module.module).buildRoutes(modulePath: module.path, topLevel: false),
         redirect: (context, state) async {
           final result = await _buildRedirectAndInjectBinds(
             context,
@@ -149,8 +159,7 @@ class ModularRouteBuilder {
       return GoRoute(
         path: _normalizePath(path: module.path, topLevel: topLevel),
         name: module.name,
-        routes: module.module
-            .configureRoutes(modulePath: module.path, topLevel: false),
+        routes: ModularRouteBuilder(module.module).buildRoutes(modulePath: module.path, topLevel: false),
         redirect: (context, state) => _buildRedirectAndInjectBinds(
             context, state,
             module: module.module,
@@ -172,9 +181,9 @@ class ModularRouteBuilder {
     final fullPath = module.path + nonNullChildRoute.path;
     final moduleName = nonNullChildRoute.name ?? module.name;
     final childRoutes =
-        module.module.configureRoutes(modulePath: module.path, topLevel: false);
+        ModularRouteBuilder(module.module).buildRoutes(modulePath: module.path, topLevel: false);
     final transition =
-        nonNullChildRoute.transition ?? Modular.getDefaultTransition;
+        nonNullChildRoute.transition ?? modularDefaultTransition;
 
     if (transition != null) {
       final route = _buildGoRouteWithTransition(
@@ -342,7 +351,7 @@ class ModularRouteBuilder {
   }
 
   /// [StatefulShellModularRoute]: [navigatorContainerBuilder] OU transição efetiva
-  /// (`transition` / [Modular.getDefaultTransition] / durações explícitas / default global).
+  /// (`transition` / [modularDefaultTransition] / durações explícitas / default global).
   ShellNavigationContainerBuilder? _resolvedStatefulShellContainer(
     StatefulShellModularRoute route,
   ) {
@@ -350,7 +359,7 @@ class ModularRouteBuilder {
       return route.navigatorContainerBuilder;
     }
 
-    final moduleDefault = Modular.getDefaultTransition;
+    final moduleDefault = modularDefaultTransition;
     final transitionFromSources = route.transition ?? moduleDefault;
     final passesExplicitDuration = route.transitionDuration != null ||
         route.reverseTransitionDuration != null;

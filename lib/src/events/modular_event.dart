@@ -1,8 +1,11 @@
 import 'dart:developer';
+import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
+import 'package:go_router_modular/src/module/module.dart';
+import 'package:go_router_modular/src/di/injector.dart';
 import 'package:go_router_modular/src/events/event_state.dart';
-import 'package:go_router_modular/src/internal/setup.dart';
+import 'package:go_router_modular/src/shared/setup.dart';
 
 /// Default global EventBus used by the modular event system.
 final EventBus _eventBus = EventBus();

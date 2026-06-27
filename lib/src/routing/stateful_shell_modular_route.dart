@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_transitions/go_transitions.dart';
 
-import '../core/module/module.dart';
+import 'package:go_router_modular/src/module/module.dart';
 import 'child_route.dart';
 import 'i_modular_route.dart';
 import 'module_route.dart';

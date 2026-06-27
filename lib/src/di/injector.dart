@@ -1,5 +1,4 @@
-import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/bind.dart';
 
 /// Read-only interface for dependency access.
 abstract interface class InjectorReader {

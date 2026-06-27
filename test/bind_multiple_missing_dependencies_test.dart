@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use_from_same_package
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
-import 'package:go_router_modular/src/exceptions/exception.dart';
+import 'package:go_router_modular/src/di/bind.dart';
+import 'package:go_router_modular/src/shared/exception.dart';
 
 // Interfaces para teste
 abstract class IFirstDependency {
