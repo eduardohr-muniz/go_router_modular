@@ -19,7 +19,7 @@ Arquivos de referência: `lib/src/routing/i_modular_route.dart`, `lib/src/routin
 
 ### Requirement: ChildRoute mapeia para GoRoute folha
 
-O sistema SHALL converter cada `ChildRoute` em um `GoRoute` que renderiza um widget. O `ChildRoute` MUST aceitar `path`, `child` (builder de widget), `name` opcional, `pageBuilder` opcional, `parentNavigatorKey`, `guards` (lista de `ModularGuard`, default `const []`), `redirect` (`@Deprecated`, mantido por compatibilidade), `onExit`, `transition` e `transitionDuration`. Quando `guards` e/ou `redirect` são fornecidos, o `GoRoute` resultante MUST receber, no seu slot `redirect`, a função composta `[...guards, GuardFn(redirect)]` (ver capability `routing-guards`). Um `ChildRoute` cujo path normaliza para `/` MUST NOT ser registrado como rota folha top-level — ele representa o índice do módulo.
+O sistema SHALL converter cada `ChildRoute` em um `GoRoute` que renderiza um widget. O `ChildRoute` MUST aceitar `path`, `child` (builder de widget), `name` opcional, `pageBuilder` opcional, `parentNavigatorKey`, `guards` (lista de `RouteGuard`, default `const []`), `redirect` (`@Deprecated`, mantido por compatibilidade), `onExit`, `transition` e `transitionDuration`. Quando `guards` e/ou `redirect` são fornecidos, o `GoRoute` resultante MUST receber, no seu slot `redirect`, a função composta `[...guards, GuardFn(redirect)]` (ver capability `routing-guards`). Um `ChildRoute` cujo path normaliza para `/` MUST NOT ser registrado como rota folha top-level — ele representa o índice do módulo.
 
 Arquivos de referência: `lib/src/routing/child_route.dart`, `lib/src/routing/builders/child_route_builder.dart`.
 
@@ -50,7 +50,7 @@ Arquivos de referência: `lib/src/routing/child_route.dart`, `lib/src/routing/bu
 
 ### Requirement: ModuleRoute monta um módulo aninhado com ciclo de vida
 
-O sistema SHALL converter `ModuleRoute` em um `GoRoute` cujo path é o segmento do módulo e cujas rotas filhas são as rotas do módulo (construídas com `topLevel = false`). O `ModuleRoute` MUST aceitar `path`, `module`, `name` opcional e `guards` (lista de `ModularGuard`, default `const []`). O `GoRoute` resultante MUST acoplar o registro dos binds do módulo no `redirect` (ver capability `routing-lifecycle`) e, em seguida, avaliar a função composta dos `guards` do `ModuleRoute`. Os `guards` MUST ser aplicados nos três ramos de construção do módulo: módulo regular, shell de módulo e stateful shell de módulo.
+O sistema SHALL converter `ModuleRoute` em um `GoRoute` cujo path é o segmento do módulo e cujas rotas filhas são as rotas do módulo (construídas com `topLevel = false`). O `ModuleRoute` MUST aceitar `path`, `module`, `name` opcional e `guards` (lista de `RouteGuard`, default `const []`). O `GoRoute` resultante MUST acoplar o registro dos binds do módulo no `redirect` (ver capability `routing-lifecycle`) e, em seguida, avaliar a função composta dos `guards` do `ModuleRoute`. Os `guards` MUST ser aplicados nos três ramos de construção do módulo: módulo regular, shell de módulo e stateful shell de módulo.
 
 Arquivos de referência: `lib/src/routing/module_route.dart`, `lib/src/routing/builders/module_route_builder.dart`, `lib/src/module/module.dart`.
 
@@ -72,7 +72,7 @@ Arquivos de referência: `lib/src/routing/module_route.dart`, `lib/src/routing/b
 
 ### Requirement: ShellModularRoute mapeia para ShellRoute com layout compartilhado
 
-O sistema SHALL converter `ShellModularRoute` em um `ShellRoute` cujo `builder` envolve o navigator filho com um layout comum. O `ShellModularRoute` MUST aceitar `builder` (que recebe o `child`), `routes` filhas, `guards` (lista de `ModularGuard`, default `const []`), `redirect` (`@Deprecated`, mantido por compatibilidade), `pageBuilder`, `observers`, `navigatorKey`, `parentNavigatorKey` e `restorationScopeId`. Quando `guards` e/ou `redirect` são fornecidos, o `ShellRoute` MUST receber no seu slot `redirect` a função composta `[...guards, GuardFn(redirect)]`. Uma `ChildRoute` cujo path normaliza para `/` MUST NOT ser filha direta de um shell (deve ser rejeitada por asserção em desenvolvimento).
+O sistema SHALL converter `ShellModularRoute` em um `ShellRoute` cujo `builder` envolve o navigator filho com um layout comum. O `ShellModularRoute` MUST aceitar `builder` (que recebe o `child`), `routes` filhas, `guards` (lista de `RouteGuard`, default `const []`), `redirect` (`@Deprecated`, mantido por compatibilidade), `pageBuilder`, `observers`, `navigatorKey`, `parentNavigatorKey` e `restorationScopeId`. Quando `guards` e/ou `redirect` são fornecidos, o `ShellRoute` MUST receber no seu slot `redirect` a função composta `[...guards, GuardFn(redirect)]`. Uma `ChildRoute` cujo path normaliza para `/` MUST NOT ser filha direta de um shell (deve ser rejeitada por asserção em desenvolvimento).
 
 Arquivos de referência: `lib/src/routing/shell_modular_route.dart`, `lib/src/routing/builders/shell_route_builder.dart`.
 
@@ -93,7 +93,7 @@ Arquivos de referência: `lib/src/routing/shell_modular_route.dart`, `lib/src/ro
 
 ### Requirement: StatefulShellModularRoute mapeia para StatefulShellRoute com branches
 
-O sistema SHALL converter `StatefulShellModularRoute` em um `StatefulShellRoute`, com uma `StatefulShellBranch` por branch declarada, preservando o estado de cada branch. O tipo MUST aceitar `branches`, `builder` (recebe a `StatefulNavigationShell`), `transition`/`transitionDuration`/`reverseTransitionDuration`, `navigatorContainerBuilder`, `guards` (lista de `ModularGuard`, default `const []`), `redirect` (`@Deprecated`, mantido por compatibilidade) e `shellKey`. A função composta `[...guards, GuardFn(redirect)]` MUST ser avaliada antes de qualquer redirect interno de seleção de branch. Uma branch MUST poder ser declarada por rotas (`ModularBranch`) ou diretamente por um módulo (`ModuleBranch`), e os paths das branches MUST ser únicos dentro do mesmo shell.
+O sistema SHALL converter `StatefulShellModularRoute` em um `StatefulShellRoute`, com uma `StatefulShellBranch` por branch declarada, preservando o estado de cada branch. O tipo MUST aceitar `branches`, `builder` (recebe a `StatefulNavigationShell`), `transition`/`transitionDuration`/`reverseTransitionDuration`, `navigatorContainerBuilder`, `guards` (lista de `RouteGuard`, default `const []`), `redirect` (`@Deprecated`, mantido por compatibilidade) e `shellKey`. A função composta `[...guards, GuardFn(redirect)]` MUST ser avaliada antes de qualquer redirect interno de seleção de branch. Uma branch MUST poder ser declarada por rotas (`ModularBranch`) ou diretamente por um módulo (`ModuleBranch`), e os paths das branches MUST ser únicos dentro do mesmo shell.
 
 Arquivos de referência: `lib/src/routing/stateful_shell_modular_route.dart`, `lib/src/routing/builders/shell_route_builder.dart`.
 

@@ -2,34 +2,34 @@
 
 ## Purpose
 
-Define o contrato de guards de rota modular: `ModularGuard` como redirect nomeado e reutilizável, o adaptador `GuardFn`, a resolução em curto-circuito de uma lista de guards, a composição do `redirect` legado como último elo da cadeia e o acesso a dependências do DI a partir de um guard.
+Define o contrato de guards de rota modular: `RouteGuard` como redirect nomeado e reutilizável, o adaptador `GuardFn`, a resolução em curto-circuito de uma lista de guards, a composição do `redirect` legado como último elo da cadeia e o acesso a dependências do DI a partir de um guard.
 
 ## Requirements
 
-### Requirement: ModularGuard encapsula um redirect nomeado e reutilizável
+### Requirement: RouteGuard encapsula um redirect nomeado e reutilizável
 
-O sistema SHALL definir `ModularGuard` como classe abstrata com um único método `redirect(BuildContext context, GoRouterState state)` que retorna `FutureOr<String?>`. Retornar `null` MUST liberar a navegação; retornar uma rota (String não-nula) MUST redirecionar para essa rota. Uma subclasse de `ModularGuard` MUST poder ser reutilizada em múltiplas rotas sem reescrever a regra.
+O sistema SHALL definir `RouteGuard` como classe abstrata com um único método `redirect(BuildContext context, GoRouterState state)` que retorna `FutureOr<String?>`. Retornar `null` MUST liberar a navegação; retornar uma rota (String não-nula) MUST redirecionar para essa rota. Uma subclasse de `RouteGuard` MUST poder ser reutilizada em múltiplas rotas sem reescrever a regra.
 
-Arquivos de referência: `lib/src/routing/guards/modular_guard.dart`.
+Arquivos de referência: `lib/src/routing/guards/route_guard.dart`.
 
 #### Scenario: Guard que libera retorna null
 
-- **WHEN** um `ModularGuard` avalia uma condição satisfeita e retorna `null`
+- **WHEN** um `RouteGuard` avalia uma condição satisfeita e retorna `null`
 - **THEN** a navegação prossegue para a rota de destino sem redirecionamento
 
 #### Scenario: Guard que barra retorna a rota de destino
 
-- **WHEN** um `ModularGuard` avalia uma condição não satisfeita e retorna `'/login'`
+- **WHEN** um `RouteGuard` avalia uma condição não satisfeita e retorna `'/login'`
 - **THEN** a navegação é redirecionada para `/login`
 
 #### Scenario: Mesmo guard reutilizado em rotas diferentes
 
-- **WHEN** uma mesma instância/classe de `ModularGuard` é declarada em duas rotas distintas
+- **WHEN** uma mesma instância/classe de `RouteGuard` é declarada em duas rotas distintas
 - **THEN** ambas as rotas aplicam a mesma regra de proteção sem duplicação de lógica
 
-### Requirement: GuardFn adapta uma função para ModularGuard
+### Requirement: GuardFn adapta uma função para RouteGuard
 
-O sistema SHALL fornecer `GuardFn`, uma subclasse concreta de `ModularGuard` que recebe uma função `FutureOr<String?> Function(BuildContext, GoRouterState)` e a expõe pelo método `redirect`. `GuardFn` MUST ser substituível por qualquer `ModularGuard` (Liskov), de modo que a resolução de uma lista não distinga entre um guard de classe nomeada e um `GuardFn`.
+O sistema SHALL fornecer `GuardFn`, uma subclasse concreta de `RouteGuard` que recebe uma função `FutureOr<String?> Function(BuildContext, GoRouterState)` e a expõe pelo método `redirect`. `GuardFn` MUST ser substituível por qualquer `RouteGuard` (Liskov), de modo que a resolução de uma lista não distinga entre um guard de classe nomeada e um `GuardFn`.
 
 Arquivos de referência: `lib/src/routing/guards/guard_fn.dart`.
 
@@ -41,11 +41,11 @@ Arquivos de referência: `lib/src/routing/guards/guard_fn.dart`.
 #### Scenario: GuardFn convive na mesma lista que guards de classe
 
 - **WHEN** uma lista contém `[AuthGuard(), GuardFn((c, s) => null)]`
-- **THEN** a resolução trata ambos uniformemente como `ModularGuard`
+- **THEN** a resolução trata ambos uniformemente como `RouteGuard`
 
 ### Requirement: Lista de guards resolve em curto-circuito numa única função
 
-O sistema SHALL reduzir uma `List<ModularGuard>` a uma única função `FutureOr<String?> Function(BuildContext, GoRouterState)` que percorre os guards na ordem declarada e retorna a primeira rota não-nula encontrada (curto-circuito "primeiro que barrar vence"). Se todos os guards retornarem `null`, a função composta MUST retornar `null`. Uma lista vazia MUST resultar em `null` (nenhum redirecionamento).
+O sistema SHALL reduzir uma `List<RouteGuard>` a uma única função `FutureOr<String?> Function(BuildContext, GoRouterState)` que percorre os guards na ordem declarada e retorna a primeira rota não-nula encontrada (curto-circuito "primeiro que barrar vence"). Se todos os guards retornarem `null`, a função composta MUST retornar `null`. Uma lista vazia MUST resultar em `null` (nenhum redirecionamento).
 
 Arquivos de referência: `lib/src/routing/guards/guard_resolver.dart`.
 
