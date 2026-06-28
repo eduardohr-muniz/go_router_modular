@@ -18,8 +18,7 @@ class ChildRoute extends ModularRoute {
   /// barrar vence"). Veja [ModularGuard].
   final List<ModularGuard> guards;
 
-  @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
-      'Will be removed in v6.0.0')
+  @Deprecated(guardsRedirectDeprecation)
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
   final FutureOr<bool> Function(BuildContext context, GoRouterState state)? onExit;
   final GoTransition? transition;
@@ -32,8 +31,7 @@ class ChildRoute extends ModularRoute {
     this.pageBuilder,
     this.parentNavigatorKey,
     this.guards = const [],
-    @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
-        'Will be removed in v6.0.0')
+    @Deprecated(guardsRedirectDeprecation)
     this.redirect,
     this.onExit,
     this.transition,

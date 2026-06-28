@@ -9,8 +9,7 @@ class ShellModularRoute extends ModularRoute {
   /// barrar vence"). Veja [ModularGuard].
   final List<ModularGuard> guards;
 
-  @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
-      'Will be removed in v6.0.0')
+  @Deprecated(guardsRedirectDeprecation)
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
   final Widget Function(BuildContext context, GoRouterState state, Widget child)? builder;
   final Page<dynamic> Function(BuildContext context, GoRouterState state, Widget child)? pageBuilder;
@@ -22,8 +21,7 @@ class ShellModularRoute extends ModularRoute {
 
   ShellModularRoute({
     this.guards = const [],
-    @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
-        'Will be removed in v6.0.0')
+    @Deprecated(guardsRedirectDeprecation)
     this.redirect,
     this.pageBuilder,
     this.observers,

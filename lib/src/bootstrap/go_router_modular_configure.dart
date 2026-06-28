@@ -225,8 +225,7 @@ class GoRouterModular {
     Page<dynamic> Function(BuildContext, GoRouterState)? errorPageBuilder,
     Widget Function(BuildContext, GoRouterState)? errorBuilder,
     List<ModularGuard> guards = const [],
-    @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
-        'Will be removed in v6.0.0')
+    @Deprecated(guardsRedirectDeprecation)
     FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
     Listenable? refreshListenable,
     int redirectLimit = 5,

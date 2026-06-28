@@ -83,8 +83,7 @@ class StatefulShellModularRoute extends ModularRoute {
   /// curto-circuito ("primeiro que barrar vence"). Veja [ModularGuard].
   final List<ModularGuard> guards;
 
-  @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
-      'Will be removed in v6.0.0')
+  @Deprecated(guardsRedirectDeprecation)
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)?
       redirect;
   final GlobalKey<NavigatorState>? parentNavigatorKey;
@@ -101,8 +100,7 @@ class StatefulShellModularRoute extends ModularRoute {
     this.navigatorContainerBuilder,
     this.notifyRootObserver = true,
     this.guards = const [],
-    @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
-        'Will be removed in v6.0.0')
+    @Deprecated(guardsRedirectDeprecation)
     this.redirect,
     this.parentNavigatorKey,
     this.restorationScopeId,
