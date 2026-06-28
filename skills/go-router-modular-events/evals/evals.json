@@ -1,0 +1,12 @@
+{
+  "skill_name": "go-router-modular-events",
+  "evals": [
+    {
+      "id": 0,
+      "name": "decoupled-cross-module",
+      "prompt": "Using go_router_modular, when an order is placed in the Checkout module, the Cart module should clear itself and a snackbar should show — without the two modules referencing each other directly. Wire it with events.",
+      "expected_output": "A small immutable event class (e.g. OrderPlaced with a const constructor), Checkout emitting via ModularEvent.fire, and Cart reacting via EventModule.listen() + on<OrderPlaced> (or ModularEventMixin for the snackbar), null-checking the callback context. The two modules share only the event class — no direct import. Uses only EventModule/ModularEvent/ModularEventMixin.",
+      "files": []
+    }
+  ]
+}

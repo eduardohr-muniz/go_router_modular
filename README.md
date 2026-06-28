@@ -59,6 +59,12 @@ npx skills add https://github.com/eduardohr-muniz/go_router_modular --skill go-r
 
 The CLI detects your installed agents and drops the skill into the right place (e.g. `.claude/skills/`). Add `-g` to install it globally for every project.
 
+**Optional — events add-on.** If your app uses the event system (`EventModule`, `ModularEvent`, `ModularEventMixin`) for decoupled cross-module communication, install the separate events skill too:
+
+```bash
+npx skills add https://github.com/eduardohr-muniz/go_router_modular --skill go-router-modular-events
+```
+
 ---
 
 ## 🤝 Contributing

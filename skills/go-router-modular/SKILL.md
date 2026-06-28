@@ -1,6 +1,6 @@
 ---
 name: go-router-modular
-description: Best practices and project structure for the go_router_modular Flutter package. Use this whenever you scaffold or edit a go_router_modular app — creating a feature's routes, adding a ChildRoute or ModuleRoute, registering a Module's binds/imports, writing navigation code (go/push), setting up main.dart / AppModule / AppWidget, or wiring debug logs — even if the user doesn't explicitly ask for "best practices". It enforces the project convention: the lib/src/modules/<feature>/ layout, a feature route file per feature, named-only navigation, name on every ChildRoute, synchronous modules with binds via the `..` cascade, and Modular.configure logs gated on kDebugMode.
+description: Best practices and project structure for the go_router_modular Flutter package. Use this whenever you scaffold or edit a go_router_modular app — creating a feature's routes, adding a ChildRoute or ModuleRoute, registering a Module's binds/imports, writing navigation code (go/push), setting up main.dart / AppModule / AppWidget, wiring debug logs, or building bottom navigation / tabs / shell layouts (StatefulShellModularRoute, ShellModularRoute) — even if the user doesn't explicitly ask for "best practices". It enforces the project convention: the lib/src/modules/<feature>/ layout, a feature route file per feature, named-only navigation, name on every ChildRoute, synchronous modules with binds via the `..` cascade, Modular.configure logs gated on kDebugMode, and shell routes only for specific cases (tabs with preserved state, or persistent chrome).
 ---
 
 # go_router_modular conventions
@@ -297,6 +297,59 @@ The package _does_ support an `async` `binds` (`Future<void> binds(Injector i) a
 but prefer the pattern above — async modules delay route registration and the first frame.
 Reach for async `binds` only when an awaited resource genuinely cannot be hoisted into
 `main()`, and keep the awaited work minimal.
+
+## Shell routes — specific cases only
+
+Shell is **not** the default. Plain `ChildRoute`/`ModuleRoute` cover most apps. Reach for a
+shell only when the UI genuinely needs one of these two shapes. Pick by intent:
+
+- **Bottom navigation / tabs with preserved state per tab** → `StatefulShellModularRoute`.
+  Each branch keeps its own navigation stack and state, so switching tabs doesn't rebuild
+  the others. Use the `ModuleBranch(path, module:)` shortcut when a branch is just a module.
+- **Persistent chrome around children** (a shared app bar, nav rail, or layout that stays
+  mounted while the child route changes) → `ShellModularRoute`.
+
+See `nextra_docs/content/en/routes/shell-route.mdx` for the full reference.
+
+### `StatefulShellModularRoute` — bottom nav / tabs
+
+```dart
+@override
+List<ModularRoute> get routes => [
+      StatefulShellModularRoute(
+        builder: (context, state, navigationShell) =>
+            AppScaffold(navigationShell: navigationShell), // hosts the bottom bar
+        branches: [
+          ModuleBranch('/home', module: HomeModule()),
+          ModuleBranch('/search', module: SearchModule()),
+          ModuleBranch('/profile', module: ProfileModule()),
+        ],
+      ),
+    ];
+```
+
+The `builder`'s `navigationShell` (a `StatefulNavigationShell`) is the tab body; switch tabs
+with `navigationShell.goBranch(index)`. For branch-change animations, see
+`StatefulShellBranchTransitions`.
+
+### `ShellModularRoute` — persistent chrome
+
+```dart
+@override
+List<ModularRoute> get routes => [
+      ShellModularRoute(
+        builder: (context, state, child) => AppShell(child: child), // app bar / nav rail
+        routes: [
+          ChildRoute(HomeRouteRelative.home, name: HomeRouteRelative.homeNamed, child: (_, __) => const HomePage()),
+          ChildRoute(SettingsRouteRelative.settings, name: SettingsRouteRelative.settingsNamed, child: (_, __) => const SettingsPage()),
+        ],
+      ),
+    ];
+```
+
+`child` is the current child route's widget; `AppShell` stays mounted across navigations.
+Inside a shell, the leaf routes still follow every convention above (named, `name` on each
+`ChildRoute`, navigation via `*Route`).
 
 ## Naming conventions
 

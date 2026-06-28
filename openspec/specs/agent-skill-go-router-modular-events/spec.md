@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Agent Skill go-router-modular-events
+
+## Purpose
+
+Define a Agent Skill separada `go-router-modular-events`, instalável independentemente da skill principal `go-router-modular`, que orienta o agente na comunicação desacoplada entre módulos do pacote `go_router_modular` via eventos: emissão com `ModularEvent.fire`, escuta auto-disposta por `EventModule.listen()` + `on<T>` ou por `ModularEventMixin`, evitando a escuta imperativa propensa a leak, e a suíte de evals que valida o uso da API modular de eventos.
+
+## Requirements
 
 ### Requirement: Skill separada de eventos versionada e instalável à parte
 
@@ -16,16 +22,21 @@ Arquivos de referência: `skills/go-router-modular-events/SKILL.md`.
 - **WHEN** o repositório é inspecionado sob `skills/`
 - **THEN** existe `skills/go-router-modular-events/` como skill própria, separada de `skills/go-router-modular/`
 
-### Requirement: Skill de eventos cobre os três caminhos do subsistema
+### Requirement: Skill de eventos cobre emissão e os dois caminhos de escuta auto-dispostos
 
-A skill de eventos SHALL cobrir os três caminhos do subsistema com peso semelhante, deixando o agente escolher pelo contexto: (a) `EventModule` com `listen()` registrando `on<T>((event, context) {...})` para ouvintes no nível de módulo (cancelados no `dispose`), incluindo composição via `OutroEventModule().listen()` dentro do `listen()`; (b) `ModularEvent.fire<T>(event)` para emitir e `ModularEvent.instance.on<T>(...)` para ouvir imperativamente; e (c) `ModularEventMixin` para ouvir em um `State<StatefulWidget>` com auto-dispose. A skill MUST indicar que eventos são classes pequenas e imutáveis, que a emissão usa `ModularEvent.fire`, e que o `BuildContext` do callback pode ser nulo. A skill MUST usar apenas símbolos da superfície pública (`ModularEvent`, `EventModule`, `ModularEventMixin`).
+A skill de eventos SHALL cobrir a emissão e os dois caminhos de escuta com **disposal automático**, deixando o agente escolher pelo contexto: emitir com `ModularEvent.fire<T>(event)` (estático); e ouvir por (a) `EventModule` com `listen()` registrando `on<T>((event, context) {...})` no nível de módulo (cancelado no `dispose`), incluindo composição via `OutroEventModule().listen()` dentro do `listen()`; ou (b) `ModularEventMixin` em um `State<StatefulWidget>` (cancelado no `dispose` do widget). A skill MUST indicar que eventos são classes pequenas e imutáveis, que a emissão usa `ModularEvent.fire`, e que o `BuildContext` do callback pode ser nulo. A skill MUST NOT recomendar a escuta imperativa por `ModularEvent.instance.on<T>` (sem dono/disposal automático, propensa a memory leak); quem precisar desse caminho que investigue por conta. A skill MUST usar apenas símbolos da superfície pública (`ModularEvent`, `EventModule`, `ModularEventMixin`).
 
 Arquivos de referência: `skills/go-router-modular-events/SKILL.md`.
 
-#### Scenario: Os três caminhos com exemplos
+#### Scenario: Emissão e os dois caminhos de escuta com exemplos
 
 - **WHEN** a skill de eventos é lida
-- **THEN** ela apresenta `EventModule.listen()` + `on<T>`, `ModularEvent.fire`/`on`, e `ModularEventMixin`, cada um com um exemplo coerente
+- **THEN** ela apresenta `ModularEvent.fire` para emitir e, para ouvir, `EventModule.listen()` + `on<T>` e `ModularEventMixin`, cada um com um exemplo coerente
+
+#### Scenario: Não recomenda escuta imperativa propensa a leak
+
+- **WHEN** a skill é inspecionada
+- **THEN** ela não apresenta `ModularEvent.instance.on<T>` como caminho de escuta recomendado
 
 #### Scenario: Emissão e composição documentadas
 

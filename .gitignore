@@ -34,3 +34,4 @@ go-router-modular-workspace/
 # Local OpenSpec tooling skills — not part of the published package / npx skills add
 .claude/skills/openspec-*
 .claude/skills/go-router-modular
+.claude/skills/go-router-modular-events

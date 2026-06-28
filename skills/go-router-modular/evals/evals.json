@@ -21,6 +21,13 @@
       "prompt": "Using go_router_modular, set up a 'checkout' module that depends on a CartRepository and a CheckoutCubit, and imports a shared PaymentModule. Show me the module definition.",
       "expected_output": "A Module whose binds(Injector i) registers CartRepository and CheckoutCubit synchronously (void binds, no async/await/Future), and imports() returns [PaymentModule()] synchronously. No async module unless an awaited resource is clearly required.",
       "files": []
+    },
+    {
+      "id": 3,
+      "name": "bottom-nav-tabs",
+      "prompt": "Using go_router_modular, build the app's main screen with a bottom navigation bar with 3 tabs \u2014 Home, Search, Profile \u2014 where each tab keeps its own navigation stack and state. Show the route setup.",
+      "expected_output": "A module whose routes use StatefulShellModularRoute with three ModuleBranch (or ModularBranch) entries, a builder receiving navigationShell, and tab switching via navigationShell.goBranch. No manual Navigator/MaterialPageRoute for the tabs. Shell used because tabs need preserved per-branch state.",
+      "files": []
     }
   ]
 }
