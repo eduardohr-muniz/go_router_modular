@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/src/bootstrap/go_router_modular_configure.dart';
+import 'package:go_router_modular/src/bootstrap/modular_configure.dart';
 import 'package:go_router_modular/src/ui/modular_loader.dart';
 
 class ModularApp extends MaterialApp {

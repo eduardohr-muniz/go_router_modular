@@ -2,7 +2,7 @@ library go_router_modular;
 
 // Core exports
 export 'src/di/bind.dart';
-export 'src/bootstrap/go_router_modular_configure.dart';
+export 'src/bootstrap/modular_configure.dart';
 export 'src/routing/route_with_completer_service.dart';
 export 'src/routing/modular_router_runtime.dart' show modularNavigatorKey;
 export 'src/module/module.dart';

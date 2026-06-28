@@ -28,7 +28,7 @@ class InjectionManager {
   /// mais de uma vez na pilha de navegação (ex.: A → B → A).
   final Map<Module, int> _referenceCount = Map<Module, int>.identity();
 
-  bool get _debugLog => SetupModular.instance.debugLogModular;
+  bool get _debugLog => SetupModular.instance.debugLogGoRouterModular;
 
   /// Defensive resolver for bind introspection (tracking, logging, validation).
   ///

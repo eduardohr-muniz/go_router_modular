@@ -124,8 +124,8 @@ void main() {
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogModular: true,
             autoDisposeEvents: true,
+            debugLogGoRouterModular: true,
           ),
         );
 
@@ -155,8 +155,8 @@ void main() {
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogModular: true,
             autoDisposeEvents: true,
+            debugLogGoRouterModular: true,
           ),
         );
 
@@ -193,8 +193,8 @@ void main() {
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogModular: true,
             autoDisposeEvents: true,
+            debugLogGoRouterModular: true,
           ),
         );
 

@@ -92,8 +92,8 @@ void main() {
       SetupModular.instance.setDebugModel(SetupModel(
         debugLogEventBus: false,
         debugLogGoRouter: false,
-        debugLogModular: false,
         autoDisposeEvents: true,
+        debugLogGoRouterModular: false,
       ));
     });
 

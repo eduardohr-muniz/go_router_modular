@@ -257,7 +257,7 @@ class Modular {
       SetupModel(
         debugLogEventBus: debugLogEventBus,
         debugLogGoRouter: debugLogDiagnosticsGoRouter,
-        debugLogModular: debugLogDiagnostics,
+        debugLogGoRouterModular: debugLogDiagnostics,
         autoDisposeEvents: autoDisposeEventsBus,
       ),
     );

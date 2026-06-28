@@ -318,7 +318,7 @@ class BindRegistry {
   /// Logs swallowed errors when `debugLogModular` is enabled. Keeps
   /// silent in release builds.
   void _swallowError(Object error, StackTrace stack, {required String context}) {
-    if (!SetupModular.instance.debugLogModular) return;
+    if (!SetupModular.instance.debugLogGoRouterModular) return;
     developer.log(
       'Swallowed error in $context: $error',
       name: 'GO_ROUTER_MODULAR',

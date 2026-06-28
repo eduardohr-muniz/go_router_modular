@@ -163,8 +163,8 @@ void main() {
       SetupModel(
         debugLogEventBus: false,
         debugLogGoRouter: false,
-        debugLogModular: false,
         autoDisposeEvents: true,
+        debugLogGoRouterModular: false,
       ),
     );
     _resetCounters();
@@ -207,8 +207,8 @@ void main() {
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogModular: true,
             autoDisposeEvents: true,
+            debugLogGoRouterModular: false,
           ),
         );
 

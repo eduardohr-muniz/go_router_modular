@@ -135,8 +135,8 @@ void main() {
       SetupModular.instance.setDebugModel(SetupModel(
         debugLogEventBus: false,
         debugLogGoRouter: false,
-        debugLogModular: false,
         autoDisposeEvents: true,
+        debugLogGoRouterModular: false,
       ));
     });
 
@@ -632,8 +632,8 @@ void main() {
         SetupModular.instance.setDebugModel(SetupModel(
           debugLogEventBus: false,
           debugLogGoRouter: false,
-          debugLogModular: false,
           autoDisposeEvents: false,
+          debugLogGoRouterModular: false,
         ));
 
         final module = TestEventModule();
@@ -884,8 +884,8 @@ void main() {
         SetupModular.instance.setDebugModel(SetupModel(
           debugLogEventBus: false,
           debugLogGoRouter: false,
-          debugLogModular: false,
           autoDisposeEvents: false,
+          debugLogGoRouterModular: false,
         ));
 
         final module = TestEventModule();
@@ -917,8 +917,8 @@ void main() {
         SetupModular.instance.setDebugModel(SetupModel(
           debugLogEventBus: false,
           debugLogGoRouter: false,
-          debugLogModular: false,
           autoDisposeEvents: true,
+          debugLogGoRouterModular: false,
         ));
 
         final module = TestEventModule();
@@ -968,8 +968,8 @@ void main() {
         SetupModular.instance.setDebugModel(SetupModel(
           debugLogEventBus: true,
           debugLogGoRouter: false,
-          debugLogModular: false,
           autoDisposeEvents: true,
+          debugLogGoRouterModular: false,
         ));
 
         final module = TestEventModule();
