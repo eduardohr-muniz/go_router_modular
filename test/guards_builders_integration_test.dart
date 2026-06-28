@@ -40,7 +40,7 @@ class _OrderModule extends Module {
 /// Guard que, ao rodar, resolve o serviço do módulo (forçando sua instância) e
 /// registra `guard` no log. Se os binds rodassem depois, o `Modular.get`
 /// lançaria — então o teste valida a ordem de duas formas.
-class _OrderGuard extends ModularGuard {
+class _OrderGuard extends RouteGuard {
   @override
   FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
     // Resolve o bind do módulo: precisa já estar registrado.
@@ -50,7 +50,7 @@ class _OrderGuard extends ModularGuard {
   }
 }
 
-class _SessionGuard extends ModularGuard {
+class _SessionGuard extends RouteGuard {
   @override
   FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
     final session = Modular.get<_SessionService>();

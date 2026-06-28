@@ -20,7 +20,7 @@ Pass a `guards` list to `Modular.configure`. They run for every navigation, with
 short-circuit semantics, before any per-route guards:
 
 ```dart filename="lib/main.dart"
-class AuthGuard extends ModularGuard {
+class AuthGuard extends RouteGuard {
   @override
   FutureOr<String?> redirect(BuildContext context, GoRouterState state) async {
     final isLoggedIn = await AuthService.instance.hasSession();
@@ -49,7 +49,7 @@ await Modular.configure(
 
 Instead of a loose `redirect` function per route, prefer **guards**: reusable,
 composable units of protection. A guard is the `redirect` encapsulated and
-named — declare a `extends ModularGuard` class once and reuse it across as many
+named — declare a `extends RouteGuard` class once and reuse it across as many
 routes as you need.
 
 Pass a `guards: [...]` list on the route. They run with short-circuit semantics
@@ -57,7 +57,7 @@ Pass a `guards: [...]` list on the route. They run with short-circuit semantics
 return `null`, navigation proceeds.
 
 ```dart filename="lib/src/modules/admin/guards/auth_guard.dart"
-class AuthGuard extends ModularGuard {
+class AuthGuard extends RouteGuard {
   @override
   FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
     final auth = Modular.get<AuthService>();
@@ -66,7 +66,7 @@ class AuthGuard extends ModularGuard {
   }
 }
 
-class RoleGuard extends ModularGuard {
+class RoleGuard extends RouteGuard {
   RoleGuard(this.requiredRole);
   final String requiredRole;
 

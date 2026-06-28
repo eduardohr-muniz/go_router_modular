@@ -15,7 +15,7 @@ class _P extends StatelessWidget {
 }
 
 /// Guard global: bloqueia qualquer rota que não seja /login.
-class _GlobalAuthGuard extends ModularGuard {
+class _GlobalAuthGuard extends RouteGuard {
   @override
   FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
     if (state.matchedLocation == '/login') return null;

@@ -298,13 +298,13 @@ but prefer the pattern above — async modules delay route registration and the 
 Reach for async `binds` only when an awaited resource genuinely cannot be hoisted into
 `main()`, and keep the awaited work minimal.
 
-## Route guards — protect routes with `ModularGuard`
+## Route guards — protect routes with `RouteGuard`
 
 To guard a route, pass a `guards: [...]` list — **not** the deprecated `redirect`.
 A guard is a reusable, named unit of protection (the `redirect` encapsulated):
 
 ```dart
-class AuthGuard extends ModularGuard {
+class AuthGuard extends RouteGuard {
   @override
   FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
     final auth = Modular.get<AuthService>(); // module binds already registered

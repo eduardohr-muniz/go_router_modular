@@ -1,5 +1,5 @@
 import 'package:go_router_modular/src/module/module.dart';
-import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
 import 'i_modular_route.dart';
 
 class ModuleRoute extends ModularRoute {
@@ -9,8 +9,8 @@ class ModuleRoute extends ModularRoute {
 
   /// Guards que protegem todas as rotas deste módulo, avaliados após o registro
   /// dos binds e em curto-circuito ("primeiro que barrar vence"). Veja
-  /// [ModularGuard].
-  final List<ModularGuard> guards;
+  /// [RouteGuard].
+  final List<RouteGuard> guards;
 
   ModuleRoute(
     this.path, {

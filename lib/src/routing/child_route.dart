@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
 import 'package:go_transitions/go_transitions.dart';
 
 import 'i_modular_route.dart';
@@ -15,8 +15,8 @@ class ChildRoute extends ModularRoute {
   final GlobalKey<NavigatorState>? parentNavigatorKey;
 
   /// Guards que protegem esta rota, avaliados em curto-circuito ("primeiro que
-  /// barrar vence"). Veja [ModularGuard].
-  final List<ModularGuard> guards;
+  /// barrar vence"). Veja [RouteGuard].
+  final List<RouteGuard> guards;
 
   @Deprecated(guardsRedirectDeprecation)
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;

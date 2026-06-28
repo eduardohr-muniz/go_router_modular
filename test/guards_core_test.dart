@@ -5,11 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/routing/guards/guard_fn.dart';
 import 'package:go_router_modular/src/routing/guards/guard_resolver.dart';
-import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
 
 /// Guard síncrono que sempre devolve [target] (use `null` para liberar) e
 /// registra seu [label] em [evaluations] ao ser avaliado.
-class _FixedGuard extends ModularGuard {
+class _FixedGuard extends RouteGuard {
   _FixedGuard.named(this.target, this.evaluations, this.label);
   final String? target;
   final List<String> evaluations;
@@ -23,7 +23,7 @@ class _FixedGuard extends ModularGuard {
 }
 
 /// Guard assíncrono que resolve para [target] após um microtask.
-class _AsyncGuard extends ModularGuard {
+class _AsyncGuard extends RouteGuard {
   _AsyncGuard(this.target, this.evaluations, this.label);
   final String? target;
   final List<String> evaluations;
@@ -54,7 +54,7 @@ class _NullState implements GoRouterState {
 void main() {
   const BuildContext context = _NullContext();
 
-  group('ModularGuard / GuardFn', () {
+  group('RouteGuard / GuardFn', () {
     test('GuardFn delega exatamente para a função fornecida', () async {
       final guard = GuardFn((_, __) => '/login');
       expect(await guard.redirect(context, _state), '/login');
@@ -65,9 +65,9 @@ void main() {
       expect(await guard.redirect(context, _state), isNull);
     });
 
-    test('GuardFn é um ModularGuard (substituível na cadeia)', () {
+    test('GuardFn é um RouteGuard (substituível na cadeia)', () {
       final GuardFn guard = GuardFn((_, __) => null);
-      expect(guard, isA<ModularGuard>());
+      expect(guard, isA<RouteGuard>());
     });
   });
 

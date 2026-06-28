@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:go_transitions/go_transitions.dart';
 
 import 'package:go_router_modular/src/module/module.dart';
-import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
 import 'child_route.dart';
 import 'i_modular_route.dart';
 import 'module_route.dart';
@@ -78,8 +78,8 @@ class StatefulShellModularRoute extends ModularRoute {
   final bool notifyRootObserver;
 
   /// Guards que protegem o shell, avaliados antes da seleção de branch e em
-  /// curto-circuito ("primeiro que barrar vence"). Veja [ModularGuard].
-  final List<ModularGuard> guards;
+  /// curto-circuito ("primeiro que barrar vence"). Veja [RouteGuard].
+  final List<RouteGuard> guards;
 
   @Deprecated(guardsRedirectDeprecation)
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;

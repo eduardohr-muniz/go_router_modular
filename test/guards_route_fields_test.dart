@@ -86,8 +86,8 @@ void main() {
       expect(semGuards.guards, isEmpty);
     });
 
-    test('guard concreto é um ModularGuard', () {
-      expect(GuardFn((_, __) => null), isA<ModularGuard>());
+    test('guard concreto é um RouteGuard', () {
+      expect(GuardFn((_, __) => null), isA<RouteGuard>());
     });
   });
 }

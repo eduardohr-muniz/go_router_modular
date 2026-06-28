@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/routing/guards/guard_fn.dart';
-import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
 
-/// Reduz uma lista de [ModularGuard] (mais um `redirect` legado opcional) a uma
+/// Reduz uma lista de [RouteGuard] (mais um `redirect` legado opcional) a uma
 /// única função de `redirect` do go_router, com resolução em curto-circuito:
 /// "primeiro que barrar vence".
 ///
@@ -16,11 +16,11 @@ import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
 /// não receba um `redirect` desnecessário.
 FutureOr<String?> Function(BuildContext context, GoRouterState state)?
     resolveGuards(
-  List<ModularGuard> guards, {
+  List<RouteGuard> guards, {
   FutureOr<String?> Function(BuildContext context, GoRouterState state)?
       legacyRedirect,
 }) {
-  final chain = <ModularGuard>[
+  final chain = <RouteGuard>[
     ...guards,
     if (legacyRedirect != null) GuardFn(legacyRedirect),
   ];
@@ -31,7 +31,7 @@ FutureOr<String?> Function(BuildContext context, GoRouterState state)?
 }
 
 Future<String?> _runChain(
-  List<ModularGuard> chain,
+  List<RouteGuard> chain,
   BuildContext context,
   GoRouterState state,
 ) async {

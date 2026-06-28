@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
 
-/// Adapta uma função `redirect` para um [ModularGuard].
+/// Adapta uma função `redirect` para um [RouteGuard].
 ///
 /// Útil quando você não quer criar uma classe dedicada para uma regra simples:
 /// ```dart
@@ -17,7 +17,7 @@ import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
 ///
 /// Também é a ponte usada internamente para compor o parâmetro `redirect`
 /// (deprecado) das rotas como o último elo da cadeia de guards.
-class GuardFn extends ModularGuard {
+class GuardFn extends RouteGuard {
   /// Função delegada que decide o destino da navegação.
   final FutureOr<String?> Function(BuildContext context, GoRouterState state) callback;
 

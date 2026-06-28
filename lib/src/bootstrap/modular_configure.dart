@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/di/bind.dart';
 import 'package:go_router_modular/src/routing/guards/guard_resolver.dart';
-import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
 import 'package:go_router_modular/src/routing/modular_router_params.dart';
 import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
 import 'package:go_router_modular/src/di/injection_manager.dart';
@@ -189,7 +189,7 @@ class Modular {
   ///   - `onException`: Callback to handle exceptions during routing.
   ///   - `errorPageBuilder`: Builder for error pages.
   ///   - `errorBuilder`: Builder for error widgets.
-  ///   - `guards`: Global [ModularGuard] list applied to every navigation,
+  ///   - `guards`: Global [RouteGuard] list applied to every navigation,
   ///     evaluated in short-circuit order ("first that blocks wins").
   ///   - `redirect`: **Deprecated** — use `guards`. Dynamic redirection function.
   ///   - `refreshListenable`: Listenable to trigger router refreshes.
@@ -224,7 +224,7 @@ class Modular {
     void Function(BuildContext, GoRouterState, GoRouter)? onException,
     Page<dynamic> Function(BuildContext, GoRouterState)? errorPageBuilder,
     Widget Function(BuildContext, GoRouterState)? errorBuilder,
-    List<ModularGuard> guards = const [],
+    List<RouteGuard> guards = const [],
     @Deprecated(guardsRedirectDeprecation) FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
     Listenable? refreshListenable,
     int redirectLimit = 5,
