@@ -18,6 +18,8 @@ export 'src/routing/module_route.dart';
 export 'src/routing/shell_modular_route.dart';
 export 'src/routing/stateful_shell_modular_route.dart';
 export 'src/routing/stateful_shell_branch_transitions.dart';
+export 'src/routing/guards/modular_guard.dart';
+export 'src/routing/guards/guard_fn.dart';
 export 'src/ui/context_extension.dart';
 export 'src/ui/route_extension.dart';
 

@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/routing/child_route.dart';
+import 'package:go_router_modular/src/routing/guards/guard_resolver.dart';
 import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
 import 'package:go_router_modular/src/routing/path/route_path_normalizer.dart';
 import 'package:go_router_modular/src/routing/transitions/route_transition_factory.dart';
@@ -12,6 +13,12 @@ class ChildRouteBuilder {
   const ChildRouteBuilder();
 
   GoRoute build({required ChildRoute childRoute, required bool topLevel}) {
+    final redirect = resolveGuards(
+      childRoute.guards,
+      // ignore: deprecated_member_use_from_same_package
+      legacyRedirect: childRoute.redirect,
+    );
+
     if (childRoute.pageBuilder != null) {
       return GoRoute(
         path: RoutePathNormalizer.normalizePath(
@@ -19,7 +26,7 @@ class ChildRouteBuilder {
         name: childRoute.name,
         pageBuilder: childRoute.pageBuilder,
         parentNavigatorKey: childRoute.parentNavigatorKey,
-        redirect: childRoute.redirect,
+        redirect: redirect,
         onExit: childRoute.onExit,
       );
     }
@@ -35,7 +42,7 @@ class ChildRouteBuilder {
           builder: (_) => childRoute.child(context, state),
         ),
         parentNavigatorKey: childRoute.parentNavigatorKey,
-        redirect: childRoute.redirect,
+        redirect: redirect,
         topLevel: topLevel,
         transitionDuration: childRoute.transitionDuration,
         onExit: childRoute.onExit,
@@ -50,7 +57,7 @@ class ChildRouteBuilder {
         builder: (_) => childRoute.child(context, state),
       ),
       parentNavigatorKey: childRoute.parentNavigatorKey,
-      redirect: childRoute.redirect,
+      redirect: redirect,
       onExit: childRoute.onExit,
     );
   }

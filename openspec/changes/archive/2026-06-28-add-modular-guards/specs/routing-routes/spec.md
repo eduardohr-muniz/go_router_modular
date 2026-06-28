@@ -1,21 +1,4 @@
-# Tipos de Rota e Construção
-
-## Purpose
-
-Define os tipos de rota modular e sua conversão para o go_router (ChildRoute, ModuleRoute, ShellModularRoute, StatefulShellModularRoute e branches), a construção pelo ModularRouteBuilder e a normalização de paths.
-
-## Requirements
-
-### Requirement: Abstração de rota modular como marcador polimórfico
-
-O sistema SHALL definir `ModularRoute` como tipo base abstrato de todos os tipos de rota modular, permitindo que o construtor de rotas selecione cada tipo por polimorfismo (`whereType<ChildRoute>()`, `whereType<ModuleRoute>()`, etc.). Adicionar um novo tipo de rota MUST ser possível criando uma nova subclasse e seu método de construção, sem alterar o tratamento dos tipos existentes.
-
-Arquivos de referência: `lib/src/routing/i_modular_route.dart`, `lib/src/routing/route_builder.dart`.
-
-#### Scenario: Construtor seleciona rotas por tipo
-
-- **WHEN** um módulo expõe uma lista heterogênea de `ModularRoute`
-- **THEN** o construtor de rotas processa cada tipo (`ChildRoute`, `ModuleRoute`, `ShellModularRoute`, `StatefulShellModularRoute`) pelo seu próprio caminho de conversão
+## MODIFIED Requirements
 
 ### Requirement: ChildRoute mapeia para GoRoute folha
 
@@ -111,35 +94,3 @@ Arquivos de referência: `lib/src/routing/stateful_shell_modular_route.dart`, `l
 
 - **WHEN** um `StatefulShellModularRoute` declara `guards: [AuthGuard()]` e `AuthGuard` retorna `'/login'`
 - **THEN** a navegação é redirecionada para `'/login'` sem aplicar o redirect interno de "ir para a primeira branch"
-
-### Requirement: Construção de rotas pelo ModularRouteBuilder
-
-O sistema SHALL construir todas as rotas de um módulo via `ModularRouteBuilder.buildRoutes`, agregando, nesta ordem, as `ChildRoute`, as `ModuleRoute`, as `ShellModularRoute` e as `StatefulShellModularRoute` do módulo. O builder MUST ser o único ponto que traduz tipos modulares em `RouteBase` do `go_router`.
-
-Arquivos de referência: `lib/src/routing/route_builder.dart`, `lib/src/core/module/module.dart`.
-
-#### Scenario: buildRoutes agrega todos os tipos de rota do módulo
-
-- **WHEN** um módulo declara rotas de tipos variados e `buildRoutes` é chamado
-- **THEN** o resultado é uma lista de `RouteBase` contendo a conversão de cada tipo de rota declarado
-
-### Requirement: Normalização de paths entre top-level e aninhado
-
-O sistema SHALL normalizar os paths das rotas de forma consistente: no nível top-level o path mantém a barra inicial; em rotas aninhadas a barra inicial é removida (exceto para parâmetros iniciados por `/:`). Barras duplicadas MUST ser compactadas e a barra final removida, exceto para a raiz `/`.
-
-Arquivos de referência: `lib/src/routing/route_builder.dart`.
-
-#### Scenario: Path aninhado perde a barra inicial
-
-- **WHEN** uma rota aninhada declara o path `/home`
-- **THEN** o path normalizado usado no `GoRoute` filho é `home`
-
-#### Scenario: Path top-level mantém a barra inicial
-
-- **WHEN** uma rota top-level declara o path `/home`
-- **THEN** o path normalizado permanece `/home`
-
-#### Scenario: Barras duplicadas são compactadas
-
-- **WHEN** a composição de paths gera `//home///sub`
-- **THEN** o path normalizado compacta as barras repetidas em uma única

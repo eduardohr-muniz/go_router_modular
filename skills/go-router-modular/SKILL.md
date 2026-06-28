@@ -298,6 +298,40 @@ but prefer the pattern above — async modules delay route registration and the 
 Reach for async `binds` only when an awaited resource genuinely cannot be hoisted into
 `main()`, and keep the awaited work minimal.
 
+## Route guards — protect routes with `ModularGuard`
+
+To guard a route, pass a `guards: [...]` list — **not** the deprecated `redirect`.
+A guard is a reusable, named unit of protection (the `redirect` encapsulated):
+
+```dart
+class AuthGuard extends ModularGuard {
+  @override
+  FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
+    final auth = Modular.get<AuthService>(); // module binds already registered
+    if (auth.isLogged) return null;          // null → allow
+    return '/login?from=${state.uri.path}';  // path → redirect
+  }
+}
+```
+
+```dart
+ChildRoute('/admin', guards: [AuthGuard(), RoleGuard('admin')], child: ...)
+```
+
+Rules:
+- `guards` is available on `ChildRoute`, `ModuleRoute`, `ShellModularRoute`, and
+  `StatefulShellModularRoute`. On `ModuleRoute` it protects **all** the module's routes.
+- Guards run with short-circuit semantics — first guard that returns a path wins; if all
+  return `null`, navigation proceeds. The route tree resolves parent→child top-down, so a
+  `ModuleRoute` guard runs before its children's guards automatically.
+- The guard reads DI via `Modular.get<T>()` (binds are registered before the guard runs)
+  and navigation data via `state` (`state.uri`, `state.pathParameters`, `state.extra`).
+- For a one-off rule without a class, use `GuardFn((context, state) => ...)`.
+- **Do not** use the `redirect:` parameter — it is `@Deprecated` (removed in v6.0.0). If both
+  are present, the order is `[...guards, GuardFn(redirect)]`.
+
+See `nextra_docs/content/en/routes/guards.mdx` for the full reference.
+
 ## Shell routes — specific cases only
 
 Shell is **not** the default. Plain `ChildRoute`/`ModuleRoute` cover most apps. Reach for a

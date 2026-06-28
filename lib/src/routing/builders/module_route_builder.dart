@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_router_modular/src/module/module.dart';
 import 'package:go_router_modular/src/routing/child_route.dart';
+import 'package:go_router_modular/src/routing/guards/guard_resolver.dart';
 import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
 import 'package:go_router_modular/src/routing/module_route.dart';
 import 'package:go_router_modular/src/routing/path/route_path_normalizer.dart';
@@ -60,7 +61,7 @@ class ModuleRouteBuilder {
             context,
             state,
             module: module.module,
-            redirect: null,
+            redirect: resolveGuards(module.guards),
           );
           if (result != null) return result;
 
@@ -90,7 +91,7 @@ class ModuleRouteBuilder {
         routes: buildNested(module.module, module.path),
         redirect: (context, state) => lifecycle.redirectAndInjectBinds(
             context, state,
-            module: module.module, redirect: null),
+            module: module.module, redirect: resolveGuards(module.guards)),
       );
     }
 
@@ -109,6 +110,15 @@ class ModuleRouteBuilder {
     final childRoutes = buildNested(module.module, module.path);
     final transition = nonNullChildRoute.transition ?? modularDefaultTransition;
 
+    // O GoRoute regular do módulo é a própria rota índice: aplica os guards do
+    // módulo (que protegem todas as rotas) seguidos dos guards e do redirect
+    // legado da rota índice. Tudo é avaliado após o registro dos binds.
+    final indexRedirect = resolveGuards(
+      [...module.guards, ...nonNullChildRoute.guards],
+      // ignore: deprecated_member_use_from_same_package
+      legacyRedirect: nonNullChildRoute.redirect,
+    );
+
     if (transition != null) {
       final route = RouteTransitionFactory.buildGoRouteWithTransition(
         path: fullPath,
@@ -118,7 +128,7 @@ class ModuleRouteBuilder {
         parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
         redirect: (context, state) => lifecycle.redirectAndInjectBinds(
             context, state,
-            module: module.module, redirect: nonNullChildRoute.redirect),
+            module: module.module, redirect: indexRedirect),
         topLevel: topLevel,
         transitionDuration: nonNullChildRoute.transitionDuration,
         onExit: nonNullChildRoute.onExit,
@@ -145,7 +155,7 @@ class ModuleRouteBuilder {
         context,
         state,
         module: module.module,
-        redirect: nonNullChildRoute.redirect,
+        redirect: indexRedirect,
       ),
       routes: childRoutes.isNotEmpty ? childRoutes : const [],
       onExit: nonNullChildRoute.onExit,

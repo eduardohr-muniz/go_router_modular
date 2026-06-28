@@ -1,0 +1,153 @@
+---
+title: Guards
+---
+
+import { Callout } from 'nextra/components'
+
+# Guards
+
+Guards protect routes: they intercept navigation and decide whether it proceeds
+or gets bounced — for example, sending an unauthenticated user to a login screen.
+A guard is a `go_router` redirect encapsulated and named: return `null` to
+proceed, or return a path `String` to redirect.
+
+The recommended way to protect a route is a `guards: [...]` list — both per-route
+and globally, on `Modular.configure`.
+
+## Global guards
+
+Pass a `guards` list to `Modular.configure`. They run for every navigation, with
+short-circuit semantics, before any per-route guards:
+
+```dart filename="lib/main.dart"
+class AuthGuard extends ModularGuard {
+  @override
+  FutureOr<String?> redirect(BuildContext context, GoRouterState state) async {
+    final isLoggedIn = await AuthService.instance.hasSession();
+    final goingToLogin = state.matchedLocation == '/login';
+
+    if (!isLoggedIn && !goingToLogin) return '/login';
+    if (isLoggedIn && goingToLogin) return '/';
+    return null; // proceed
+  }
+}
+
+await Modular.configure(
+  appModule: AppModule(),
+  initialRoute: '/',
+  guards: [AuthGuard()],
+);
+```
+
+<Callout type="warning">
+  The `redirect` parameter on `Modular.configure` is **deprecated** and will be
+  removed in v6.0.0. Migrate to `guards`. If you declare both, the effective
+  order is `[...guards, GuardFn(redirect)]`.
+</Callout>
+
+## Per-route guards (recommended)
+
+Instead of a loose `redirect` function per route, prefer **guards**: reusable,
+composable units of protection. A guard is the `redirect` encapsulated and
+named — declare a `extends ModularGuard` class once and reuse it across as many
+routes as you need.
+
+Pass a `guards: [...]` list on the route. They run with short-circuit semantics
+("first that blocks wins"): the first guard returning a path redirects; if all
+return `null`, navigation proceeds.
+
+```dart filename="lib/src/modules/admin/guards/auth_guard.dart"
+class AuthGuard extends ModularGuard {
+  @override
+  FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
+    final auth = Modular.get<AuthService>();
+    if (auth.isLogged) return null; // allow
+    return '/login?from=${state.uri.path}';
+  }
+}
+
+class RoleGuard extends ModularGuard {
+  RoleGuard(this.requiredRole);
+  final String requiredRole;
+
+  @override
+  FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
+    final user = Modular.get<UserService>().current;
+    return user.hasRole(requiredRole) ? null : '/';
+  }
+}
+```
+
+```dart filename="lib/src/modules/admin/admin_module.dart"
+ChildRoute(
+  '/admin',
+  guards: [AuthGuard(), RoleGuard('admin')],
+  child: (context, state) => const AdminPage(),
+)
+```
+
+`guards` is available on `ChildRoute`, `ModuleRoute`, `ShellModularRoute`, and
+`StatefulShellModularRoute`. On `ModuleRoute`, the guards protect **all** of the
+module's routes.
+
+The guard receives `context` and `state` — the module's binds are already
+registered when it runs, so `Modular.get<T>()` resolves normally; and `state`
+gives access to `state.uri`, `state.pathParameters`, `state.uri.queryParameters`,
+and `state.extra`.
+
+For a simple rule without creating a class, use `GuardFn`:
+
+```dart
+ChildRoute(
+  '/beta',
+  guards: [GuardFn((context, state) {
+    return Modular.get<FeatureFlags>().betaEnabled ? null : '/';
+  })],
+  child: (context, state) => const BetaPage(),
+)
+```
+
+<Callout type="info">
+  You don't need a guard to register a module's binds. When you enter a
+  `ModuleRoute`, its dependencies are registered automatically and the
+  [loader](/en/routes/loader-system) covers the wait.
+</Callout>
+
+## Per-route `redirect` (deprecated)
+
+<Callout type="warning">
+  The `redirect` parameter on `ChildRoute`, `ShellModularRoute`, and
+  `StatefulShellModularRoute` is **deprecated** and will be removed in v6.0.0.
+  Migrate to `guards: [GuardFn(...)]`. During the transition, if you declare both
+  `guards` and `redirect`, the effective order is `[...guards, GuardFn(redirect)]`
+  — guards run first and the legacy `redirect` is the last link.
+</Callout>
+
+```dart filename="old style — avoid"
+ChildRoute(
+  '/admin',
+  child: (context, state) => const AdminPage(),
+  redirect: (context, state) {
+    final user = Modular.get<UserService>();
+    return user.isAdmin ? null : '/';
+  },
+)
+```
+
+## Avoiding loops
+
+Always redirect to absolute paths, and make sure your conditions can't bounce
+back and forth. A common mistake is redirecting to `/login` without exempting the
+`/login` route itself, which creates an infinite loop.
+
+<Callout type="warning">
+  `go_router` aborts after `redirectLimit` consecutive redirects (default `5`,
+  configurable in `Modular.configure`). If you hit that limit, your conditions
+  are looping — re-check that every redirect target eventually returns `null`.
+</Callout>
+
+## Next steps
+
+- [Loader System](/en/routes/loader-system)
+- [Routes & Modules](/en/routes/routes-system)
+- [Dependency Injection](/en/dependency-injection)

@@ -4,6 +4,7 @@ import 'package:go_router_modular/src/module/module.dart';
 import 'package:go_router_modular/src/routing/builders/child_route_builder.dart';
 import 'package:go_router_modular/src/routing/builders/module_route_builder.dart';
 import 'package:go_router_modular/src/routing/child_route.dart';
+import 'package:go_router_modular/src/routing/guards/guard_resolver.dart';
 import 'package:go_router_modular/src/routing/i_modular_route.dart';
 import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
 import 'package:go_router_modular/src/routing/module_route.dart';
@@ -57,7 +58,11 @@ class ModularShellRouteBuilder {
             ? (context, state, child) =>
                 shellRoute.pageBuilder!(context, state, child)
             : null,
-        redirect: shellRoute.redirect,
+        redirect: resolveGuards(
+          shellRoute.guards,
+          // ignore: deprecated_member_use_from_same_package
+          legacyRedirect: shellRoute.redirect,
+        ),
         navigatorKey: shellRoute.navigatorKey,
         observers: shellRoute.observers,
         parentNavigatorKey: shellRoute.parentNavigatorKey,
@@ -119,6 +124,12 @@ class ModularShellRouteBuilder {
             child: effectiveBuilder(context, state, navigationShell),
           );
 
+      final statefulRedirect = resolveGuards(
+        statefulRoute.guards,
+        // ignore: deprecated_member_use_from_same_package
+        legacyRedirect: statefulRoute.redirect,
+      );
+
       final navigatorContainer = _resolvedStatefulShellContainer(statefulRoute);
       if (navigatorContainer != null) {
         return StatefulShellRoute(
@@ -126,7 +137,7 @@ class ModularShellRouteBuilder {
           notifyRootObserver: statefulRoute.notifyRootObserver,
           navigatorContainerBuilder: navigatorContainer,
           builder: shellChild,
-          redirect: statefulRoute.redirect,
+          redirect: statefulRedirect,
           parentNavigatorKey: statefulRoute.parentNavigatorKey,
           restorationScopeId: statefulRoute.restorationScopeId,
           key: statefulRoute.shellKey,
@@ -137,7 +148,7 @@ class ModularShellRouteBuilder {
         branches: branches,
         notifyRootObserver: statefulRoute.notifyRootObserver,
         builder: shellChild,
-        redirect: statefulRoute.redirect,
+        redirect: statefulRedirect,
         parentNavigatorKey: statefulRoute.parentNavigatorKey,
         restorationScopeId: statefulRoute.restorationScopeId,
         key: statefulRoute.shellKey,

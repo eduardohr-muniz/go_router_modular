@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:go_transitions/go_transitions.dart';
 
 import 'package:go_router_modular/src/module/module.dart';
+import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
 import 'child_route.dart';
 import 'i_modular_route.dart';
 import 'module_route.dart';
@@ -77,6 +78,13 @@ class StatefulShellModularRoute extends ModularRoute {
 
   /// Encaminhado para [StatefulShellRoute]: notificar o observer raiz da troca de páginas.
   final bool notifyRootObserver;
+
+  /// Guards que protegem o shell, avaliados antes da seleção de branch e em
+  /// curto-circuito ("primeiro que barrar vence"). Veja [ModularGuard].
+  final List<ModularGuard> guards;
+
+  @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
+      'Will be removed in v6.0.0')
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)?
       redirect;
   final GlobalKey<NavigatorState>? parentNavigatorKey;
@@ -92,6 +100,9 @@ class StatefulShellModularRoute extends ModularRoute {
     this.reverseTransitionDuration,
     this.navigatorContainerBuilder,
     this.notifyRootObserver = true,
+    this.guards = const [],
+    @Deprecated('Use guards: [GuardFn(...)] instead of redirect. '
+        'Will be removed in v6.0.0')
     this.redirect,
     this.parentNavigatorKey,
     this.restorationScopeId,

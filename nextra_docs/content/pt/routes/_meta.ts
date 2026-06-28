@@ -5,5 +5,5 @@ export default {
   'best-practices': 'Boas Práticas',
   transitions: 'Transições de Página',
   'loader-system': 'Sistema de Loader',
-  redirects: 'Redirecionamentos'
+  guards: 'Guards'
 }
