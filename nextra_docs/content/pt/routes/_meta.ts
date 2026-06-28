@@ -2,8 +2,8 @@ export default {
   'routes-system': 'Rotas e Módulos',
   'shell-route': 'Shell Routes',
   navigation: 'Navegação',
-  'best-practices': 'Boas Práticas',
+  guards: 'Guards',
   transitions: 'Transições de Página',
-  'loader-system': 'Sistema de Loader',
-  guards: 'Guards'
+  'best-practices': 'Boas Práticas',
+  'loader-system': 'Sistema de Loader'
 }
