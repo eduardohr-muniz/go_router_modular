@@ -1,16 +1,16 @@
-class GoRouterModularConfigureAssert {
-  GoRouterModularConfigureAssert._();
+class ModularConfigureAssert {
+  ModularConfigureAssert._();
 
-  static String goRouterModularConfigureAssert() {
+  static String configureAssert() {
     return '''
-Add GoRouterModular.configure in main.dart and AppWidget app_widget.dart
+Add Modular.configure in main.dart and AppWidget app_widget.dart
 
 Example of correct setup in main.dart:
 ```dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  await GoRouterModular.configure(
+  await Modular.configure(
     appModule: AppModule(),
     initialRoute: '/',
   );
@@ -40,7 +40,7 @@ class AppWidget extends StatelessWidget {
 }
 ```
 
-Make sure to call GoRouterModular.configure() before accessing routerConfig.
+Make sure to call Modular.configure() before accessing routerConfig.
 ''';
   }
 }

@@ -159,8 +159,7 @@ List<int> _benchmark(int iterations, void Function() fn) {
   return times;
 }
 
-int _p(List<int> sorted, double pct) =>
-    sorted[(sorted.length * pct / 100).clamp(0, sorted.length - 1).round()];
+int _p(List<int> sorted, double pct) => sorted[(sorted.length * pct / 100).clamp(0, sorted.length - 1).round()];
 
 void _printStats(String label, List<int> times, {int? instances}) {
   final min = times.first;
@@ -230,8 +229,7 @@ void main() {
 
       expect(binds.length, 100);
       // registerBatch puro (só indexação) deve ser sub-1ms para 100 binds
-      expect(swReg.elapsedMilliseconds, lessThan(10),
-          reason: 'registerBatch de 100 binds deve levar < 10ms');
+      expect(swReg.elapsedMilliseconds, lessThan(10), reason: 'registerBatch de 100 binds deve levar < 10ms');
     });
 
     // Fluxo legado: register() invoca o factory uma vez para descoberta de
@@ -256,8 +254,7 @@ void main() {
 
       expect(binds.length, 100);
       // Legado invoca factory para descobrir tipo → mais lento, toleramos 100ms
-      expect(sw.elapsedMilliseconds, lessThan(100),
-          reason: 'fluxo legado de 100 binds deve levar < 100ms');
+      expect(sw.elapsedMilliseconds, lessThan(100), reason: 'fluxo legado de 100 binds deve levar < 100ms');
     });
   });
 
@@ -275,15 +272,12 @@ void main() {
       _resetCounters();
 
       final times = _benchmark(10000, () => Bind.get<RepoImpl>());
-      _printStats('singleton get<RepoImpl> x10k', times,
-          instances: RepoImpl.constructed);
+      _printStats('singleton get<RepoImpl> x10k', times, instances: RepoImpl.constructed);
 
       // Singleton: zero re-invocações após cache
-      expect(RepoImpl.constructed, 0,
-          reason: 'singleton não deve ser reinstanciado após cache');
+      expect(RepoImpl.constructed, 0, reason: 'singleton não deve ser reinstanciado após cache');
       // p99 < 100μs = lookup quente deve ser sub-100μs
-      expect(_p(times, 99), lessThan(100),
-          reason: 'p99 do lookup de singleton deve ser < 100μs');
+      expect(_p(times, 99), lessThan(100), reason: 'p99 do lookup de singleton deve ser < 100μs');
     });
 
     test('factory: 1 000 chamadas get<ServiceImpl>()', () {
@@ -293,8 +287,7 @@ void main() {
       _resetCounters();
 
       final times = _benchmark(1000, () => Bind.get<ServiceImpl>());
-      _printStats('factory get<ServiceImpl> x1k', times,
-          instances: ServiceImpl.constructed);
+      _printStats('factory get<ServiceImpl> x1k', times, instances: ServiceImpl.constructed);
 
       // Factory cria nova instância a cada chamada de lookup
       expect(ServiceImpl.constructed, 1000);
@@ -323,13 +316,10 @@ void main() {
 
       // Chamadas subsequentes: Strategy 2 (lookup direto no cache)
       final times = _benchmark(10000, () => Bind.get<IRepo>());
-      _printStats('get<IRepo> cached x10k (Strategy 2)', times,
-          instances: RepoImpl.constructed);
+      _printStats('get<IRepo> cached x10k (Strategy 2)', times, instances: RepoImpl.constructed);
 
-      expect(RepoImpl.constructed, 0,
-          reason: 'singleton em cache: zero re-invocações');
-      expect(_p(times, 99), lessThan(100),
-          reason: 'p99 do lookup cacheado por interface deve ser < 100μs');
+      expect(RepoImpl.constructed, 0, reason: 'singleton em cache: zero re-invocações');
+      expect(_p(times, 99), lessThan(100), reason: 'p99 do lookup cacheado por interface deve ser < 100μs');
 
       // Identidade do singleton preservada
       final a = Bind.get<IRepo>();
@@ -352,8 +342,7 @@ void main() {
       final times = _benchmark(1000, () => Bind.get<IRepo>());
       _printStats('factory get<IRepo> x1k', times, instances: RepoImpl.constructed);
 
-      expect(RepoImpl.constructed, 1000,
-          reason: 'factory: nova instância por chamada de lookup');
+      expect(RepoImpl.constructed, 1000, reason: 'factory: nova instância por chamada de lookup');
     });
 
     test('múltiplas interfaces: MultiImpl resolve IRepo e IService', () {
@@ -362,14 +351,11 @@ void main() {
       final times1 = _benchmark(1000, () => Bind.get<IRepo>());
       final times2 = _benchmark(1000, () => Bind.get<IService>());
 
-      _printStats('get<IRepo> via MultiImpl x1k', times1,
-          instances: MultiImpl.constructed);
+      _printStats('get<IRepo> via MultiImpl x1k', times1, instances: MultiImpl.constructed);
       _printStats('get<IService> via MultiImpl x1k', times2);
 
-      expect(MultiImpl.constructed, 1,
-          reason: 'singleton multi-interface: construído uma única vez');
-      expect(identical(Bind.get<IRepo>(), Bind.get<IService>()), isTrue,
-          reason: 'mesma instância para ambas as interfaces');
+      expect(MultiImpl.constructed, 1, reason: 'singleton multi-interface: construído uma única vez');
+      expect(identical(Bind.get<IRepo>(), Bind.get<IService>()), isTrue, reason: 'mesma instância para ambas as interfaces');
     });
   });
 
@@ -399,7 +385,7 @@ void main() {
       final times = _benchmark(10000, () {
         try {
           Bind.get<IUnrelated>();
-        } on GoRouterModularException {
+        } on ModularException {
           notFoundCount++;
         }
       });
@@ -411,12 +397,9 @@ void main() {
       print('  CacheImpl.constructed: ${CacheImpl.constructed}');
 
       expect(notFoundCount, 10000, reason: 'sempre deve lançar NotFound');
-      expect(RepoImpl.constructed, 0,
-          reason: 'ZERO phantom instances de RepoImpl durante lookup');
-      expect(ServiceImpl.constructed, 0,
-          reason: 'ZERO phantom instances de ServiceImpl durante lookup');
-      expect(CacheImpl.constructed, 0,
-          reason: 'ZERO phantom instances de CacheImpl durante lookup');
+      expect(RepoImpl.constructed, 0, reason: 'ZERO phantom instances de RepoImpl durante lookup');
+      expect(ServiceImpl.constructed, 0, reason: 'ZERO phantom instances de ServiceImpl durante lookup');
+      expect(CacheImpl.constructed, 0, reason: 'ZERO phantom instances de CacheImpl durante lookup');
     });
 
     test('custo de um lookup de tipo não relacionado é sub-linear no nº de binds', () {
@@ -445,7 +428,7 @@ void main() {
       final times = _benchmark(1000, () {
         try {
           Bind.get<IUnrelated>();
-        } on GoRouterModularException {
+        } on ModularException {
           notFoundCount++;
         }
       });
@@ -465,8 +448,7 @@ void main() {
       expect(ScaleE.constructed, 0);
 
       // p99 < 1ms mesmo com 10 binds no mapa
-      expect(_p(times, 99), lessThan(1000),
-          reason: 'p99 de lookup não-relacionado com 10 binds deve ser < 1ms');
+      expect(_p(times, 99), lessThan(1000), reason: 'p99 de lookup não-relacionado com 10 binds deve ser < 1ms');
     });
   });
 
@@ -516,7 +498,8 @@ void main() {
       swFirst.stop();
 
       print('  Resolução inicial (10 tipos, 1ª vez): ${swFirst.elapsedMicroseconds}μs');
-      print('  Instâncias criadas: ${ScaleA.constructed + ScaleB.constructed + ScaleC.constructed + ScaleD.constructed + ScaleE.constructed + ScaleF.constructed + ScaleG.constructed + ScaleH.constructed + ScaleI.constructed + ScaleJ.constructed}');
+      print(
+          '  Instâncias criadas: ${ScaleA.constructed + ScaleB.constructed + ScaleC.constructed + ScaleD.constructed + ScaleE.constructed + ScaleF.constructed + ScaleG.constructed + ScaleH.constructed + ScaleI.constructed + ScaleJ.constructed}');
 
       // Resolução subsequente (cache quente)
       final swCache = Stopwatch()..start();
@@ -529,8 +512,7 @@ void main() {
       }
       swCache.stop();
       final perCall = swCache.elapsedMicroseconds / 5000;
-      print(
-          '  5 000 lookups cache quente: ${swCache.elapsedMicroseconds}μs (${perCall.toStringAsFixed(2)}μs/call)');
+      print('  5 000 lookups cache quente: ${swCache.elapsedMicroseconds}μs (${perCall.toStringAsFixed(2)}μs/call)');
 
       expect(a, isA<ScaleA>());
       expect(b, isA<ScaleB>());
@@ -561,8 +543,7 @@ void main() {
       _printStats('isCompatibleWith<IRepo> (positivo) x100k', timesPos);
 
       // Check negativo: RepoImpl is IUnrelated → false
-      final timesNeg =
-          _benchmark(100000, () => bind.isCompatibleWith<IUnrelated>());
+      final timesNeg = _benchmark(100000, () => bind.isCompatibleWith<IUnrelated>());
       _printStats('isCompatibleWith<IUnrelated> (negativo) x100k', timesNeg);
 
       // Verificações de corretude
@@ -573,8 +554,7 @@ void main() {
 
       // Custo deve ser sub-microsecond no p99 em JIT/AOT otimizado
       // Em flutter_test (VM não otimizada) toleramos até 10μs
-      expect(_p(timesPos, 99), lessThan(10),
-          reason: 'isCompatibleWith deve ser muito barato (< 10μs p99)');
+      expect(_p(timesPos, 99), lessThan(10), reason: 'isCompatibleWith deve ser muito barato (< 10μs p99)');
       expect(_p(timesNeg, 99), lessThan(10));
     });
   });
@@ -617,8 +597,7 @@ void main() {
     Bind.get<IRepo>();
     swIface1.stop();
     print('Lookup interface (1ª vez, Strategy 5): ${swIface1.elapsedMicroseconds}μs');
-    expect(RepoImpl.constructed, 0,
-        reason: 'singleton já construído; Strategy 5 usa cache');
+    expect(RepoImpl.constructed, 0, reason: 'singleton já construído; Strategy 5 usa cache');
 
     // Lookup por interface (cache → Strategy 2)
     final swIface2 = Stopwatch()..start();

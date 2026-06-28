@@ -9,7 +9,6 @@ import 'package:go_router_modular/src/di/bind_context_tracker.dart';
 import 'package:go_router_modular/src/shared/exception.dart';
 import 'package:go_router_modular/src/shared/setup.dart';
 
-
 /// Manages module lifecycle: registration, bind injection, and disposal.
 class InjectionManager {
   static InjectionManager? _instance;
@@ -29,7 +28,7 @@ class InjectionManager {
   /// mais de uma vez na pilha de navegação (ex.: A → B → A).
   final Map<Module, int> _referenceCount = Map<Module, int>.identity();
 
-  bool get _debugLog => SetupModular.instance.debugLogGoRouterModular;
+  bool get _debugLog => SetupModular.instance.debugLogModular;
 
   /// Defensive resolver for bind introspection (tracking, logging, validation).
   ///
@@ -250,11 +249,11 @@ class InjectionManager {
 
   /// Valida (commit-time) que cada dependência resolvida pelos binds de [module]
   /// durante o commit pertence ao seu conjunto visível (próprios + importados +
-  /// AppModule). Lança [GoRouterModularException] na violação.
+  /// AppModule). Lança [ModularException] na violação.
   void _validateModuleScope(Module module, List<BindIdentifier> resolvedDependencies) {
     for (final resolvedId in resolvedDependencies) {
       if (!_tracker.isVisible(resolvedId, module)) {
-        throw GoRouterModularException(
+        throw ModularException(
           '${module.runtimeType} resolveu ${resolvedId.type} que não declarou nem importou. '
           'Importe o módulo dono de ${resolvedId.type} ou injete ${resolvedId.type} em ${module.runtimeType}.',
         );

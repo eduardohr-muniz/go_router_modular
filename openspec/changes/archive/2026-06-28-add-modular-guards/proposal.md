@@ -7,12 +7,13 @@ Hoje a única forma de proteger uma rota é passar uma função `redirect` crua 
 - Introduz `ModularGuard`, classe abstrata com um único método `redirect(BuildContext, GoRouterState) -> FutureOr<String?>`. Retornar `null` = libera; retornar uma rota = redireciona.
 - Introduz `GuardFn`, adapter que embrulha uma função `redirect` em um `ModularGuard` (escape hatch para quem não quer criar classe, e ponte do `redirect` legado).
 - Adiciona o campo `guards: List<ModularGuard>` (default `const []`, portanto **não-breaking**) em `ChildRoute`, `ModuleRoute`, `ShellModularRoute` e `StatefulShellModularRoute`.
-- Adiciona o parâmetro `guards: List<ModularGuard>` (default `const []`) ao `GoRouterModular.configure`, como proteção **global** aplicada a toda navegação; o `redirect` global do `configure` vira `@Deprecated` e compõe como `[...guards, GuardFn(redirect)]`.
+- Adiciona o parâmetro `guards: List<ModularGuard>` (default `const []`) ao `Modular.configure`, como proteção **global** aplicada a toda navegação; o `redirect` global do `configure` vira `@Deprecated` e compõe como `[...guards, GuardFn(redirect)]`.
 - A lista de guards **colapsa numa única função `redirect`** (fold "primeiro não-nulo vence") entregue no mesmo slot `redirect:` do `GoRoute` que os builders já preenchem hoje. Nenhuma mudança no motor de navegação nem no ciclo de binds.
 - Marca o parâmetro `redirect` atual das rotas como **`@Deprecated`** (continua funcionando até a v6.0.0). Quando `guards` e `redirect` coexistem, a ordem efetiva é `[...guards, GuardFn(redirect)]` — o legado vira o último elo do fold.
 - Guards acessam o DI via `Modular.get` normalmente, pois os binds do módulo já estão registrados antes do guard rodar (a ordem `registra binds -> roda guard` já é a que existe hoje no `redirect`).
 
 Justificativa de engenharia:
+
 - **SRP / Single Responsibility**: cada guard tem um único motivo para mudar (uma regra de acesso), em vez de uma função-canivete por rota.
 - **Open/Closed**: novas regras de acesso entram como novas subclasses de `ModularGuard`, sem alterar os builders nem as rotas existentes.
 - **DRY / Clean Code**: um `AuthGuard` é declarado uma vez e reutilizado em todas as rotas, eliminando a duplicação de `if`-chains de redirect.
@@ -21,12 +22,14 @@ Justificativa de engenharia:
 ## Capabilities
 
 ### New Capabilities
+
 - `routing-guards`: define o contrato de `ModularGuard` e `GuardFn`, a resolução em curto-circuito de uma lista de guards numa única função redirect, a ordem de composição com o `redirect` legado e o acesso ao DI a partir de um guard.
 
 ### Modified Capabilities
+
 - `routing-routes`: os quatro tipos de rota (`ChildRoute`, `ModuleRoute`, `ShellModularRoute`, `StatefulShellModularRoute`) passam a aceitar `guards: List<ModularGuard>`; `ChildRoute`/`ShellModularRoute`/`StatefulShellModularRoute` têm seu `redirect` marcado como `@Deprecated`; `ModuleRoute` — que hoje não tem redirect — ganha `guards` plugado nos três ramos de construção (regular, shell e stateful shell).
 - `routing-lifecycle`: formaliza que os guards rodam **depois** do registro de binds do módulo (para que `Modular.get` funcione dentro do guard) e **antes** do redirect de "ir para a primeira branch" do stateful shell.
-- `routing-configuration`: `GoRouterModular.configure` passa a aceitar `guards` (proteção global); seu `redirect` vira `@Deprecated` e a função global entregue ao `GoRouter` é a composição `[...guards, GuardFn(redirect)]`.
+- `routing-configuration`: `Modular.configure` passa a aceitar `guards` (proteção global); seu `redirect` vira `@Deprecated` e a função global entregue ao `GoRouter` é a composição `[...guards, GuardFn(redirect)]`.
 - `public-api-surface`: o barril principal passa a exportar `ModularGuard` e `GuardFn`.
 
 ## Impact

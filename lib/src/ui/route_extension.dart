@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router_modular/src/bootstrap/go_router_modular_configure.dart';
+import 'package:go_router_modular/src/bootstrap/modular_configure.dart';
 import 'package:go_router_modular/src/ui/async_navigation_helper.dart';
 
 /// Extension to add functionalities to [BuildContext] for GoRouter.
@@ -15,9 +15,9 @@ extension GoRouterExtension on BuildContext {
   ///   final userId = context.getPathParam('userId');
   ///   print(userId);
   ///   ```
-  @Deprecated('Use GoRouterModular.pathParamOf(context, param) instead. Will be removed in a future major release.')
+  @Deprecated('Use Modular.pathParamOf(context, param) instead. Will be removed in a future major release.')
   String? getPathParam(String param) {
-    return GoRouterModular.pathParamOf(this, param);
+    return Modular.pathParamOf(this, param);
   }
 
   /// Returns the current route path.
@@ -28,9 +28,9 @@ extension GoRouterExtension on BuildContext {
   ///   final path = context.getPath;
   ///   print(path); // Prints the current path
   ///   ```
-  @Deprecated('Use GoRouterModular.currentPathOf(context) instead. Will be removed in a future major release.')
+  @Deprecated('Use Modular.currentPathOf(context) instead. Will be removed in a future major release.')
   String? get getPath {
-    return GoRouterModular.currentPathOf(this);
+    return Modular.currentPathOf(this);
   }
 
   /// Returns the current router state.
@@ -41,9 +41,9 @@ extension GoRouterExtension on BuildContext {
   ///   final state = context.state;
   ///   print(state.location); // Prints the current location
   ///   ```
-  @Deprecated('Use GoRouterModular.routerStateOf(context) instead. Will be removed in a future major release.')
+  @Deprecated('Use Modular.routerStateOf(context) instead. Will be removed in a future major release.')
   GoRouterState get state {
-    return GoRouterModular.routerStateOf(this);
+    return Modular.routerStateOf(this);
   }
 
   /// Navega para a rota [routeName] e retorna um [Future]
@@ -78,10 +78,10 @@ extension GoRouterExtension on BuildContext {
       this,
       routeName,
       navigate: (router) => router.goNamed(
-      routeName,
-      pathParameters: pathParameters,
-      queryParameters: queryParameters,
-      extra: extra,
+        routeName,
+        pathParameters: pathParameters,
+        queryParameters: queryParameters,
+        extra: extra,
       ),
       onComplete: onComplete,
     );
@@ -113,8 +113,8 @@ extension GoRouterExtension on BuildContext {
       this,
       routeName,
       navigate: (router) => router.go(
-      routeName,
-      extra: extra,
+        routeName,
+        extra: extra,
       ),
       onComplete: onComplete,
     );
@@ -144,8 +144,8 @@ extension GoRouterExtension on BuildContext {
       this,
       routeName,
       navigate: (router) => router.push(
-      routeName,
-      extra: extra,
+        routeName,
+        extra: extra,
       ),
       onComplete: onComplete,
     );
@@ -181,10 +181,10 @@ extension GoRouterExtension on BuildContext {
       this,
       routeName,
       navigate: (router) => router.pushNamed(
-      routeName,
-      pathParameters: pathParameters,
-      queryParameters: queryParameters,
-      extra: extra,
+        routeName,
+        pathParameters: pathParameters,
+        queryParameters: queryParameters,
+        extra: extra,
       ),
       onComplete: onComplete,
     );
@@ -214,8 +214,8 @@ extension GoRouterExtension on BuildContext {
       this,
       routeName,
       navigate: (router) => router.pushReplacement(
-      routeName,
-      extra: extra,
+        routeName,
+        extra: extra,
       ),
       onComplete: onComplete,
     );
@@ -251,10 +251,10 @@ extension GoRouterExtension on BuildContext {
       this,
       routeName,
       navigate: (router) => router.pushReplacementNamed(
-      routeName,
-      pathParameters: pathParameters,
-      queryParameters: queryParameters,
-      extra: extra,
+        routeName,
+        pathParameters: pathParameters,
+        queryParameters: queryParameters,
+        extra: extra,
       ),
       onComplete: onComplete,
     );
@@ -284,8 +284,8 @@ extension GoRouterExtension on BuildContext {
       this,
       routeName,
       navigate: (router) => router.replace(
-      routeName,
-      extra: extra,
+        routeName,
+        extra: extra,
       ),
       onComplete: onComplete,
     );
@@ -321,10 +321,10 @@ extension GoRouterExtension on BuildContext {
       this,
       routeName,
       navigate: (router) => router.replaceNamed(
-      routeName,
-      pathParameters: pathParameters,
-      queryParameters: queryParameters,
-      extra: extra,
+        routeName,
+        pathParameters: pathParameters,
+        queryParameters: queryParameters,
+        extra: extra,
       ),
       onComplete: onComplete,
     );

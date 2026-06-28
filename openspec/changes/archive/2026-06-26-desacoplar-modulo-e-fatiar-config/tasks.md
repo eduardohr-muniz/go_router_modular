@@ -1,7 +1,7 @@
 ## 1. Linha de base
 
 - [x] 1.1 Rodar `flutter analyze` e `flutter test` e registrar a linha de base verde
-- [x] 1.2 Capturar o conjunto de símbolos públicos exportados por `lib/go_router_modular.dart` (símbolos do god-config: Modular, GoRouterModular, modularNavigatorKey, ModularRouterConfigCopyWith, RouteWithCompleterService)
+- [x] 1.2 Capturar o conjunto de símbolos públicos exportados por `lib/go_router_modular.dart` (símbolos do god-config: Modular, Modular, modularNavigatorKey, ModularRouterConfigCopyWith, RouteWithCompleterService)
 - [x] 1.3 `RouteWithCompleterService` é exportado (via config) mas não usado fora do pacote → permanece exportado do novo arquivo. Decisões: arquivos novos em `core/config/`; guarda em nível de arquivo; Fase 4 (relocar marcador) dispensada (spec só exige module sem route_builder/injection_manager)
 
 ## 2. Fase 1 — Extrair responsabilidades do god-config
@@ -22,7 +22,7 @@
 ## 4. Fase 3 — Module como contrato puro
 
 - [x] 4.1 Remover `configureRoutes` de `core/module/module.dart` e seus imports de `routing`/`manager`
-- [x] 4.2 Mover a orquestração para `GoRouterModular.configure` (`registerAppModule(appModule)` + `ModularRouteBuilder(appModule).buildRoutes(topLevel: true)`)
+- [x] 4.2 Mover a orquestração para `Modular.configure` (`registerAppModule(appModule)` + `ModularRouteBuilder(appModule).buildRoutes(topLevel: true)`)
 - [x] 4.3 Substituir os 3 sites em `route_builder` (`submodulo.configureRoutes(...)`) por `ModularRouteBuilder(submodulo).buildRoutes(...)`
 - [x] 4.4 Confirmar que `module.dart` não importa `routing/route_builder` nem `core/manager/injection_manager`; `flutter analyze`
 

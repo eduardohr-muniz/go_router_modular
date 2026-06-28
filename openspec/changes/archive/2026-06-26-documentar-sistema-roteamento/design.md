@@ -11,7 +11,7 @@ Peças e responsabilidade única (Single Responsibility), com caminho de referê
 - `StatefulShellModularRoute` + `ModularBranch`/`ModuleBranch` (`stateful_shell_modular_route.dart`): shell com estado por branch → `StatefulShellRoute`.
 - `ModularRouteBuilder` (`route_builder.dart`): único tradutor de tipos modulares para `RouteBase`, normalização de paths e ponto de injeção do ciclo de vida.
 - `StatefulShellBranchTransitions` (`stateful_shell_branch_transitions.dart`): resolução e sincronização da animação entre branches.
-- `GoRouterModular` (`go_router_modular_configure.dart`): configuração singleton, snapshot imutável de parâmetros, `copyWith`/`copyRouterConfig`.
+- `Modular` (`go_router_modular_configure.dart`): configuração singleton, snapshot imutável de parâmetros, `copyWith`/`copyRouterConfig`.
 - `ParentWidgetObserver` (`parent_widget_observer.dart`): dispara o descarte do módulo no `dispose` do widget.
 - `OnceBuilder` (`once_builder.dart`): cacheia a closure de build para não reinstanciar factories no rebuild.
 - `ModularLoader` (`modular_loader.dart`) + `ModularApp.router` (`material_app_router.dart`): overlay de carregamento durante o registro e injeção do router.

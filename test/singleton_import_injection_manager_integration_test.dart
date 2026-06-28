@@ -163,7 +163,7 @@ void main() {
       SetupModel(
         debugLogEventBus: false,
         debugLogGoRouter: false,
-        debugLogGoRouterModular: false,
+        debugLogModular: false,
         autoDisposeEvents: true,
       ),
     );
@@ -201,13 +201,13 @@ void main() {
     );
 
     test(
-      'com debugLogGoRouterModular ligado — logging não pode reinstanciar singleton duplicado',
+      'com debugLogModular ligado — logging não pode reinstanciar singleton duplicado',
       () async {
         SetupModular.instance.setDebugModel(
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogGoRouterModular: true,
+            debugLogModular: true,
             autoDisposeEvents: true,
           ),
         );

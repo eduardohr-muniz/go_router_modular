@@ -3,19 +3,22 @@
 Após o passo C, o grafo real revelou dois acoplamentos estruturais:
 
 1. **Ciclo `module ⇄ routing`** — raiz única em `Module.configureRoutes()` (`core/module/module.dart:32-35`):
+
    ```dart
    List<RouteBase> configureRoutes({String modulePath = '', bool topLevel = false}) {
      InjectionManager.instance.registerAppModule(this);            // registro (DI)
      return ModularRouteBuilder(this).buildRoutes(modulePath: modulePath, topLevel: topLevel); // construção (routing)
    }
    ```
+
    Isso obriga `module.dart` a importar `routing/route_builder.dart` + `core/manager/injection_manager.dart`; e `routing/*` importa `module.dart` (`ModuleRoute` guarda `Module`). `configureRoutes` é chamado em 4 lugares, todos internos: `configure()` (top-level) e `route_builder` (3 sites, submódulos). Nenhum consumidor externo o chama — é de-facto interno.
 
-2. **God-config** `core/config/go_router_modular_configure.dart` (472 linhas) com 4 responsabilidades: façade `GoRouterModular`/`Modular`; composição `configure`/`copyRouterConfig`; `_ModularRouterParams` + extension `copyWith`; e `RouteWithCompleterService`. Mais o estado global `_defaultTransition`/`getDefaultTransition` e `modularNavigatorKey`.
+2. **God-config** `core/config/go_router_modular_configure.dart` (472 linhas) com 4 responsabilidades: façade `Modular`/`Modular`; composição `configure`/`copyRouterConfig`; `_ModularRouterParams` + extension `copyWith`; e `RouteWithCompleterService`. Mais o estado global `_defaultTransition`/`getDefaultTransition` e `modularNavigatorKey`.
 
 Achados do levantamento (validados por grep/leitura):
+
 - `i_modular_route.dart` (marcador `ModularRoute`) é **folha pura** (zero imports) — relocar é trivial.
-- `bind_registry` e `internal/setup` **não** usam o façade (os matches eram a substring `debugLogGoRouterModular`). Não há inversão de camada a partir de `core/bind`.
+- `bind_registry` e `internal/setup` **não** usam o façade (os matches eram a substring `debugLogModular`). Não há inversão de camada a partir de `core/bind`.
 - O único acoplamento de `routing` ao façade em código é `route_builder` → `Modular.getDefaultTransition` (4 sites) e `RouteWithCompleterService`. `stateful_shell_modular_route` cita `Modular` só em comentários.
 
 Restrições: pt-BR; sem mudança de comportamento; superfície pública preservada; sem abreviações.
@@ -42,7 +45,7 @@ Restrições: pt-BR; sem mudança de comportamento; superfície pública preserv
 ```
 lib/src/
   bootstrap/
-    go_router_modular.dart          ← façade + composition root (GoRouterModular/Modular):
+    go_router_modular.dart          ← façade + composition root (Modular/Modular):
                                        configure(), copyRouterConfig(), get/tryGet, routerConfig.
                                        É o ÚNICO que importa module + manager + routing/route_builder + params + runtime.
     modular_router_params.dart      ← _ModularRouterParams + extension ModularRouterConfigCopyWith
@@ -53,17 +56,19 @@ lib/src/
   core/module/module.dart           ← contrato puro, sem configureRoutes
 ```
 
-- **Por quê:** separa façade/composição (topo) de params (dados) e runtime (estado lido por routing/events). O composition root é o único que conhece todos os subsistemas (Dependency Inversion). Mantém `Modular`/`GoRouterModular` como classe única para preservar a API pública (`Modular.configure`, `Modular.get`, etc.).
+- **Por quê:** separa façade/composição (topo) de params (dados) e runtime (estado lido por routing/events). O composition root é o único que conhece todos os subsistemas (Dependency Inversion). Mantém `Modular`/`Modular` como classe única para preservar a API pública (`Modular.configure`, `Modular.get`, etc.).
 - **Alternativa considerada:** manter tudo em `core/config/` e só separar classes em arquivos no mesmo diretório — viável, mas `bootstrap/` comunica melhor o papel de composition root. A decisão de diretório final pode ser ajustada na implementação sem afetar o comportamento.
 
 ### Decisão 2: Quebra do ciclo via remoção de `configureRoutes`
 
 `Module.configureRoutes` é removido. A orquestração vai para o composition root:
+
 ```dart
 // em configure(): substitui appModule.configureRoutes(topLevel: true)
 InjectionManager.instance.registerAppModule(appModule);
 final routes = ModularRouteBuilder(appModule).buildRoutes(topLevel: true);
 ```
+
 Em `route_builder`, os 3 sites `submodulo.configureRoutes(modulePath: x, topLevel: false)` viram `ModularRouteBuilder(submodulo).buildRoutes(modulePath: x, topLevel: false)`. O `registerAppModule` desses sites era no-op (idempotente, AppModule já setado), então não há perda de comportamento.
 
 - **Por quê:** corta a dependência de `module.dart` para `routing` e `manager` na raiz. `route_builder` já está em `routing`, então construir `ModularRouteBuilder` diretamente é natural.

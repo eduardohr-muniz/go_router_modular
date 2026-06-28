@@ -18,10 +18,10 @@ void main() {
 
     test('Não deve entrar em loop infinito ao buscar bind não registrado', () {
       // Deve lançar exceção rapidamente, não entrar em loop
-      expect(() => Bind.get<TestService>(), throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<TestService>(), throwsA(isA<ModularException>()));
 
       // Verifica que não há tentativas pendentes após exceção
-      expect(() => Bind.get<TestService>(), throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<TestService>(), throwsA(isA<ModularException>()));
 
       // Se chegou aqui, não entrou em loop infinito
     });

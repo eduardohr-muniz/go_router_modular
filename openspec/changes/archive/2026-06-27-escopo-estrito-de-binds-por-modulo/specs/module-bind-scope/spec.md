@@ -13,7 +13,7 @@ Arquivos de referência: `lib/src/di/bind_context_tracker.dart`, `lib/src/di/inj
 
 ### Requirement: Validação de escopo no registro do módulo (commit-time)
 
-O sistema SHALL validar, ao registrar um módulo M, que cada bind **declarado por M** resolve suas dependências diretas dentro do conjunto visível de M. A validação MUST ocorrer de forma síncrona ao final do registro (no momento do `push`/entrada da rota), e MUST lançar `GoRouterModularException` quando um bind de M depende de um bind fora do escopo de M — mesmo que esse bind exista e esteja vivo no container por pertencer a outro módulo não importado.
+O sistema SHALL validar, ao registrar um módulo M, que cada bind **declarado por M** resolve suas dependências diretas dentro do conjunto visível de M. A validação MUST ocorrer de forma síncrona ao final do registro (no momento do `push`/entrada da rota), e MUST lançar `ModularException` quando um bind de M depende de um bind fora do escopo de M — mesmo que esse bind exista e esteja vivo no container por pertencer a outro módulo não importado.
 
 A mensagem MUST identificar o módulo solicitante, o tipo dependido e a correção sugerida (importar o módulo dono ou injetar o bind em M).
 
@@ -22,7 +22,7 @@ Arquivos de referência: `lib/src/di/injection_manager.dart`, `lib/src/di/inject
 #### Scenario: Bind do módulo depende de tipo fora do escopo
 
 - **WHEN** `ModuleA` injeta `ServiceA` e `ServiceB`; `ModuleB` (que não importa `ModuleA` nem injeta `ServiceB`) declara um bind cuja factory faz `i.get<ServiceB>()`; e a navegação entra em `ModuleB` (push, com `ModuleA` ainda vivo)
-- **THEN** o registro de `ModuleB` lança `GoRouterModularException`
+- **THEN** o registro de `ModuleB` lança `ModularException`
 - **AND** a mensagem orienta importar `ModuleA` ou injetar `ServiceB` em `ModuleB`
 
 #### Scenario: Dependências dentro do escopo registram normalmente

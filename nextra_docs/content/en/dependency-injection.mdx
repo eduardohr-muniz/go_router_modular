@@ -2,7 +2,7 @@
 title: Dependency Injection
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout } from "nextra/components";
 
 # Dependency Injection
 
@@ -29,11 +29,11 @@ class HomeModule extends Module {
 A factory receives the `Injector`, so binds can depend on other binds via
 `i.get<T>()`.
 
-| Method | When it's created | Reuse | Disposed on unregister |
-| --- | --- | --- | --- |
-| `addSingleton<T>` | Eagerly, when the module registers | Same instance | Yes |
-| `addLazySingleton<T>` | On first resolution | Same instance after | Yes |
-| `addFactory<T>` (alias `add<T>`) | Every resolution | New instance each time | No |
+| Method                           | When it's created                  | Reuse                  | Disposed on unregister |
+| -------------------------------- | ---------------------------------- | ---------------------- | ---------------------- |
+| `addSingleton<T>`                | Eagerly, when the module registers | Same instance          | Yes                    |
+| `addLazySingleton<T>`            | On first resolution                | Same instance after    | Yes                    |
+| `addFactory<T>` (alias `add<T>`) | Every resolution                   | New instance each time | No                     |
 
 <Callout type="info">
   `binds` may be async — its return type is `FutureOr<void>`, so you can `await`
@@ -94,7 +94,7 @@ A module can only resolve binds from its **visible scope**:
 - the `AppModule`'s binds (the only globally-visible scope).
 
 If a bind tries to resolve a dependency the module neither declared nor imported,
-the package throws a `GoRouterModularException` **at module registration time** —
+the package throws a `ModularException` **at module registration time** —
 before the route is ever shown.
 
 ```dart filename="❌ violation"

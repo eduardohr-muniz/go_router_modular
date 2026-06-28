@@ -8,26 +8,26 @@ import 'package:go_router_modular/src/routing/guards/modular_guard.dart';
 import 'package:go_router_modular/src/routing/modular_router_params.dart';
 import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
 import 'package:go_router_modular/src/di/injection_manager.dart';
-import 'package:go_router_modular/src/shared/asserts/go_router_modular_configure_assert.dart';
+import 'package:go_router_modular/src/shared/asserts/modular_configure_assert.dart';
 import 'package:go_router_modular/src/shared/setup.dart';
 import 'package:go_router_modular/src/module/module.dart';
 import 'package:go_router_modular/src/routing/route_builder.dart';
 import 'package:go_transitions/go_transitions.dart';
 
-/// Alias to simplify the use of GoRouterModular.
-typedef Modular = GoRouterModular;
+/// Alias to simplify the use of Modular.
+typedef GoRouterModular = Modular;
 
 /// Main class to manage modular routing using GoRouter.
-class GoRouterModular {
+class Modular {
   /// Private constructor to prevent direct instantiation.
-  GoRouterModular._();
+  Modular._();
 
   /// Current router configuration.
   ///
   /// Returns the configured [GoRouter] instance.
   /// Throws an exception if [configure] has not been called yet.
   static GoRouter get routerConfig {
-    assert(_router != null, GoRouterModularConfigureAssert.goRouterModularConfigureAssert());
+    assert(_router != null, ModularConfigureAssert.configureAssert());
     return _router!;
   }
 
@@ -61,7 +61,7 @@ class GoRouterModular {
   /// - [T]: The type of the dependency to return.
   /// - **Example**:
   ///   ```dart
-  ///   final myService = GoRouterModular.get<MyService>();
+  ///   final myService = Modular.get<MyService>();
   ///   ```
   static T get<T>({String? key}) => Bind.get<T>(key: key);
 
@@ -71,7 +71,7 @@ class GoRouterModular {
   /// - **Returns**: The dependency instance if found, `null` otherwise.
   /// - **Example**:
   ///   ```dart
-  ///   final myService = GoRouterModular.tryGet<MyService>();
+  ///   final myService = Modular.tryGet<MyService>();
   ///   if (myService != null) {
   ///     // Use myService
   ///   }
@@ -84,8 +84,8 @@ class GoRouterModular {
   /// - **Returns**: `true` if the dependency is registered, `false` otherwise.
   /// - **Example**:
   ///   ```dart
-  ///   if (GoRouterModular.isRegistered<MyService>()) {
-  ///     final myService = GoRouterModular.get<MyService>();
+  ///   if (Modular.isRegistered<MyService>()) {
+  ///     final myService = Modular.get<MyService>();
   ///   }
   ///   ```
   static bool isRegistered<T>({String? key}) => Bind.isRegistered<T>(key: key);
@@ -97,7 +97,7 @@ class GoRouterModular {
   /// - **Returns**: An instance of [GoRouterState].
   /// - **Example**:
   ///   ```dart
-  ///   final routerState = GoRouterModular.routerStateOf(context);
+  ///   final routerState = Modular.routerStateOf(context);
   ///   print(routerState.uri);
   ///   ```
   static GoRouterState routerStateOf(BuildContext context) => GoRouterState.of(context);
@@ -109,7 +109,7 @@ class GoRouterModular {
   /// - **Returns**: The current route path as a `String`, or `null` if not defined.
   /// - **Example**:
   ///   ```dart
-  ///   final path = GoRouterModular.currentPathOf(context);
+  ///   final path = Modular.currentPathOf(context);
   ///   print(path); // Prints the current path
   ///   ```
   static String? currentPathOf(BuildContext context) => GoRouterState.of(context).path;
@@ -122,7 +122,7 @@ class GoRouterModular {
   /// - **Returns**: The parameter value as a `String`, or `null` if not found.
   /// - **Example**:
   ///   ```dart
-  ///   final userId = GoRouterModular.pathParamOf(context, 'userId');
+  ///   final userId = Modular.pathParamOf(context, 'userId');
   ///   ```
   static String? pathParamOf(BuildContext context, String name) => GoRouterState.of(context).pathParameters[name];
 
@@ -144,7 +144,7 @@ class GoRouterModular {
   /// - **Returns**: The parameter value as a `String`, or `null` if not found.
   /// - **Example**:
   ///   ```dart
-  ///   final ref = GoRouterModular.queryParamOf(context, 'ref');
+  ///   final ref = Modular.queryParamOf(context, 'ref');
   ///   ```
   static String? queryParamOf(BuildContext context, String name) => GoRouterState.of(context).uri.queryParameters[name];
 
@@ -163,18 +163,18 @@ class GoRouterModular {
   /// - **Returns**: The `extra` value cast to `T`, or `null` if absent or of a different type.
   /// - **Example**:
   ///   ```dart
-  ///   final payload = GoRouterModular.extraOf<MyPayload>(context);
+  ///   final payload = Modular.extraOf<MyPayload>(context);
   ///   ```
   static T? extraOf<T>(BuildContext context) => GoRouterState.of(context).extra is T ? GoRouterState.of(context).extra as T : null;
 
   /// Returns the current route path based on the [BuildContext].
   ///
   /// Returns an empty string when no path is defined.
-  @Deprecated('Use GoRouterModular.currentPathOf instead. Will be removed in a future major release.')
+  @Deprecated('Use Modular.currentPathOf instead. Will be removed in a future major release.')
   static String getCurrentPathOf(BuildContext context) => currentPathOf(context) ?? '';
 
   /// Returns the current router state based on the [BuildContext].
-  @Deprecated('Use GoRouterModular.routerStateOf instead. Will be removed in a future major release.')
+  @Deprecated('Use Modular.routerStateOf instead. Will be removed in a future major release.')
   static GoRouterState stateOf(BuildContext context) => routerStateOf(context);
 
   /// Configures the modular router with the provided modules and options.
@@ -211,7 +211,7 @@ class GoRouterModular {
   ///
   /// - **Example**:
   ///   ```dart
-  ///   final router = await GoRouterModular.configure(
+  ///   final router = await Modular.configure(
   ///     appModule: AppModule(),
   ///     initialRoute: '/',
   ///   );
@@ -225,8 +225,7 @@ class GoRouterModular {
     Page<dynamic> Function(BuildContext, GoRouterState)? errorPageBuilder,
     Widget Function(BuildContext, GoRouterState)? errorBuilder,
     List<ModularGuard> guards = const [],
-    @Deprecated(guardsRedirectDeprecation)
-    FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
+    @Deprecated(guardsRedirectDeprecation) FutureOr<String?> Function(BuildContext, GoRouterState)? redirect,
     Listenable? refreshListenable,
     int redirectLimit = 5,
     bool routerNeglect = false,
@@ -258,7 +257,7 @@ class GoRouterModular {
       SetupModel(
         debugLogEventBus: debugLogEventBus,
         debugLogGoRouter: debugLogDiagnosticsGoRouter,
-        debugLogGoRouterModular: debugLogDiagnostics,
+        debugLogModular: debugLogDiagnostics,
         autoDisposeEvents: autoDisposeEventsBus,
       ),
     );
@@ -342,7 +341,7 @@ class GoRouterModular {
     String? restorationScopeId,
     bool? routerNeglect,
   }) {
-    assert(_params != null, GoRouterModularConfigureAssert.goRouterModularConfigureAssert());
+    assert(_params != null, ModularConfigureAssert.configureAssert());
     if (_derivedRouter != null) return _derivedRouter!;
 
     _derivedRouter = _params!
@@ -370,15 +369,14 @@ class GoRouterModular {
   }
 }
 
-
-/// Adds a [copyWith] to the [GoRouter] returned by [GoRouterModular.routerConfig].
+/// Adds a [copyWith] to the [GoRouter] returned by [Modular.routerConfig].
 ///
 /// Lets you override modular routing options (for example [observers])
 /// directly where the router is consumed, reusing everything else provided to
-/// [GoRouterModular.configure].
+/// [Modular.configure].
 extension ModularRouterConfigCopyWith on GoRouter {
   /// Returns a [GoRouter] reusing the modular configuration with the given
-  /// overrides applied. See [GoRouterModular.copyRouterConfig].
+  /// overrides applied. See [Modular.copyRouterConfig].
   GoRouter copyWith({
     List<RouteBase>? routes,
     String? initialLocation,
@@ -398,7 +396,7 @@ extension ModularRouterConfigCopyWith on GoRouter {
     String? restorationScopeId,
     bool? routerNeglect,
   }) {
-    return GoRouterModular.copyRouterConfig(
+    return Modular.copyRouterConfig(
       routes: routes,
       initialLocation: initialLocation,
       debugLogDiagnostics: debugLogDiagnostics,
@@ -419,4 +417,3 @@ extension ModularRouterConfigCopyWith on GoRouter {
     );
   }
 }
-

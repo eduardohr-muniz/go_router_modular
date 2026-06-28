@@ -2,7 +2,7 @@
 
 ### Requirement: Utilitários do go_router ficam acessíveis pela superfície pública
 
-O sistema SHALL garantir que os utilitários úteis do `go_router` permaneçam acessíveis ao consumidor por um único import do barril principal, para que ele possa usá-los diretamente caso prefira não passar pelos wrappers da fachada `GoRouterModular`. A re-exportação MUST manter `package:go_router/go_router.dart` com `hide GoRouter, ShellRoute`, de modo que tipos como `GoRouterState` e a extension `GoRouterHelper` (que provê `context.go`, `context.push`, etc.) continuem disponíveis, sem vazar os tipos substituídos (`GoRouter`, `ShellRoute`).
+O sistema SHALL garantir que os utilitários úteis do `go_router` permaneçam acessíveis ao consumidor por um único import do barril principal, para que ele possa usá-los diretamente caso prefira não passar pelos wrappers da fachada `Modular`. A re-exportação MUST manter `package:go_router/go_router.dart` com `hide GoRouter, ShellRoute`, de modo que tipos como `GoRouterState` e a extension `GoRouterHelper` (que provê `context.go`, `context.push`, etc.) continuem disponíveis, sem vazar os tipos substituídos (`GoRouter`, `ShellRoute`).
 
 Arquivos de referência: `lib/go_router_modular.dart`.
 

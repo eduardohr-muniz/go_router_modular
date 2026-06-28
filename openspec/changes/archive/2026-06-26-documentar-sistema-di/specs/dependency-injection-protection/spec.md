@@ -2,14 +2,14 @@
 
 ### Requirement: Detecção de dependência circular entre tipos distintos
 
-O sistema SHALL detectar dependência circular durante a resolução. Enquanto um tipo `T` está sendo construído, se a construção de outro tipo solicitar `T` de volta (ciclo real), o sistema MUST lançar `GoRouterModularException` com mensagem que descreve a cadeia de dependência detectada, em vez de entrar em recursão infinita.
+O sistema SHALL detectar dependência circular durante a resolução. Enquanto um tipo `T` está sendo construído, se a construção de outro tipo solicitar `T` de volta (ciclo real), o sistema MUST lançar `ModularException` com mensagem que descreve a cadeia de dependência detectada, em vez de entrar em recursão infinita.
 
 Arquivos de referência: `lib/src/core/bind/bind_locator.dart`, `lib/src/core/bind/bind_search_protection.dart`, `lib/src/exceptions/exception.dart`.
 
 #### Scenario: Ciclo A→B→A é interrompido com exceção
 
 - **WHEN** `A` depende de `B` e `B` depende de `A`, e `get<A>()` é chamado
-- **THEN** o sistema lança `GoRouterModularException`
+- **THEN** o sistema lança `ModularException`
 - **AND** a mensagem descreve a cadeia de dependência circular
 
 ### Requirement: Self-reference legítima é permitida
@@ -26,7 +26,7 @@ Arquivos de referência: `lib/src/core/bind/bind_locator.dart`, `lib/src/core/bi
 
 ### Requirement: Limite de tentativas de busca como salvaguarda
 
-O sistema SHALL contar as tentativas de busca por tipo (`searchAttempts`). Ao exceder o limite máximo de tentativas para o mesmo tipo, o sistema MUST limpar o estado de busca e lançar `GoRouterModularException`, evitando laços que escapem da detecção baseada em pilha.
+O sistema SHALL contar as tentativas de busca por tipo (`searchAttempts`). Ao exceder o limite máximo de tentativas para o mesmo tipo, o sistema MUST limpar o estado de busca e lançar `ModularException`, evitando laços que escapem da detecção baseada em pilha.
 
 Arquivos de referência: `lib/src/core/bind/bind_locator.dart`, `lib/src/core/bind/bind_search_protection.dart`.
 
@@ -34,7 +34,7 @@ Arquivos de referência: `lib/src/core/bind/bind_locator.dart`, `lib/src/core/bi
 
 - **WHEN** a resolução do mesmo tipo é tentada além do limite máximo permitido
 - **THEN** o sistema limpa o estado de busca
-- **AND** lança `GoRouterModularException`
+- **AND** lança `ModularException`
 
 ### Requirement: Bloqueio de factory durante sua própria execução
 

@@ -2,7 +2,7 @@
 title: Rotas e Módulos
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout } from "nextra/components";
 
 # Rotas e Módulos
 
@@ -12,12 +12,12 @@ shell. Esta página cobre o modelo de rotas e como os módulos se aninham.
 
 ## Os quatro tipos de rota
 
-| Tipo | Use para |
-| --- | --- |
-| `ChildRoute` | Uma única página (a folha de uma rota). |
-| `ModuleRoute` | Montar outro módulo sob um prefixo de caminho. |
-| `ShellModularRoute` | Um layout compartilhado (um Navigator) em volta de um conjunto de rotas. |
-| `StatefulShellModularRoute` | Abas/barra inferior com estado persistente por branch. |
+| Tipo                        | Use para                                                                 |
+| --------------------------- | ------------------------------------------------------------------------ |
+| `ChildRoute`                | Uma única página (a folha de uma rota).                                  |
+| `ModuleRoute`               | Montar outro módulo sob um prefixo de caminho.                           |
+| `ShellModularRoute`         | Um layout compartilhado (um Navigator) em volta de um conjunto de rotas. |
+| `StatefulShellModularRoute` | Abas/barra inferior com estado persistente por branch.                   |
 
 Os dois tipos de shell são detalhados em [Shell Routes](/pt/routes/shell-route).
 
@@ -99,7 +99,7 @@ class UserModule extends Module {
 Você também pode ler o parâmetro de caminho direto do context:
 
 ```dart
-final id = GoRouterModular.pathParamOf(context, 'id');
+final id = Modular.pathParamOf(context, 'id');
 ```
 
 Navegar para `/user/42?tab=posts` resulta em `id == '42'` e `tab == 'posts'`.

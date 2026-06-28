@@ -57,16 +57,12 @@ void main() {
       Bind.registerBatch(binds);
       Bind.commitBatch(injector);
 
-      expect(_SideEffectfulCubit.constructed, 0,
-          reason: 'baseline: factory not built during commitBatch');
+      expect(_SideEffectfulCubit.constructed, 0, reason: 'baseline: factory not built during commitBatch');
 
-      expect(() => Bind.get<_IUnregistered>(),
-          throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<_IUnregistered>(), throwsA(isA<ModularException>()));
 
-      expect(_SideEffectfulCubit.constructed, 0,
-          reason: 'factory must NOT be invoked for unrelated interface lookup');
-      expect(_SideEffectfulCubit.sideEffectsLog, isEmpty,
-          reason: 'no constructor side effects must leak');
+      expect(_SideEffectfulCubit.constructed, 0, reason: 'factory must NOT be invoked for unrelated interface lookup');
+      expect(_SideEffectfulCubit.sideEffectsLog, isEmpty, reason: 'no constructor side effects must leak');
     });
 
     test('multiple factory binds: NONE are invoked for unrelated lookup', () {
@@ -78,8 +74,7 @@ void main() {
       Bind.registerBatch(binds);
       Bind.commitBatch(injector);
 
-      expect(() => Bind.get<_IUnregistered>(),
-          throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<_IUnregistered>(), throwsA(isA<ModularException>()));
 
       expect(_SideEffectfulCubit.constructed, 0);
       expect(_AnotherFactoryBind.constructed, 0);
@@ -99,8 +94,7 @@ void main() {
         } catch (_) {}
       }
 
-      expect(_SideEffectfulCubit.constructed, 0,
-          reason: 'cumulative side-effect leak across calls must be zero');
+      expect(_SideEffectfulCubit.constructed, 0, reason: 'cumulative side-effect leak across calls must be zero');
     });
 
     test('factory IS invoked for its own type lookup (sanity)', () {
@@ -113,8 +107,7 @@ void main() {
 
       final cubit = Bind.get<_SideEffectfulCubit>();
       expect(cubit, isA<_SideEffectfulCubit>());
-      expect(_SideEffectfulCubit.constructed, 1,
-          reason: 'factory still works for legitimate gets by its declared type');
+      expect(_SideEffectfulCubit.constructed, 1, reason: 'factory still works for legitimate gets by its declared type');
 
       // Factory semantics: each get builds a new instance.
       Bind.get<_SideEffectfulCubit>();

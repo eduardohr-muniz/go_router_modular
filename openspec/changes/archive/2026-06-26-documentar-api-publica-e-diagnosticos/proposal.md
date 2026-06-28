@@ -4,9 +4,9 @@ As specs já propostas cobrem DI, roteamento, módulos, eventos e dependências,
 
 ## What Changes
 
-- Documentar a **superfície de API pública** em `lib/go_router_modular.dart`: o que é exportado por área (core, DI, routing, exceptions, widgets, eventos) e a política deliberada de re-export de pacotes externos com ocultação — `go_router` com `hide GoRouter, ShellRoute`, `go_transitions` com `hide GoTransition`, `event_bus` completo — para que os tipos modulares (`GoRouterModular`, `ShellModularRoute`, `GoTransition` modular) substituam os originais sem colisão.
+- Documentar a **superfície de API pública** em `lib/go_router_modular.dart`: o que é exportado por área (core, DI, routing, exceptions, widgets, eventos) e a política deliberada de re-export de pacotes externos com ocultação — `go_router` com `hide GoRouter, ShellRoute`, `go_transitions` com `hide GoTransition`, `event_bus` completo — para que os tipos modulares (`Modular`, `ShellModularRoute`, `GoTransition` modular) substituam os originais sem colisão.
 - Documentar o **barril de testes** `lib/testing.dart`: o que `import 'package:go_router_modular/testing.dart'` expõe (`ModularTestScope`, `EventRecorder`, `RecordedEventList`, `FakeInjector`, `ModularEventBus`) e os re-exports de conveniência (`clearEventModuleState`, `defaultModularEventBus`).
-- Documentar o **assert de configuração** `GoRouterModularConfigureAssert.goRouterModularConfigureAssert()`: a mensagem-guia exibida quando `routerConfig`/`params` são acessados antes de `GoRouterModular.configure`, e onde é aplicada (`go_router_modular_configure.dart`).
+- Documentar o **assert de configuração** `ModularConfigureAssert.goRouterModularConfigureAssert()`: a mensagem-guia exibida quando `routerConfig`/`params` são acessados antes de `Modular.configure`, e onde é aplicada (`go_router_modular_configure.dart`).
 - Documentar o **log interno** `iLog`/`kInternalLogs` e registrar honestamente que está **dormente** (definido, mas não chamado em `lib/`) — candidato a remoção ou a passar a ser usado.
 - Documentar o **`DependencyAnalyzer`** (histórico de tentativas por tipo com janela fixa, taxa de sucesso, grafo de dependências, `clearAll`/`clearTypeHistory`) e registrar que, em produção, **apenas `clearAll()` é usado** (limpeza em `ModularTestScope`); o restante é infraestrutura dormente, sendo a proteção contra ciclos efetiva feita por `BindSearchProtection`.
 - **Sem mudança de comportamento e sem alterar `lib/`**: mudança puramente documental.
@@ -14,10 +14,12 @@ As specs já propostas cobrem DI, roteamento, módulos, eventos e dependências,
 ## Capabilities
 
 ### New Capabilities
+
 - `public-api-surface`: A superfície pública exportada pelos barris `lib/go_router_modular.dart` e `lib/testing.dart` — o que é público por área, a política de `hide`/`show` nos re-exports de pacotes externos e o conjunto público de utilitários de teste.
 - `internal-diagnostics`: Os helpers internos de diagnóstico e guarda — o assert-guia de configuração (ativo), o log interno `iLog`/`kInternalLogs` (dormente) e o `DependencyAnalyzer` (rastreamento dormente; só `clearAll` em produção).
 
 ### Modified Capabilities
+
 <!-- Nenhuma capability existente tem requisitos alterados — esta mudança é puramente documental e não altera as specs já propostas. -->
 
 ## Impact

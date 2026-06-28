@@ -107,7 +107,7 @@ void main() {
 
     await expectLater(
       manager.registerBindsModule(FeatureBBadModule()),
-      throwsA(isA<GoRouterModularException>()),
+      throwsA(isA<ModularException>()),
     );
   });
 
@@ -130,7 +130,7 @@ void main() {
       await manager.registerBindsModule(RepositoryOwnerModule()); // dono vivo
       await expectLater(
         manager.registerBindsModule(ConsumerBadModule()),
-        throwsA(isA<GoRouterModularException>()),
+        throwsA(isA<ModularException>()),
       );
     });
 

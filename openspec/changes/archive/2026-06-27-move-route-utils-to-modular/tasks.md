@@ -13,8 +13,8 @@
 
 ## 3. Depreciação dos símbolos legados
 
-- [x] 3.1 Marcar `getCurrentPathOf` como `@Deprecated('Use GoRouterModular.currentPathOf')` e fazê-lo delegar a `currentPathOf`.
-- [x] 3.2 Marcar `stateOf` como `@Deprecated('Use GoRouterModular.routerStateOf')` e fazê-lo delegar a `routerStateOf`.
+- [x] 3.1 Marcar `getCurrentPathOf` como `@Deprecated('Use Modular.currentPathOf')` e fazê-lo delegar a `currentPathOf`.
+- [x] 3.2 Marcar `stateOf` como `@Deprecated('Use Modular.routerStateOf')` e fazê-lo delegar a `routerStateOf`.
 - [x] 3.3 Em `lib/src/ui/route_extension.dart`, marcar `getPathParam`, `getPath` e `state` como `@Deprecated(...)` apontando para a fachada, fazendo cada um delegar ao método novo (sem reimplementar a lógica).
 
 ## 4. Superfície pública (re-export do go_router)
@@ -31,5 +31,5 @@
 
 ## 6. Documentação
 
-- [x] 6.1 Atualizar README/site indicando a forma preferida de ler estado da rota (`GoRouterModular.*Of`) e os avisos de depreciação.
+- [x] 6.1 Atualizar README/site indicando a forma preferida de ler estado da rota (`Modular.*Of`) e os avisos de depreciação.
 - [x] 6.2 Rodar `dart analyze`/`flutter analyze` e garantir ausência de warnings (exceto os `@Deprecated` esperados em testes de equivalência, se houver).

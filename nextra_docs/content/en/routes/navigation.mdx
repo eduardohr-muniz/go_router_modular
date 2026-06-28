@@ -2,7 +2,7 @@
 title: Navigation
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout } from "nextra/components";
 
 # Navigation
 
@@ -79,26 +79,26 @@ context.popUntilNamed('home');     // pop until this named route is on top
 
 ## Reading route state
 
-Use the `GoRouterModular` facade to read the current route state from a
+Use the `Modular` facade to read the current route state from a
 `BuildContext`. The methods follow the `...Of(context)` convention:
 
 ```dart
-final state    = GoRouterModular.routerStateOf(context);        // the GoRouterState
-final path     = GoRouterModular.currentPathOf(context);        // current path
-final id       = GoRouterModular.pathParamOf(context, 'id');    // a path parameter
-final params   = GoRouterModular.pathParamsOf(context);         // all path parameters
-final ref      = GoRouterModular.queryParamOf(context, 'ref');  // a query parameter
-final queries  = GoRouterModular.queryParamsOf(context);        // all query parameters
-final uri      = GoRouterModular.currentUriOf(context);         // current Uri
-final location = GoRouterModular.currentLocationOf(context);    // current location
-final payload  = GoRouterModular.extraOf<MyPayload>(context);   // typed extra
+final state    = Modular.routerStateOf(context);        // the GoRouterState
+final path     = Modular.currentPathOf(context);        // current path
+final id       = Modular.pathParamOf(context, 'id');    // a path parameter
+final params   = Modular.pathParamsOf(context);         // all path parameters
+final ref      = Modular.queryParamOf(context, 'ref');  // a query parameter
+final queries  = Modular.queryParamsOf(context);        // all query parameters
+final uri      = Modular.currentUriOf(context);         // current Uri
+final location = Modular.currentLocationOf(context);    // current location
+final payload  = Modular.extraOf<MyPayload>(context);   // typed extra
 ```
 
 <Callout type="info">
   The extension shortcuts `context.getPathParam('id')`, `context.getPath` and
   `context.state` still work, but are **deprecated** in favor of
-  `GoRouterModular.pathParamOf`, `currentPathOf` and `routerStateOf`. They will
-  be removed in a future major release.
+  `Modular.pathParamOf`, `currentPathOf` and `routerStateOf`. They will be
+  removed in a future major release.
 </Callout>
 
 You can also use the `go_router` utilities directly (`GoRouterState`,

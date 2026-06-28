@@ -50,18 +50,18 @@ void main() {
 
     test('Não deve entrar em loop infinito ao buscar bind não registrado', () {
       // Arrange & Act & Assert
-      expect(() => Bind.get<TestService>(), throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<TestService>(), throwsA(isA<ModularException>()));
 
       // Verifica que não há tentativas pendentes após exceção
-      expect(() => Bind.get<TestService>(), throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<TestService>(), throwsA(isA<ModularException>()));
     });
 
     test('Deve limpar estado de busca após exceção', () {
       // Arrange
-      expect(() => Bind.get<TestService>(), throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<TestService>(), throwsA(isA<ModularException>()));
 
       // Act - Tenta buscar novamente
-      expect(() => Bind.get<TestService>(), throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<TestService>(), throwsA(isA<ModularException>()));
 
       // Assert - Não deve acumular tentativas indefinidamente
       // Se chegou aqui sem timeout, o teste passou
@@ -80,7 +80,7 @@ void main() {
       await InjectionManager.instance.unregisterModule(module);
 
       // Verifica que o bind foi removido
-      expect(() => Bind.get<TestService>(), throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<TestService>(), throwsA(isA<ModularException>()));
 
       // Act 2 - Simula volta para página (novo registro)
       await InjectionManager.instance.registerBindsModule(module);

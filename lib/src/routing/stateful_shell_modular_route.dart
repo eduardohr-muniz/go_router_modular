@@ -19,7 +19,7 @@ import 'module_route.dart';
 /// - Caso contrário, usa-se transição igual à das rotas: preencha só [transition],
 ///   só `transitionDuration`, ambos ou nenhum; o que faltar usa
 ///   **[Modular.getDefaultTransition]** e **[GoTransition.defaultDuration]**
-///   (esta última também reflete `defaultTransitionDuration` de [GoRouterModular.configure]).
+///   (esta última também reflete `defaultTransitionDuration` de [Modular.configure]).
 ///
 /// Sobrescritas explícitas: [transition], [transitionDuration], [reverseTransitionDuration].
 /// [navigatorContainerBuilder], quando informado, **substitui** toda a lógica acima.
@@ -54,10 +54,8 @@ import 'module_route.dart';
 /// }
 /// ```
 class StatefulShellModularRoute extends ModularRoute {
-  final Widget Function(BuildContext context, GoRouterState state,
-      StatefulNavigationShell navigationShell)? builder;
-  final Page<dynamic> Function(BuildContext context, GoRouterState state,
-      StatefulNavigationShell navigationShell)? pageBuilder;
+  final Widget Function(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell)? builder;
+  final Page<dynamic> Function(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell)? pageBuilder;
   final List<ModularBranch> branches;
 
   /// Transição entre branches (`GoTransitions.*`). Omitido usa [Modular.getDefaultTransition]
@@ -84,8 +82,7 @@ class StatefulShellModularRoute extends ModularRoute {
   final List<ModularGuard> guards;
 
   @Deprecated(guardsRedirectDeprecation)
-  final FutureOr<String?> Function(BuildContext context, GoRouterState state)?
-      redirect;
+  final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
   final GlobalKey<NavigatorState>? parentNavigatorKey;
   final String? restorationScopeId;
   final GlobalKey<StatefulNavigationShellState>? shellKey;
@@ -100,8 +97,7 @@ class StatefulShellModularRoute extends ModularRoute {
     this.navigatorContainerBuilder,
     this.notifyRootObserver = true,
     this.guards = const [],
-    @Deprecated(guardsRedirectDeprecation)
-    this.redirect,
+    @Deprecated(guardsRedirectDeprecation) this.redirect,
     this.parentNavigatorKey,
     this.restorationScopeId,
     this.shellKey,

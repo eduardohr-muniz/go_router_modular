@@ -9,7 +9,7 @@ Arquivos de referência: `lib/go_router_modular.dart`.
 #### Scenario: Import único dá acesso à API de produção
 
 - **WHEN** um consumidor importa `package:go_router_modular/go_router_modular.dart`
-- **THEN** tipos como `Module`, `Bind`, `Injector`, `ChildRoute`, `ModuleRoute`, `ShellModularRoute`, `ModularApp` e `GoRouterModularException` ficam disponíveis sem importar arquivos de `src/`
+- **THEN** tipos como `Module`, `Bind`, `Injector`, `ChildRoute`, `ModuleRoute`, `ShellModularRoute`, `ModularApp` e `ModularException` ficam disponíveis sem importar arquivos de `src/`
 
 #### Scenario: Widgets internos não-públicos não são exportados
 

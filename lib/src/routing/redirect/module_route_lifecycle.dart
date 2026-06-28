@@ -35,7 +35,7 @@ class ModuleRouteLifecycle {
       await InjectionManager.instance.registerBindsModule(module);
       completer.complete();
     } catch (e) {
-      if (e is GoRouterModularException) {
+      if (e is ModularException) {
         log('${e.message}', name: 'GO_ROUTER_MODULAR');
         rethrow;
       }

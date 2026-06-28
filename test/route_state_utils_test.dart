@@ -10,7 +10,7 @@ class _Payload {
 }
 
 /// Captura o [BuildContext] da rota de detalhe para exercitar os utilitários
-/// de leitura de estado da fachada [GoRouterModular].
+/// de leitura de estado da fachada [Modular].
 BuildContext? capturedContext;
 
 class UtilsModule extends Module {
@@ -60,44 +60,44 @@ void main() {
     return capturedContext!;
   }
 
-  group('GoRouterModular: leitura de estado da rota', () {
+  group('Modular: leitura de estado da rota', () {
     testWidgets('routerStateOf, currentPathOf e pathParamOf', (tester) async {
       final context = await pumpAndNavigate(tester);
 
-      expect(GoRouterModular.routerStateOf(context), isA<GoRouterState>());
-      expect(GoRouterModular.currentPathOf(context), '/usuario/:id');
-      expect(GoRouterModular.pathParamOf(context, 'id'), '42');
-      expect(GoRouterModular.pathParamOf(context, 'inexistente'), isNull);
+      expect(Modular.routerStateOf(context), isA<GoRouterState>());
+      expect(Modular.currentPathOf(context), '/usuario/:id');
+      expect(Modular.pathParamOf(context, 'id'), '42');
+      expect(Modular.pathParamOf(context, 'inexistente'), isNull);
     });
 
     testWidgets('pathParamsOf, queryParamsOf e queryParamOf', (tester) async {
       final context = await pumpAndNavigate(tester);
 
-      expect(GoRouterModular.pathParamsOf(context), {'id': '42'});
-      expect(GoRouterModular.queryParamsOf(context), {'termo': 'flutter'});
-      expect(GoRouterModular.queryParamOf(context, 'termo'), 'flutter');
-      expect(GoRouterModular.queryParamOf(context, 'ausente'), isNull);
+      expect(Modular.pathParamsOf(context), {'id': '42'});
+      expect(Modular.queryParamsOf(context), {'termo': 'flutter'});
+      expect(Modular.queryParamOf(context, 'termo'), 'flutter');
+      expect(Modular.queryParamOf(context, 'ausente'), isNull);
     });
 
     testWidgets('currentUriOf e currentLocationOf', (tester) async {
       final context = await pumpAndNavigate(tester);
 
-      expect(GoRouterModular.currentUriOf(context).toString(), '/usuario/42?termo=flutter');
-      expect(GoRouterModular.currentLocationOf(context), '/usuario/42');
+      expect(Modular.currentUriOf(context).toString(), '/usuario/42?termo=flutter');
+      expect(Modular.currentLocationOf(context), '/usuario/42');
     });
 
     testWidgets('extraOf retorna o extra tipado e null em tipo divergente', (tester) async {
       const payload = _Payload('detalhe');
       final context = await pumpAndNavigate(tester, extra: payload);
 
-      expect(GoRouterModular.extraOf<_Payload>(context), same(payload));
-      expect(GoRouterModular.extraOf<String>(context), isNull);
+      expect(Modular.extraOf<_Payload>(context), same(payload));
+      expect(Modular.extraOf<String>(context), isNull);
     });
 
     testWidgets('extraOf retorna null quando não há extra', (tester) async {
       final context = await pumpAndNavigate(tester);
 
-      expect(GoRouterModular.extraOf<_Payload>(context), isNull);
+      expect(Modular.extraOf<_Payload>(context), isNull);
     });
   });
 
@@ -106,20 +106,20 @@ void main() {
       final context = await pumpAndNavigate(tester);
 
       // ignore: deprecated_member_use_from_same_package
-      expect(GoRouterModular.getCurrentPathOf(context), GoRouterModular.currentPathOf(context));
+      expect(Modular.getCurrentPathOf(context), Modular.currentPathOf(context));
       // ignore: deprecated_member_use_from_same_package
-      expect(GoRouterModular.stateOf(context), same(GoRouterModular.routerStateOf(context)));
+      expect(Modular.stateOf(context), same(Modular.routerStateOf(context)));
     });
 
     testWidgets('extension: getPath, state e getPathParam delegam aos novos', (tester) async {
       final context = await pumpAndNavigate(tester);
 
       // ignore: deprecated_member_use_from_same_package
-      expect(context.getPath, GoRouterModular.currentPathOf(context));
+      expect(context.getPath, Modular.currentPathOf(context));
       // ignore: deprecated_member_use_from_same_package
-      expect(context.getPathParam('id'), GoRouterModular.pathParamOf(context, 'id'));
+      expect(context.getPathParam('id'), Modular.pathParamOf(context, 'id'));
       // ignore: deprecated_member_use_from_same_package
-      expect(context.state, same(GoRouterModular.routerStateOf(context)));
+      expect(context.state, same(Modular.routerStateOf(context)));
     });
   });
 

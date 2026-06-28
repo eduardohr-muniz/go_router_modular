@@ -67,12 +67,10 @@ void main() {
       expect(afterCommit, 1, reason: 'eager singleton built once during commit');
 
       for (var i = 0; i < 5; i++) {
-        expect(() => Bind.get<_IUnrelated>(),
-            throwsA(isA<GoRouterModularException>()));
+        expect(() => Bind.get<_IUnrelated>(), throwsA(isA<ModularException>()));
       }
 
-      expect(_SideEffectful.constructed, afterCommit,
-          reason: 'cached singleton must not be rebuilt by probes');
+      expect(_SideEffectful.constructed, afterCommit, reason: 'cached singleton must not be rebuilt by probes');
     },
   );
 
@@ -90,8 +88,7 @@ void main() {
 
       final viaConcrete = Bind.get<_UnrelatedConcrete>();
       final viaInterface = Bind.get<_IUnrelated>();
-      expect(identical(viaConcrete, viaInterface), isTrue,
-          reason: 'interface lookup must reuse the canonical singleton');
+      expect(identical(viaConcrete, viaInterface), isTrue, reason: 'interface lookup must reuse the canonical singleton');
     },
   );
 }

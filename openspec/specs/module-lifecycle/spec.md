@@ -66,7 +66,7 @@ Arquivos de referência: `lib/src/core/manager/injection_manager.dart`, `lib/src
 
 ### Requirement: Serialização de operações de registro e descarte
 
-O sistema SHALL serializar as operações de registro e descarte de módulos através de uma fila (`OperationQueue`), executando-as em ordem para evitar condições de corrida. Uma operação que lance `GoRouterModularException` MUST propagar a falha; outras falhas MUST NOT interromper o processamento das operações seguintes.
+O sistema SHALL serializar as operações de registro e descarte de módulos através de uma fila (`OperationQueue`), executando-as em ordem para evitar condições de corrida. Uma operação que lance `ModularException` MUST propagar a falha; outras falhas MUST NOT interromper o processamento das operações seguintes.
 
 Arquivos de referência: `lib/src/core/manager/operation_queue.dart`, `lib/src/core/manager/injection_manager.dart`.
 

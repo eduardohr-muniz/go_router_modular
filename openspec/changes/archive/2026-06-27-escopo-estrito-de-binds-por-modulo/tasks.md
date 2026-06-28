@@ -14,7 +14,7 @@
 - [x] 3.1 (Revisado) Em vez de um injector que re-roda factories, a gravação ocorre no `_injector` compartilhado DURANTE o commit (execução única legítima) — o recorder que re-executava quebrava a contagem de construtor, então foi descartado
 - [x] 3.2 Criar `_validateModuleScope(module, recordedDependencies)`: checa cada dependência gravada no commit contra `isVisible`
 - [x] 3.3 Envolver `Bind.commitBatch` com `beginScopeRecording`/`endScopeRecording` em `_registerBindsModuleInternal` e validar de forma **eager** (síncrona)
-- [x] 3.4 Lançar `GoRouterModularException` acionável na violação (módulo, tipo, correção)
+- [x] 3.4 Lançar `ModularException` acionável na violação (módulo, tipo, correção)
 - [x] 3.5 `flutter analyze`
 
 ## 4. Verificação e ajustes

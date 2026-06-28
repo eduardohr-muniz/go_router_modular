@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 
 /// Snapshot imutável dos parâmetros usados para construir o [GoRouter] modular.
 ///
-/// Capturado em `GoRouterModular.configure` para que o router possa ser
-/// reconstruído com sobrescritas via `GoRouterModular.copyRouterConfig`.
+/// Capturado em `Modular.configure` para que o router possa ser
+/// reconstruído com sobrescritas via `Modular.copyRouterConfig`.
 /// É interno ao pacote (não exportado pelo barril público).
 class ModularRouterParams {
   const ModularRouterParams({

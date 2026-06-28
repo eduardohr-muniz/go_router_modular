@@ -120,7 +120,7 @@ class BindLocator {
     if (currentAttempts >= _maxAbsoluteAttempts) {
       _protection.searchAttempts.remove(type);
       _protection.currentlySearching.remove(type);
-      throw GoRouterModularException(
+      throw ModularException(
         'Too many search attempts ($currentAttempts) for type "${type.toString()}". '
         'Possible infinite loop detected. Please ensure the bind is registered before use.',
       );
@@ -139,7 +139,7 @@ class BindLocator {
       if (_protection.isTopInvocationFor(type)) return;
 
       final chain = _protection.searchStack.map((t) => t.toString()).join(' -> ');
-      throw GoRouterModularException(
+      throw ModularException(
         'Circular dependency detected while resolving type "${type.toString()}".\n'
         'Dependency chain: $chain -> ${type.toString()}\n'
         'Break the cycle by injecting an abstraction, using a lazy factory, '
@@ -161,7 +161,7 @@ class BindLocator {
     final bind = _storage.bindsMapByKey[key];
 
     if (bind == null) {
-      throw GoRouterModularException('Bind not found for type "${type.toString()}" with key: $key');
+      throw ModularException('Bind not found for type "${type.toString()}" with key: $key');
     }
 
     if (bind.instance is! T) return null;
@@ -364,6 +364,6 @@ class BindLocator {
       message += '\nDependency chain: $path';
     }
 
-    throw GoRouterModularException(message);
+    throw ModularException(message);
   }
 }

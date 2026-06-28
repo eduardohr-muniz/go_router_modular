@@ -15,10 +15,12 @@ Restrições: pt-BR; mensagem acionável; brecha consciente na resolução está
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Validar, no registro de M, que os binds **declarados por M** resolvem dependências dentro de `visibleSet(M)`; senão, lançar fail-fast.
 - Reusar o gancho de validação existente; não tocar no `BindLocator` nem na resolução estática.
 
 **Non-Goals:**
+
 - Não enforçar `Modular.get`/`Bind.get`/`context.read` (brecha consciente).
 - Não isolar instâncias por módulo.
 
@@ -27,10 +29,12 @@ Restrições: pt-BR; mensagem acionável; brecha consciente na resolução está
 ### Decisão 1: Conjunto visível via tracker
 
 `BindContextTracker.isVisible(BindIdentifier bindId, Module scope)`:
+
 ```
 isVisible = moduleBindTypes[scope]?.contains(bindId) == true
          || moduleBindTypes[appModule]?.contains(bindId) == true
 ```
+
 Cacheável; dados já existentes.
 
 ### Decisão 2: Tag de bind para identificar o dono do resolvido
@@ -46,7 +50,7 @@ para cada bind declarado por M:
    recorder = _ScopeRecordingInjector()        // grava cada get<U> com o runtimeType resolvido
    try { bind.factoryFunction(recorder) } catch (_) { /* not-found tratado pelo fluxo normal */ }
    para cada bindId resolvido pelo recorder:
-      if (!tracker.isVisible(bindId, M)) → throw GoRouterModularException(mensagem acionável)
+      if (!tracker.isVisible(bindId, M)) → throw ModularException(mensagem acionável)
 ```
 
 - Checa **dependências diretas** dos binds de M; a transitividade é coberta quando o módulo dono de cada dependência é validado no seu próprio registro.

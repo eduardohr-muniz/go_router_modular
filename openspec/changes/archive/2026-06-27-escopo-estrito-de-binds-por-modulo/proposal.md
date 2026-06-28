@@ -12,7 +12,7 @@ Esta mudança implementa a regra na abordagem **commit-time**: ao registrar um m
 
 - Computar o **conjunto visível** de cada módulo M = binds próprios ∪ importados ∪ binds do `AppModule`, a partir do `BindContextTracker` (que já registra `moduleBindTypes[M]` como próprios+importados).
 - Taguear cada `Bind` com seu identificador (`BindIdentifier`) para identificar o dono do bind resolvido.
-- **Validação de escopo no registro**: ao final do registro de M, rodar as factories dos binds **declarados por M** com um injector que grava os tipos resolvidos, e verificar que cada dependência direta pertence ao conjunto visível de M. Violação → `GoRouterModularException` síncrona (fail-fast no push).
+- **Validação de escopo no registro**: ao final do registro de M, rodar as factories dos binds **declarados por M** com um injector que grava os tipos resolvidos, e verificar que cada dependência direta pertence ao conjunto visível de M. Violação → `ModularException` síncrona (fail-fast no push).
 - Tornar a validação relevante **eager** (síncrona ao registro) em vez de adiada, para o erro surgir na entrada da rota.
 - **Brecha consciente**: `Modular.get`/`Bind.get` estáticos e `context.read` permanecem **globais** (sem enforcement em runtime) — uso indevido ali é responsabilidade do desenvolvedor; não é o caminho idiomático.
 
@@ -21,6 +21,7 @@ Justificativa SOLID/Clean Code: torna explícitas e verificáveis as dependênci
 ## Capabilities
 
 ### New Capabilities
+
 - `module-bind-scope`: validação de escopo de binds por módulo no registro (commit-time) — conjunto visível, checagem das dependências dos binds declarados, exceção acionável, e a brecha consciente na resolução estática.
 
 ## Impact

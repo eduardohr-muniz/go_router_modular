@@ -2,7 +2,7 @@
 title: Injeção de Dependência
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout } from "nextra/components";
 
 # Injeção de Dependência
 
@@ -28,11 +28,11 @@ class HomeModule extends Module {
 Uma factory recebe o `Injector`, então um bind pode depender de outros binds via
 `i.get<T>()`.
 
-| Método | Quando é criado | Reuso | Descartado ao desregistrar |
-| --- | --- | --- | --- |
-| `addSingleton<T>` | Imediatamente, ao registrar o módulo | Mesma instância | Sim |
-| `addLazySingleton<T>` | Na primeira resolução | Mesma instância depois | Sim |
-| `addFactory<T>` (alias `add<T>`) | A cada resolução | Nova instância sempre | Não |
+| Método                           | Quando é criado                      | Reuso                  | Descartado ao desregistrar |
+| -------------------------------- | ------------------------------------ | ---------------------- | -------------------------- |
+| `addSingleton<T>`                | Imediatamente, ao registrar o módulo | Mesma instância        | Sim                        |
+| `addLazySingleton<T>`            | Na primeira resolução                | Mesma instância depois | Sim                        |
+| `addFactory<T>` (alias `add<T>`) | A cada resolução                     | Nova instância sempre  | Não                        |
 
 <Callout type="info">
   `binds` pode ser assíncrono — seu tipo de retorno é `FutureOr<void>`, então você
@@ -93,7 +93,7 @@ Um módulo só pode resolver binds do seu **escopo visível**:
 - os binds do `AppModule` (o único escopo globalmente visível).
 
 Se um bind tentar resolver uma dependência que o módulo não declarou nem importou,
-o pacote lança uma `GoRouterModularException` **no momento do registro do módulo**
+o pacote lança uma `ModularException` **no momento do registro do módulo**
 — antes mesmo de a rota ser exibida.
 
 ```dart filename="❌ violação"

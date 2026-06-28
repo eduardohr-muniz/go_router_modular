@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Deprecation message shared by every legacy `redirect` parameter (routes and
-/// `GoRouterModular.configure`). Explains both migration paths to guards:
+/// `Modular.configure`). Explains both migration paths to guards:
 /// a dedicated class `extends ModularGuard`, or an inline `GuardFn`.
-const String guardsRedirectDeprecation =
-    'Use guards instead — either a class that `extends ModularGuard` '
+const String guardsRedirectDeprecation = 'Use guards instead — either a class that `extends ModularGuard` '
     '(reusable) or an inline `GuardFn((context, state) => ...)`, passed in the '
     'route/configure `guards: [...]` list. Will be removed in v6.0.0.';
 

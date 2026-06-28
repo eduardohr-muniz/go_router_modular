@@ -34,7 +34,7 @@ class OperationQueue {
         try {
           await operation();
         } catch (e) {
-          if (e is GoRouterModularException) rethrow;
+          if (e is ModularException) rethrow;
         }
       }
     } finally {

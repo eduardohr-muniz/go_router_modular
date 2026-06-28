@@ -15,7 +15,7 @@ Arquivos de referência: `lib/go_router_modular.dart`.
 #### Scenario: Import único dá acesso à API de produção
 
 - **WHEN** um consumidor importa `package:go_router_modular/go_router_modular.dart`
-- **THEN** tipos como `Module`, `Bind`, `Injector`, `ChildRoute`, `ModuleRoute`, `ShellModularRoute`, `ModularApp` e `GoRouterModularException` ficam disponíveis sem importar arquivos de `src/`
+- **THEN** tipos como `Module`, `Bind`, `Injector`, `ChildRoute`, `ModuleRoute`, `ShellModularRoute`, `ModularApp` e `ModularException` ficam disponíveis sem importar arquivos de `src/`
 
 #### Scenario: Widgets internos não-públicos não são exportados
 
@@ -52,7 +52,7 @@ Arquivos de referência: `lib/go_router_modular.dart`.
 
 ### Requirement: Utilitários do go_router ficam acessíveis pela superfície pública
 
-O sistema SHALL garantir que os utilitários úteis do `go_router` permaneçam acessíveis ao consumidor por um único import do barril principal, para que ele possa usá-los diretamente caso prefira não passar pelos wrappers da fachada `GoRouterModular`. A re-exportação MUST manter `package:go_router/go_router.dart` com `hide GoRouter, ShellRoute`, de modo que tipos como `GoRouterState` e a extension `GoRouterHelper` (que provê `context.go`, `context.push`, etc.) continuem disponíveis, sem vazar os tipos substituídos (`GoRouter`, `ShellRoute`).
+O sistema SHALL garantir que os utilitários úteis do `go_router` permaneçam acessíveis ao consumidor por um único import do barril principal, para que ele possa usá-los diretamente caso prefira não passar pelos wrappers da fachada `Modular`. A re-exportação MUST manter `package:go_router/go_router.dart` com `hide GoRouter, ShellRoute`, de modo que tipos como `GoRouterState` e a extension `GoRouterHelper` (que provê `context.go`, `context.push`, etc.) continuem disponíveis, sem vazar os tipos substituídos (`GoRouter`, `ShellRoute`).
 
 Arquivos de referência: `lib/go_router_modular.dart`.
 

@@ -2,7 +2,7 @@
 title: Routes & Modules
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout } from "nextra/components";
 
 # Routes & Modules
 
@@ -12,12 +12,12 @@ covers the route model and how modules nest.
 
 ## The four route types
 
-| Type | Use it for |
-| --- | --- |
-| `ChildRoute` | A single page (the leaf of a route). |
-| `ModuleRoute` | Mount another module under a path prefix. |
-| `ShellModularRoute` | A shared layout (one Navigator) around a set of routes. |
-| `StatefulShellModularRoute` | Tabs/bottom nav with per-branch persistent state. |
+| Type                        | Use it for                                              |
+| --------------------------- | ------------------------------------------------------- |
+| `ChildRoute`                | A single page (the leaf of a route).                    |
+| `ModuleRoute`               | Mount another module under a path prefix.               |
+| `ShellModularRoute`         | A shared layout (one Navigator) around a set of routes. |
+| `StatefulShellModularRoute` | Tabs/bottom nav with per-branch persistent state.       |
 
 The two shell types are covered in detail on [Shell Routes](/en/routes/shell-route).
 
@@ -99,7 +99,7 @@ class UserModule extends Module {
 You can also read the path parameter directly from the context:
 
 ```dart
-final id = GoRouterModular.pathParamOf(context, 'id');
+final id = Modular.pathParamOf(context, 'id');
 ```
 
 Navigating to `/user/42?tab=posts` gives `id == '42'` and `tab == 'posts'`.

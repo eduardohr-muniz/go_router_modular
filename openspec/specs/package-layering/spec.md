@@ -20,7 +20,7 @@ Arquivos de referência: `lib/src/core/module/module.dart`, `lib/src/routing/rou
 #### Scenario: route_builder não depende do façade de configuração
 
 - **WHEN** os imports de `lib/src/routing/route_builder.dart` são inspecionados
-- **THEN** ele não importa o arquivo do façade `GoRouterModular`/`Modular`
+- **THEN** ele não importa o arquivo do façade `Modular`/`Modular`
 
 ### Requirement: Module é um contrato puro
 
@@ -36,13 +36,13 @@ Arquivos de referência: `lib/src/core/module/module.dart`.
 
 ### Requirement: Composition root orquestra registro e construção
 
-O sistema SHALL concentrar no composition root (`GoRouterModular.configure`) a orquestração que antes vivia em `Module.configureRoutes`: registrar o `AppModule` no container e construir as rotas top-level. O comportamento observável de `configure` MUST permanecer idêntico (mesma assinatura, mesmo resultado de roteamento e registro).
+O sistema SHALL concentrar no composition root (`Modular.configure`) a orquestração que antes vivia em `Module.configureRoutes`: registrar o `AppModule` no container e construir as rotas top-level. O comportamento observável de `configure` MUST permanecer idêntico (mesma assinatura, mesmo resultado de roteamento e registro).
 
 Arquivos de referência: `lib/src/core/config/` (composition root), `lib/src/core/manager/injection_manager.dart`, `lib/src/routing/route_builder.dart`.
 
 #### Scenario: configure registra o AppModule e constrói as rotas
 
-- **WHEN** `GoRouterModular.configure(appModule: ..., initialRoute: ...)` é chamado
+- **WHEN** `Modular.configure(appModule: ..., initialRoute: ...)` é chamado
 - **THEN** o `AppModule` é registrado no container
 - **AND** as rotas top-level são construídas a partir do `AppModule`
 - **AND** o resultado e o comportamento são idênticos aos anteriores à refatoração
@@ -54,7 +54,7 @@ Arquivos de referência: `lib/src/core/config/` (composition root), `lib/src/cor
 
 ### Requirement: God-config fatiado por responsabilidade
 
-O sistema SHALL separar o antigo `go_router_modular_configure.dart` em arquivos coesos por responsabilidade: (a) o façade/composition root `GoRouterModular`/`Modular`; (b) o snapshot imutável de parâmetros de router e sua extension `copyWith`; (c) o serviço de completers de navegação `RouteWithCompleterService`; (d) o holder de runtime com a transição padrão e o `modularNavigatorKey`. Cada arquivo MUST ter uma única responsabilidade.
+O sistema SHALL separar o antigo `go_router_modular_configure.dart` em arquivos coesos por responsabilidade: (a) o façade/composition root `Modular`/`Modular`; (b) o snapshot imutável de parâmetros de router e sua extension `copyWith`; (c) o serviço de completers de navegação `RouteWithCompleterService`; (d) o holder de runtime com a transição padrão e o `modularNavigatorKey`. Cada arquivo MUST ter uma única responsabilidade.
 
 Arquivos de referência: `lib/src/core/config/` (ou área de bootstrap resultante), `lib/src/routing/`.
 

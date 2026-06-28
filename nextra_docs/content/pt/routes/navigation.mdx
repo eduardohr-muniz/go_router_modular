@@ -2,7 +2,7 @@
 title: Navegação
 ---
 
-import { Callout } from 'nextra/components'
+import { Callout } from "nextra/components";
 
 # Navegação
 
@@ -67,8 +67,8 @@ Future<void> goNamedAsync(
 <Callout type="info">
   Prefira `goAsync` em vez de `go` quando precisar rodar código logo após as
   dependências do destino estarem prontas — por exemplo, ler um controller que o
-  módulo de destino registra, ou aguardar a navegação em um fluxo. Para navegação
-  simples, `go` resolve.
+  módulo de destino registra, ou aguardar a navegação em um fluxo. Para
+  navegação simples, `go` resolve.
 </Callout>
 
 ## Voltando até uma localização
@@ -80,26 +80,26 @@ context.popUntilNamed('home');     // remove até esta rota nomeada ficar no top
 
 ## Lendo o estado da rota
 
-Use a fachada `GoRouterModular` para ler o estado da rota atual a partir de um
+Use a fachada `Modular` para ler o estado da rota atual a partir de um
 `BuildContext`. Os métodos seguem a convenção `...Of(context)`:
 
 ```dart
-final state    = GoRouterModular.routerStateOf(context);        // o GoRouterState
-final path     = GoRouterModular.currentPathOf(context);        // o caminho atual
-final id       = GoRouterModular.pathParamOf(context, 'id');    // um parâmetro de caminho
-final params   = GoRouterModular.pathParamsOf(context);         // todos os parâmetros de caminho
-final ref      = GoRouterModular.queryParamOf(context, 'ref');  // um query parameter
-final queries  = GoRouterModular.queryParamsOf(context);        // todos os query parameters
-final uri      = GoRouterModular.currentUriOf(context);         // o Uri atual
-final location = GoRouterModular.currentLocationOf(context);    // a location atual
-final payload  = GoRouterModular.extraOf<MyPayload>(context);   // o extra tipado
+final state    = Modular.routerStateOf(context);        // o GoRouterState
+final path     = Modular.currentPathOf(context);        // o caminho atual
+final id       = Modular.pathParamOf(context, 'id');    // um parâmetro de caminho
+final params   = Modular.pathParamsOf(context);         // todos os parâmetros de caminho
+final ref      = Modular.queryParamOf(context, 'ref');  // um query parameter
+final queries  = Modular.queryParamsOf(context);        // todos os query parameters
+final uri      = Modular.currentUriOf(context);         // o Uri atual
+final location = Modular.currentLocationOf(context);    // a location atual
+final payload  = Modular.extraOf<MyPayload>(context);   // o extra tipado
 ```
 
 <Callout type="info">
   Os atalhos por extension `context.getPathParam('id')`, `context.getPath` e
   `context.state` continuam funcionando, mas estão **depreciados** em favor de
-  `GoRouterModular.pathParamOf`, `currentPathOf` e `routerStateOf`. Serão
-  removidos em uma major futura.
+  `Modular.pathParamOf`, `currentPathOf` e `routerStateOf`. Serão removidos em
+  uma major futura.
 </Callout>
 
 Se preferir, você também pode usar diretamente os utilitários do `go_router`

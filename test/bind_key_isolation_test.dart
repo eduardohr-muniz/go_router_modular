@@ -74,7 +74,7 @@ void main() {
         // Busca sem key deve lançar exceção (bind não encontrado)
         expect(
           () => Bind.get<HttpClient>(),
-          throwsA(isA<GoRouterModularException>()),
+          throwsA(isA<ModularException>()),
         );
 
         // Busca com key deve funcionar
@@ -105,7 +105,7 @@ void main() {
         // Busca com key deve lançar exceção (bind não encontrado)
         expect(
           () => Bind.get<ApiClient>(key: 'api-client-key'),
-          throwsA(isA<GoRouterModularException>()),
+          throwsA(isA<ModularException>()),
         );
       });
 
@@ -126,7 +126,7 @@ void main() {
         // Busca com key deve lançar exceção (bind não encontrado)
         expect(
           () => Bind.get<ApiClient>(key: 'api-client-key'),
-          throwsA(isA<GoRouterModularException>()),
+          throwsA(isA<ModularException>()),
         );
 
         // Busca sem key deve funcionar

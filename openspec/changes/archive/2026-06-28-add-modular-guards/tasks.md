@@ -29,7 +29,7 @@
 
 ## 6. Guards globais no `configure`
 
-- [x] 6.1 Adicionar `guards: List<ModularGuard>` (default `const []`) ao `GoRouterModular.configure` e marcar o parâmetro `redirect` global com `@Deprecated`, resolvendo `[...guards, GuardFn(redirect)]` no `redirect` entregue ao `GoRouter` via `resolveGuards`.
+- [x] 6.1 Adicionar `guards: List<ModularGuard>` (default `const []`) ao `Modular.configure` e marcar o parâmetro `redirect` global com `@Deprecated`, resolvendo `[...guards, GuardFn(redirect)]` no `redirect` entregue ao `GoRouter` via `resolveGuards`.
 - [x] 6.2 Escrever testes de integração do guard global: desvia a rota inicial, bloqueia navegação para rota protegida, libera rota isenta, e coexistência `guards` + `redirect` legado (guards liberam → legado decide).
 
 ## 5. Verificação final
