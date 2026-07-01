@@ -54,7 +54,7 @@ This repo ships an **Agent Skill** that teaches AI coding agents (Claude Code, C
 **Install it into your project with one command** (via the [`skills`](https://github.com/vercel-labs/skills) CLI):
 
 ```bash
-npx skills add https://github.com/eduardohr-muniz/go_router_modular --skill go-router-modular
+npx skills add eduardohr-muniz/go_router_modular -s go_router_modular
 ```
 
 The CLI detects your installed agents and drops the skill into the right place (e.g. `.claude/skills/`). Add `-g` to install it globally for every project.
@@ -62,7 +62,7 @@ The CLI detects your installed agents and drops the skill into the right place (
 **Optional — events add-on.** If your app uses the event system (`EventModule`, `ModularEvent`, `ModularEventMixin`) for decoupled cross-module communication, install the separate events skill too:
 
 ```bash
-npx skills add https://github.com/eduardohr-muniz/go_router_modular --skill go-router-modular-events
+npx skills add eduardohr-muniz/go_router_modular -s go-router-modular-events
 ```
 
 ---
