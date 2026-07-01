@@ -1,5 +1,10 @@
 ## Unreleased
 
+### 5.5.2
+
+- **Documentation:** reworked the `README` for a cleaner, pub.dev-friendly layout — added an **Installation** section and a step-by-step **Quick Start** (configure, compose modules, define a feature module, navigate), a features table, and a collapsible events add-on section. The layout no longer relies on centering, which pub.dev strips.
+- **Fixed:** the `go-router-modular` Agent Skill was silently skipped by the `skills` CLI because a `: ` inside its `SKILL.md` frontmatter `description` produced invalid YAML. The description was corrected so the skill is discovered and installable again.
+
 ### 5.5.0
 
 - **Route-state reads consolidated on the `Modular` facade with better names.** The read utilities moved off the `BuildContext` extension and onto the facade, following the `...Of(context)` convention. Beyond path and parameters, there is now explicit access to the useful `go_router` utilities (query params, uri, location, and typed `extra`) from a single entry point:
