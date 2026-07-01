@@ -92,17 +92,17 @@ packages:
     dependency: transitive
     description:
       name: go_router
-      sha256: "7974313e217a7771557add6ff2238acb63f635317c35fa590d348fb238f00896"
+      sha256: "5922b2861e2235a3504896f0d6fa07d84141b480cf52eecd2f42cd25585a9e8a"
       url: "https://pub.dev"
     source: hosted
-    version: "17.1.0"
+    version: "17.3.0"
   go_router_modular:
     dependency: "direct main"
     description:
       path: ".."
       relative: true
     source: path
-    version: "5.1.0"
+    version: "5.3.0"
   go_transitions:
     dependency: transitive
     description:
@@ -261,5 +261,5 @@ packages:
     source: hosted
     version: "1.1.1"
 sdks:
-  dart: ">=3.9.0 <4.0.0"
-  flutter: ">=3.35.0"
+  dart: ">=3.10.0 <4.0.0"
+  flutter: ">=3.38.0"

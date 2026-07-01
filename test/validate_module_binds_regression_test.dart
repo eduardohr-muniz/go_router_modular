@@ -1,5 +1,5 @@
 /// TDD — reproduz o bug onde `_validateModuleBinds` lança
-/// `GoRouterModularException` ao tentar instanciar um bind *factory* cujas
+/// `ModularException` ao tentar instanciar um bind *factory* cujas
 /// dependências já foram removidas (porque `_unregisterBinds` roda ANTES da
 /// validação dentro de `_unregisterModuleInternal`).
 ///
@@ -20,8 +20,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/core/dependency_analyzer/dependency_analyzer.dart';
-import 'package:go_router_modular/src/internal/setup.dart';
+import 'package:go_router_modular/src/shared/setup.dart';
 
 // ---------------------------------------------------------------------------
 // Tipos de teste
@@ -90,13 +89,11 @@ void main() {
 
   setUp(() {
     InjectionManager.instance.resetForTesting();
-    DependencyAnalyzer.clearAll();
     _resetCounters();
   });
 
   tearDown(() {
     InjectionManager.instance.resetForTesting();
-    DependencyAnalyzer.clearAll();
     _resetCounters();
   });
 
@@ -119,16 +116,16 @@ void main() {
     );
 
     test(
-      'COM debugLog ativo: desregistrar RouteModule não deve lançar GoRouterModularException',
+      'COM debugLog ativo: desregistrar RouteModule não deve lançar ModularException',
       () async {
-        // Este é o caso crítico: debugLogGoRouterModular=true ativa o `throw`
+        // Este é o caso crítico: debugLogModular=true ativa o `throw`
         // dentro de `_validateModuleBinds`, que interrompe a OperationQueue.
         SetupModular.instance.setDebugModel(
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogGoRouterModular: true,
             autoDisposeEvents: true,
+            debugLogGoRouterModular: true,
           ),
         );
 
@@ -138,7 +135,7 @@ void main() {
         await InjectionManager.instance.registerAppModule(appModule);
         await InjectionManager.instance.registerBindsModule(routeModule);
 
-        // Não deve lançar GoRouterModularException — mesmo com debugLog ativo
+        // Não deve lançar ModularException — mesmo com debugLog ativo
         await expectLater(
           InjectionManager.instance.unregisterModule(routeModule),
           completes,
@@ -158,8 +155,8 @@ void main() {
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogGoRouterModular: true,
             autoDisposeEvents: true,
+            debugLogGoRouterModular: true,
           ),
         );
 
@@ -185,8 +182,7 @@ void main() {
         );
 
         // FakeRepository deve ter sido criado exatamente 2x (1 por registro)
-        expect(FakeRepository.constructorCalls, 2,
-            reason: 'FakeRepository deve ser re-instanciado no segundo registro');
+        expect(FakeRepository.constructorCalls, 2, reason: 'FakeRepository deve ser re-instanciado no segundo registro');
       },
     );
 
@@ -197,8 +193,8 @@ void main() {
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogGoRouterModular: true,
             autoDisposeEvents: true,
+            debugLogGoRouterModular: true,
           ),
         );
 
@@ -216,8 +212,7 @@ void main() {
         expect(
           FakeCubit.constructorCalls,
           0,
-          reason:
-              'Factory binds não devem ser instanciados durante a validação — '
+          reason: 'Factory binds não devem ser instanciados durante a validação — '
               'são transientes e suas dependências podem já ter sido dispostas.',
         );
       },

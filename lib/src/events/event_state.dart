@@ -19,7 +19,7 @@ class EventState {
   /// Currently active exclusive listener per event type
   final Map<int, Map<Type, ExclusiveListener?>> activeExclusiveListener = {};
 
-  /// Auto-dispose tracking for EventListenerMixin
+  /// Auto-dispose tracking for EventModule listeners
   final Map<int, Map<Type, bool>> disposeSubscriptions = {};
 
   void clearAll() {

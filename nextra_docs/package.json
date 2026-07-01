@@ -1,14 +1,14 @@
 {
     "name": "go-router-modular-docs",
     "version": "1.0.0",
-    "description": "Documentation for GoRouter Modular package using Nextra",
-    "main": "index.js",
+    "description": "Documentation for go_router_modular, built with Nextra 4 (English + Portuguese).",
+    "type": "module",
+    "private": true,
     "scripts": {
         "dev": "next dev",
         "build": "next build",
-        "start": "next start",
-        "lint": "next lint",
-        "export": "touch out/.nojekyll"
+        "postbuild": "pagefind --site out --output-subdir _pagefind",
+        "start": "next start"
     },
     "keywords": [
         "flutter",
@@ -18,21 +18,23 @@
         "documentation",
         "nextra"
     ],
-    "author": "GoRouter Modular Team",
+    "author": "go_router_modular",
     "license": "MIT",
     "dependencies": {
-        "@heroicons/react": "^2.2.0",
-        "next": "^14.0.0",
-        "nextra": "^2.13.0",
-        "nextra-theme-docs": "^2.13.0",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "next": "^15.5.19",
+        "nextra": "^4.6.1",
+        "nextra-theme-docs": "^4.6.1",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7"
     },
     "devDependencies": {
-        "@types/node": "20.8.0",
-        "@types/react": "18.2.25",
-        "@types/react-dom": "18.2.11",
-        "eslint": "^9.36.0",
-        "typescript": "5.2.2"
+        "@types/node": "^22.10.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "pagefind": "^1.5.2",
+        "typescript": "^5.6.0"
+    },
+    "overrides": {
+        "zod": "4.3.6"
     }
 }

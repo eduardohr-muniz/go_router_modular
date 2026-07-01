@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use_from_same_package
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
-import 'package:go_router_modular/src/exceptions/exception.dart';
+import 'package:go_router_modular/src/di/bind.dart';
+import 'package:go_router_modular/src/shared/exception.dart';
 
 // Interfaces para teste
 abstract class IFirstDependency {
@@ -83,13 +83,12 @@ void main() {
       expect(
         () => Bind.get<ComplexClass>(),
         throwsA(
-          predicate<GoRouterModularException>(
+          predicate<ModularException>(
             (exception) {
               final message = exception.message;
 
               // Verifica se a mensagem contém informação sobre o bind problemático
-              final containsBindInfo = message.contains('ComplexClass') ||
-                  message.contains('Bind not found');
+              final containsBindInfo = message.contains('ComplexClass') || message.contains('Bind not found');
 
               // Verifica se a mensagem contém informação sobre dependências faltantes
               // Espera-se encontrar pelo menos uma das dependências faltantes na mensagem
@@ -123,12 +122,12 @@ void main() {
       Bind.register(complexBind);
 
       // Act
-      GoRouterModularException? caughtException;
+      ModularException? caughtException;
 
       try {
         Bind.get<ComplexClass>();
       } catch (e) {
-        if (e is GoRouterModularException) {
+        if (e is ModularException) {
           caughtException = e;
         } else {
           rethrow;
@@ -136,13 +135,12 @@ void main() {
       }
 
       // Assert
-      expect(caughtException, isNotNull, reason: 'Deve lançar GoRouterModularException');
+      expect(caughtException, isNotNull, reason: 'Deve lançar ModularException');
 
       final message = caughtException!.message;
 
       // Verifica se a mensagem menciona o bind problemático
-      final mentionsBindProblem = message.contains('ComplexClass') ||
-          message.contains('Bind not found');
+      final mentionsBindProblem = message.contains('ComplexClass') || message.contains('Bind not found');
       expect(
         mentionsBindProblem,
         isTrue,
@@ -151,10 +149,8 @@ void main() {
 
       // Verifica se a mensagem menciona pelo menos uma das dependências faltantes
       // (o sistema pode falhar na primeira dependência não encontrada)
-      final hasSecondDependency = message.contains('ISecondDependency') ||
-          message.contains('SecondDependency');
-      final hasThirdDependency = message.contains('IThirdDependency') ||
-          message.contains('ThirdDependency');
+      final hasSecondDependency = message.contains('ISecondDependency') || message.contains('SecondDependency');
+      final hasThirdDependency = message.contains('IThirdDependency') || message.contains('ThirdDependency');
 
       expect(
         hasSecondDependency || hasThirdDependency,
@@ -216,7 +212,7 @@ void main() {
       expect(
         () => Bind.get<ComplexClass>(),
         throwsA(
-          predicate<GoRouterModularException>(
+          predicate<ModularException>(
             (exception) {
               final message = exception.message;
 
@@ -249,12 +245,12 @@ void main() {
       Bind.register(complexBind);
 
       // Act
-      GoRouterModularException? caughtException;
+      ModularException? caughtException;
 
       try {
         Bind.get<ComplexClass>();
       } catch (e) {
-        if (e is GoRouterModularException) {
+        if (e is ModularException) {
           caughtException = e;
         }
       }
@@ -276,7 +272,8 @@ void main() {
       expect(
         mentionsBindProblem || mentionsMissingDependency,
         isTrue,
-        reason: 'A mensagem de erro deve mencionar o bind problemático (ComplexClass) ou as dependências faltantes (ISecondDependency/IThirdDependency)',
+        reason:
+            'A mensagem de erro deve mencionar o bind problemático (ComplexClass) ou as dependências faltantes (ISecondDependency/IThirdDependency)',
       );
     });
   });

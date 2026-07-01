@@ -3,7 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/src/events/modular_event.dart';
-import 'package:go_router_modular/src/internal/setup.dart';
+import 'package:go_router_modular/src/shared/setup.dart';
 import 'package:event_bus/event_bus.dart';
 
 bool get _debugLog => SetupModular.instance.debugLogEventBus;

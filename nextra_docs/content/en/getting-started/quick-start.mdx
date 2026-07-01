@@ -1,0 +1,140 @@
+---
+title: Quick Start
+---
+
+import { Callout, Steps } from 'nextra/components'
+
+# Quick Start
+
+Get a modular app running in three steps: install the package, configure the
+router, then split your app into modules.
+
+<Steps>
+
+### Install
+
+Add the package to your project:
+
+```bash
+flutter pub add go_router_modular
+```
+
+### Configure
+
+Call `Modular.configure` inside `main()`, after the Flutter binding is ready,
+then render `ModularApp.router`:
+
+```dart filename="lib/main.dart"
+import 'package:flutter/material.dart';
+import 'package:go_router_modular/go_router_modular.dart';
+
+import 'src/app_module.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Modular.configure(
+    appModule: AppModule(),
+    initialRoute: '/',
+  );
+  runApp(const AppWidget());
+}
+
+class AppWidget extends StatelessWidget {
+  const AppWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) => ModularApp.router(title: 'My App');
+}
+```
+
+`ModularApp.router` wires `Modular.routerConfig` and the loading overlay for
+you. `Modular.configure` is idempotent — calling it twice returns the same
+router.
+
+<Callout type="info">
+  Need router options that `ModularApp.router` doesn't expose (custom
+  `observers`, a `redirect`, an `errorBuilder`)? Pass them straight to
+  `Modular.configure`, or override only what you need with
+  `Modular.routerConfig.copyWith(...)`.
+</Callout>
+
+### Create modules
+
+The app module is the root of the tree. It mounts feature modules with
+`ModuleRoute`:
+
+```dart filename="lib/src/app_module.dart"
+import 'package:go_router_modular/go_router_modular.dart';
+
+import 'modules/home/home_module.dart';
+
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        ModuleRoute('/', module: HomeModule()),
+      ];
+}
+```
+
+Each feature module owns its dependencies and its pages. Register dependencies
+in `binds` with the `Injector`, and declare pages with `ChildRoute`:
+
+```dart filename="lib/src/modules/home/home_module.dart"
+import 'package:go_router_modular/go_router_modular.dart';
+
+import 'home_controller.dart';
+import 'pages/home_page.dart';
+
+class HomeModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<HomeController>((i) => HomeController());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute('/', child: (context, state) => const HomePage()),
+      ];
+}
+```
+
+Read a dependency with `context.read<T>()` (or `Modular.get<T>()` outside a
+widget):
+
+```dart filename="lib/src/modules/home/pages/home_page.dart"
+@override
+Widget build(BuildContext context) {
+  final controller = context.read<HomeController>();
+  // ...
+}
+```
+
+</Steps>
+
+## Project structure
+
+A module-first layout keeps each feature self-contained:
+
+```text
+lib/
+├── main.dart
+└── src/
+    ├── app_module.dart
+    ├── app_widget.dart
+    └── modules/
+        └── home/
+            ├── home_module.dart
+            ├── home_controller.dart
+            └── pages/
+                └── home_page.dart
+```
+
+`HomeModule`'s binds are registered when you enter the module and disposed when
+you leave it — no manual cleanup.
+
+## Next steps
+
+- [Routes & Modules](/en/routes/routes-system) — every route type in depth.
+- [Dependency Injection](/en/dependency-injection) — binds, scopes, and lookup.
+- [Migration Guide](/en/getting-started/migration-guide) — upgrading from an
+  older version.

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:go_transitions/go_transitions.dart';
 
-import '../core/module/module.dart';
+import 'package:go_router_modular/src/module/module.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
 import 'child_route.dart';
 import 'i_modular_route.dart';
 import 'module_route.dart';
@@ -18,7 +19,7 @@ import 'module_route.dart';
 /// - Caso contrário, usa-se transição igual à das rotas: preencha só [transition],
 ///   só `transitionDuration`, ambos ou nenhum; o que faltar usa
 ///   **[Modular.getDefaultTransition]** e **[GoTransition.defaultDuration]**
-///   (esta última também reflete `defaultTransitionDuration` de [GoRouterModular.configure]).
+///   (esta última também reflete `defaultTransitionDuration` de [Modular.configure]).
 ///
 /// Sobrescritas explícitas: [transition], [transitionDuration], [reverseTransitionDuration].
 /// [navigatorContainerBuilder], quando informado, **substitui** toda a lógica acima.
@@ -53,10 +54,8 @@ import 'module_route.dart';
 /// }
 /// ```
 class StatefulShellModularRoute extends ModularRoute {
-  final Widget Function(BuildContext context, GoRouterState state,
-      StatefulNavigationShell navigationShell)? builder;
-  final Page<dynamic> Function(BuildContext context, GoRouterState state,
-      StatefulNavigationShell navigationShell)? pageBuilder;
+  final Widget Function(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell)? builder;
+  final Page<dynamic> Function(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell)? pageBuilder;
   final List<ModularBranch> branches;
 
   /// Transição entre branches (`GoTransitions.*`). Omitido usa [Modular.getDefaultTransition]
@@ -77,8 +76,13 @@ class StatefulShellModularRoute extends ModularRoute {
 
   /// Encaminhado para [StatefulShellRoute]: notificar o observer raiz da troca de páginas.
   final bool notifyRootObserver;
-  final FutureOr<String?> Function(BuildContext context, GoRouterState state)?
-      redirect;
+
+  /// Guards que protegem o shell, avaliados antes da seleção de branch e em
+  /// curto-circuito ("primeiro que barrar vence"). Veja [RouteGuard].
+  final List<RouteGuard> guards;
+
+  @Deprecated(guardsRedirectDeprecation)
+  final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
   final GlobalKey<NavigatorState>? parentNavigatorKey;
   final String? restorationScopeId;
   final GlobalKey<StatefulNavigationShellState>? shellKey;
@@ -92,7 +96,8 @@ class StatefulShellModularRoute extends ModularRoute {
     this.reverseTransitionDuration,
     this.navigatorContainerBuilder,
     this.notifyRootObserver = true,
-    this.redirect,
+    this.guards = const [],
+    @Deprecated(guardsRedirectDeprecation) this.redirect,
     this.parentNavigatorKey,
     this.restorationScopeId,
     this.shellKey,

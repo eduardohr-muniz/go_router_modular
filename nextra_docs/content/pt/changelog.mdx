@@ -1,0 +1,59 @@
+---
+title: Changelog
+---
+
+import { Callout } from "nextra/components";
+
+# Changelog
+
+Destaques das versões recentes. O histórico completo e oficial fica em
+[`CHANGELOG.md`](https://github.com/eduardohr-muniz/go_router_modular/blob/master/CHANGELOG.md)
+no GitHub.
+
+## Unreleased
+
+### Breaking
+
+- **Composição do módulo de eventos simplificada.** O mecanismo não utilizado
+  `eventImports()` + `ModularEventListener` e o mixin público `EventListenerMixin`
+  foram removidos. Para compor os ouvintes de outro módulo, chame
+  `OutroEventModule().listen()` de forma síncrona dentro do seu próprio `listen()`
+  — os ouvintes compostos herdam o ciclo de descarte do módulo host. O único mixin
+  público de eventos agora é `ModularEventMixin`. Veja
+  [Módulo de Eventos](/pt/event-module).
+
+## 5.3.0
+
+### Adicionado
+
+- **`copyWith` no router modular.** Sobrescreva opções individuais do `GoRouter`
+  no ponto de consumo, reaproveitando tudo que foi passado em
+  `Modular.configure(...)` — útil para opções que o `ModularApp.router` não expõe
+  (ex.: `observers`). O router derivado é memoizado, então o estado de navegação é
+  preservado entre rebuilds. Veja [Início Rápido](/pt/getting-started/quick-start).
+
+### Alterado
+
+- Atualização da restrição do `go_router` para `^17.3.0`.
+
+## 5.2.0
+
+### Breaking
+
+- **Binds de factory sem tipo não resolvem mais por supertipos.** Registre
+  factories com tipo explícito ao resolver por interface:
+  `i.addFactory<IService>((i) => ServiceImpl())`. Isso elimina instâncias fantasma
+  de factory que executavam efeitos colaterais do construtor durante buscas não
+  relacionadas. Veja [Injeção de Dependência](/pt/dependency-injection).
+
+### Corrigido
+
+- Dependências circulares entre tipos diferentes agora geram um
+  `ModularException` claro com a cadeia de dependências, em vez do erro
+  enganoso "Bind not found".
+
+<Callout type="info">
+  Para todas as versões e a lista completa de correções, leia o [changelog
+  completo no
+  GitHub](https://github.com/eduardohr-muniz/go_router_modular/blob/master/CHANGELOG.md).
+</Callout>

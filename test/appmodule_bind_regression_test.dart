@@ -9,7 +9,7 @@
 ///   cachedInstance == null e chamam factoryFunction → construtor executado 2x extra.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/bind.dart';
 import 'package:go_router_modular/src/di/injector.dart';
 
 // ======================== CLASSES DE TESTE ========================

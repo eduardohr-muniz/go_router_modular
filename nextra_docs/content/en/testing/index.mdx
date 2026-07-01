@@ -1,0 +1,100 @@
+---
+title: Overview
+---
+
+import { Callout } from 'nextra/components'
+
+# Testing
+
+`go_router_modular` ships a dedicated testing library that resets the DI
+container, isolates the event system, and records fired events — so each test
+runs clean with no manual boilerplate.
+
+```dart
+import 'package:go_router_modular/testing.dart';
+```
+
+This single import gives you everything: `ModularTestScope`, `EventRecorder`,
+`RecordedEventList`, `FakeInjector`, `ModularEventBus`, plus the
+`clearEventModuleState` and `defaultModularEventBus` helpers.
+
+## ModularTestScope
+
+`ModularTestScope` is the facade for **integration tests** — it wires together
+DI, events, and lifecycle. Use it whenever a test exercises the real container
+(real binds resolving through `Modular`) and/or the real event bus.
+
+Create a scope with `ModularTestScope.fresh()` and hook its lifecycle into your
+test's `setUp`/`tearDown`:
+
+- `setUp` resets the DI container, clears event state, and re-applies the
+  template binds.
+- `tearDown` cancels event listeners and resets everything again.
+
+```dart filename="test/order_service_test.dart"
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router_modular/testing.dart';
+
+void main() {
+  final scope = ModularTestScope.fresh()
+      .withInstance<AppConfig>(AppConfig.test())
+      .withLazySingleton<ApiClient>(() => FakeApiClient());
+
+  setUp(scope.setUp);
+  tearDown(scope.tearDown);
+
+  test('resolves a registered dependency', () {
+    expect(scope.isRegistered<ApiClient>(), isTrue);
+    expect(scope.get<ApiClient>(), isA<FakeApiClient>());
+  });
+
+  test('per-test override', () {
+    scope.registerInstance<ApiClient>(AnotherFakeApiClient());
+    expect(scope.get<ApiClient>(), isA<AnotherFakeApiClient>());
+  });
+}
+```
+
+### Template binds
+
+Template binds are declared once and **re-applied on every `setUp`**, so every
+test starts from the same baseline. Each method returns a **new** scope, so they
+chain:
+
+- `withInstance<T>(T instance)` — registers a singleton instance.
+- `withFactory<T>(T Function() factory)` — registers a factory (new instance per
+  resolution).
+- `withLazySingleton<T>(T Function() factory)` — registers a lazily-created
+  singleton.
+
+```dart
+final scope = ModularTestScope.fresh()
+    .withInstance<AppConfig>(AppConfig.test())
+    .withFactory<Uuid>(() => Uuid())
+    .withLazySingleton<ApiClient>(() => FakeApiClient());
+```
+
+### Per-test registration
+
+To register something for a single test (after `setUp` has run), use the direct
+methods. They register straight into the container:
+
+- `registerInstance<T>(T instance)`
+- `registerFactory<T>(T Function() factory)`
+- `registerLazySingleton<T>(T Function() factory)`
+
+### Resolving
+
+- `get<T>({String? key})` — resolves `T` from the container.
+- `isRegistered<T>({String? key})` — `true` if `T` is registered.
+
+<Callout type="info">
+  Always wire both `setUp(scope.setUp)` and `tearDown(scope.tearDown)`. Without
+  `tearDown`, event listeners and container state leak into the next test.
+</Callout>
+
+## Next steps
+
+- [Testing Events](/en/testing/event-testing)
+- [Unit Testing](/en/testing/fake-injector)
+- [Event Module](/en/event-module)

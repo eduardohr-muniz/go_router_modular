@@ -1,0 +1,154 @@
+---
+title: Guards
+---
+
+import { Callout } from 'nextra/components'
+
+# Guards
+
+Guards protegem rotas: eles interceptam a navegação e decidem se ela prossegue ou
+é desviada — por exemplo, mandar um usuário não autenticado para a tela de login.
+Um guard é o `redirect` do `go_router` encapsulado e nomeado: retorne `null` para
+prosseguir, ou retorne um `String` de caminho para redirecionar.
+
+A forma recomendada de proteger uma rota é uma lista `guards: [...]` — tanto por
+rota quanto globalmente, no `Modular.configure`.
+
+## Guards globais
+
+Passe uma lista `guards` para o `Modular.configure`. Eles rodam em toda
+navegação, em curto-circuito, antes dos guards de rota:
+
+```dart filename="lib/main.dart"
+class AuthGuard extends RouteGuard {
+  @override
+  FutureOr<String?> redirect(BuildContext context, GoRouterState state) async {
+    final isLoggedIn = await AuthService.instance.hasSession();
+    final goingToLogin = state.matchedLocation == '/login';
+
+    if (!isLoggedIn && !goingToLogin) return '/login';
+    if (isLoggedIn && goingToLogin) return '/';
+    return null; // prossegue
+  }
+}
+
+await Modular.configure(
+  appModule: AppModule(),
+  initialRoute: '/',
+  guards: [AuthGuard()],
+);
+```
+
+<Callout type="warning">
+  O parâmetro `redirect` do `Modular.configure` está **deprecado** e será
+  removido na v6.0.0. Migre para `guards`. Se declarar os dois, a ordem efetiva é
+  `[...guards, GuardFn(redirect)]`.
+</Callout>
+
+## Guards por rota (recomendado)
+
+Em vez de uma função `redirect` solta por rota, prefira **guards**: unidades de
+proteção reutilizáveis e componíveis. Um guard é o `redirect` encapsulado e
+nomeado — declare uma classe `extends RouteGuard` uma vez e reutilize-a em
+quantas rotas precisar.
+
+Passe uma lista `guards: [...]` na rota. Eles são avaliados em curto-circuito
+("primeiro que barrar vence"): o primeiro guard que retorna um caminho
+redireciona; se todos retornam `null`, a navegação prossegue.
+
+```dart filename="lib/src/modules/admin/guards/auth_guard.dart"
+class AuthGuard extends RouteGuard {
+  @override
+  FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
+    final auth = Modular.get<AuthService>();
+    if (auth.isLogged) return null; // libera
+    return '/login?from=${state.uri.path}';
+  }
+}
+
+class RoleGuard extends RouteGuard {
+  RoleGuard(this.requiredRole);
+  final String requiredRole;
+
+  @override
+  FutureOr<String?> redirect(BuildContext context, GoRouterState state) {
+    final user = Modular.get<UserService>().current;
+    return user.hasRole(requiredRole) ? null : '/';
+  }
+}
+```
+
+```dart filename="lib/src/modules/admin/admin_module.dart"
+ChildRoute(
+  '/admin',
+  guards: [AuthGuard(), RoleGuard('admin')],
+  child: (context, state) => const AdminPage(),
+)
+```
+
+`guards` está disponível em `ChildRoute`, `ModuleRoute`, `ShellModularRoute` e
+`StatefulShellModularRoute`. No `ModuleRoute`, os guards protegem **todas** as
+rotas do módulo.
+
+O guard recebe `context` e `state` — os binds do módulo já estão registrados
+quando ele roda, então `Modular.get<T>()` resolve normalmente; e `state` dá
+acesso a `state.uri`, `state.pathParameters`, `state.uri.queryParameters` e
+`state.extra`.
+
+Para uma regra simples sem criar uma classe, use `GuardFn`:
+
+```dart
+ChildRoute(
+  '/beta',
+  guards: [GuardFn((context, state) {
+    return Modular.get<FeatureFlags>().betaEnabled ? null : '/';
+  })],
+  child: (context, state) => const BetaPage(),
+)
+```
+
+<Callout type="info">
+  Você não precisa de um guard para registrar os binds de um módulo. Ao entrar
+  em um `ModuleRoute`, suas dependências são registradas automaticamente e o
+  [loader](/pt/routes/loader-system) cobre a espera.
+</Callout>
+
+## `redirect` por rota (deprecado)
+
+<Callout type="warning">
+  O parâmetro `redirect` em `ChildRoute`, `ShellModularRoute` e
+  `StatefulShellModularRoute` está **deprecado** e será removido na v6.0.0.
+  Migre para `guards: [GuardFn(...)]`. Durante a transição, se você declarar
+  `guards` e `redirect` juntos, a ordem efetiva é `[...guards, GuardFn(redirect)]`
+  — os guards rodam primeiro e o `redirect` legado é o último elo.
+</Callout>
+
+```dart filename="forma antiga — evite"
+ChildRoute(
+  '/admin',
+  child: (context, state) => const AdminPage(),
+  redirect: (context, state) {
+    final user = Modular.get<UserService>();
+    return user.isAdmin ? null : '/';
+  },
+)
+```
+
+## Evitando loops
+
+Sempre redirecione para caminhos absolutos e garanta que suas condições não
+fiquem indo e voltando. Um erro comum é redirecionar para `/login` sem isentar a
+própria rota `/login`, o que cria um loop infinito.
+
+<Callout type="warning">
+  O `go_router` aborta após `redirectLimit` redirecionamentos consecutivos
+  (padrão `5`, configurável no `Modular.configure`). Se você atingir esse limite,
+  suas condições estão em loop — verifique se todo destino de redirect acaba
+  retornando `null`.
+</Callout>
+
+## Próximos passos
+
+- [Sistema de Loader](/pt/routes/loader-system)
+- [Rotas e Módulos](/pt/routes/routes-system)
+- [Injeção de Dependência](/pt/dependency-injection)

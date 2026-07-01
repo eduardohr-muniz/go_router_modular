@@ -15,8 +15,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/core/dependency_analyzer/dependency_analyzer.dart';
-import 'package:go_router_modular/src/internal/setup.dart';
+import 'package:go_router_modular/src/shared/setup.dart';
 
 // ---------------------------------------------------------------------------
 // Tipos de teste (contagem de construções)
@@ -160,13 +159,12 @@ void main() {
 
   tearDown(() {
     InjectionManager.instance.resetForTesting();
-    DependencyAnalyzer.clearAll();
     SetupModular.instance.setDebugModel(
       SetupModel(
         debugLogEventBus: false,
         debugLogGoRouter: false,
-        debugLogGoRouterModular: false,
         autoDisposeEvents: true,
+        debugLogGoRouterModular: false,
       ),
     );
     _resetCounters();
@@ -174,7 +172,6 @@ void main() {
 
   setUp(() {
     InjectionManager.instance.resetForTesting();
-    DependencyAnalyzer.clearAll();
     _resetCounters();
   });
 
@@ -204,14 +201,14 @@ void main() {
     );
 
     test(
-      'com debugLogGoRouterModular ligado — logging não pode reinstanciar singleton duplicado',
+      'com debugLogModular ligado — logging não pode reinstanciar singleton duplicado',
       () async {
         SetupModular.instance.setDebugModel(
           SetupModel(
             debugLogEventBus: false,
             debugLogGoRouter: false,
-            debugLogGoRouterModular: true,
             autoDisposeEvents: true,
+            debugLogGoRouterModular: false,
           ),
         );
 

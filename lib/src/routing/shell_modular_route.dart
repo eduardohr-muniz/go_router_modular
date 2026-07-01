@@ -1,8 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router/go_router.dart';
+import 'package:go_router_modular/src/routing/guards/route_guard.dart';
+import 'package:go_router_modular/src/routing/i_modular_route.dart';
 
 class ShellModularRoute extends ModularRoute {
+  /// Guards que protegem o shell, avaliados em curto-circuito ("primeiro que
+  /// barrar vence"). Veja [RouteGuard].
+  final List<RouteGuard> guards;
+
+  @Deprecated(guardsRedirectDeprecation)
   final FutureOr<String?> Function(BuildContext context, GoRouterState state)? redirect;
   final Widget Function(BuildContext context, GoRouterState state, Widget child)? builder;
   final Page<dynamic> Function(BuildContext context, GoRouterState state, Widget child)? pageBuilder;
@@ -13,6 +20,8 @@ class ShellModularRoute extends ModularRoute {
   final String? restorationScopeId;
 
   ShellModularRoute({
+    this.guards = const [],
+    @Deprecated(guardsRedirectDeprecation)
     this.redirect,
     this.pageBuilder,
     this.observers,

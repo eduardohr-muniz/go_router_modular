@@ -1,5 +1,5 @@
-import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/bind.dart';
+import 'package:go_router_modular/src/di/bind_identifier.dart';
 
 /// Read-only interface for dependency access.
 abstract interface class InjectorReader {
@@ -8,7 +8,28 @@ abstract interface class InjectorReader {
 
 class Injector implements InjectorReader {
   @override
-  T get<T>({String? key}) => Bind.get<T>(key: key);
+  T get<T>({String? key}) {
+    final instance = Bind.get<T>(key: key);
+    final sink = _scopeRecordingSink;
+    if (sink != null) {
+      final type = (instance as Object).runtimeType;
+      sink.add(BindIdentifier(type, key ?? type.toString()));
+    }
+    return instance;
+  }
+
+  /// Coletor de dependências resolvidas durante o commit, para validação de
+  /// escopo por módulo. Ativo apenas entre [beginScopeRecording] e
+  /// [endScopeRecording]; fora disso, `get` não grava nada.
+  List<BindIdentifier>? _scopeRecordingSink;
+
+  void beginScopeRecording() => _scopeRecordingSink = <BindIdentifier>[];
+
+  List<BindIdentifier> endScopeRecording() {
+    final recorded = _scopeRecordingSink ?? const <BindIdentifier>[];
+    _scopeRecordingSink = null;
+    return List<BindIdentifier>.of(recorded);
+  }
 
   final List<Bind<Object>> _registeringBinds = [];
   bool _isRegistering = false;

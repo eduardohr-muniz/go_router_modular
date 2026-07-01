@@ -15,7 +15,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/widgets/once_builder.dart';
+import 'package:go_router_modular/src/ui/once_builder.dart';
 
 void main() {
   group('OnceBuilder', () {

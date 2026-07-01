@@ -1,3 +1,47 @@
+## Unreleased
+
+### 5.5.0
+
+- **Route-state reads consolidated on the `Modular` facade with better names.** The read utilities moved off the `BuildContext` extension and onto the facade, following the `...Of(context)` convention. Beyond path and parameters, there is now explicit access to the useful `go_router` utilities (query params, uri, location, and typed `extra`) from a single entry point:
+
+  ```dart
+  final state    = Modular.routerStateOf(context);        // the GoRouterState
+  final path     = Modular.currentPathOf(context);        // the current path
+  final id       = Modular.pathParamOf(context, 'id');    // a path parameter
+  final params   = Modular.pathParamsOf(context);         // all path parameters
+  final ref      = Modular.queryParamOf(context, 'ref');  // a query parameter
+  final queries  = Modular.queryParamsOf(context);        // all query parameters
+  final uri      = Modular.currentUriOf(context);         // the current Uri
+  final location = Modular.currentLocationOf(context);    // the current location
+  final payload  = Modular.extraOf<MyPayload>(context);   // the typed extra
+  ```
+
+  The `go_router` utilities (`GoRouterState`, `context.go`, `context.push`, …) are still re-exported by the package barrel, so you can use them directly by importing only `package:go_router_modular/go_router_modular.dart`.
+
+  Deprecations (still functional, will be removed in a future major release):
+  - Extension: `context.getPathParam('id')` → `Modular.pathParamOf(context, 'id')`; `context.getPath` → `Modular.currentPathOf(context)`; `context.state` → `Modular.routerStateOf(context)`.
+  - Facade: `Modular.getCurrentPathOf(context)` → `currentPathOf(context)`; `Modular.stateOf(context)` → `routerStateOf(context)`.
+
+### 5.4.0
+
+- **Simplified `EventModule` composition; unused event APIs removed.** The composition mechanism based on `eventImports()` + `ModularEventListener` was removed (it was dead code, with no consumers). To compose another module's listeners, call `AnotherEventModule().listen()` synchronously inside your own `listen()` — the child's listeners inherit the host's lifecycle (they are disposed together with it, with no duplication when recreated).
+
+  ```dart
+  class EventModuleA extends EventModule {
+    @override
+    void listen() {
+      on<EventFromA>((event, context) { /* ... */ });
+      EventModuleB().listen(); // direct composition
+    }
+  }
+  ```
+
+  In addition, the listening logic is no longer exposed as the public `EventListenerMixin` mixin — it was incorporated directly into `EventModule` (which is still a `Module`). The only public mixin in the events subsystem is now `ModularEventMixin` (for `State<StatefulWidget>`).
+
+  Migration:
+  - Remove `eventImports()` overrides and any use of `ModularEventListener`; move the `on<T>` calls into the `listen()` of an `EventModule` and compose via `AnotherEventModule().listen()`.
+  - If you referenced `EventListenerMixin` directly, use `EventModule` instead.
+
 ## 5.3.0
 
 ### Added
@@ -44,7 +88,7 @@
 ### Fixed
 
 - **Phantom factory instances during interface lookup** (the breaking change above is the fix). Reproduction: with 4 factory binds in a module, every unrelated `get<IUnregistered>` instantiated all 4 (running their constructors). After 100 lookups in a session, ~400 phantom Cubit/Service instances leaked — each potentially opening WebSockets, subscribing to streams, or firing events. Now: zero phantom invocations.
-- **Cross-type circular dependency now surfaces a clear error**. `A → B → A` previously fell into the global `hasBlockedBinds` bypass and was masked as `Bind not found for type "A"` at the deepest probe level. The validation bypass is now tightened to the specific self-reference case (`addFactory<I>((i) => i.get())`) using a typed `(bind, requestedType)` invocation stack. Cross-type cycles now throw `GoRouterModularException: Circular dependency detected while resolving type "A". Dependency chain: A -> B -> A.`
+- **Cross-type circular dependency now surfaces a clear error**. `A → B → A` previously fell into the global `hasBlockedBinds` bypass and was masked as `Bind not found for type "A"` at the deepest probe level. The validation bypass is now tightened to the specific self-reference case (`addFactory<I>((i) => i.get())`) using a typed `(bind, requestedType)` invocation stack. Cross-type cycles now throw `ModularException: Circular dependency detected while resolving type "A". Dependency chain: A -> B -> A.`
 - **`BindRegistry.register` indexes typed binds under the declared type**. `Bind.factory<IService>((i) => ServiceImpl())` previously stored the bind only under `ServiceImpl` (the discovered runtime type), making `get<IService>` miss Strategy 2 and depend on probing. Typed binds now occupy `bindsMap[IService]` directly; the discovered runtime type is also indexed for `get<ServiceImpl>` lookups.
 
 ### Improved
@@ -63,7 +107,7 @@
 ### Improved
 
 - **Dependency injection — batch registration**: Typed binds (`Bind<T>`) are now indexed up front in `registerBatch`, so any bind in the same batch can resolve siblings in any declaration order. `commitBatch` runs in three phases: materialize singletons, propagate cached instances to duplicate `Bind` objects, then fall back to deferred resolution for `Bind<Object>` registrations.
-- **Dependency injection — code quality**: Extracted `_writeToCanonicalSlot` to centralise the dual-map invariant (`bindsMap` for unkeyed, `bindsMapByKey` for keyed binds). Replaced the ambiguous `bool _handleExistingBind` with a `_SlotConflictResolution` enum. Renamed `_pendingBatch` to `_uncommittedBatch`. Swallowed registration errors now surface via `dart:developer.log` when `debugLogGoRouterModular` is enabled.
+- **Dependency injection — code quality**: Extracted `_writeToCanonicalSlot` to centralise the dual-map invariant (`bindsMap` for unkeyed, `bindsMapByKey` for keyed binds). Replaced the ambiguous `bool _handleExistingBind` with a `_SlotConflictResolution` enum. Renamed `_pendingBatch` to `_uncommittedBatch`. Swallowed registration errors now surface via `dart:developer.log` when `debugLogModular` is enabled.
 
 ### Fixed
 
@@ -81,7 +125,7 @@
 ### Fixed
 
 - **Duplicate singleton construction via imports**: `_collectImportedBinds` created new `Bind` objects with `cachedInstance == null` on every registration pass. `commitBatch` now propagates `cachedInstance` to duplicate binds before downstream methods run, preventing 2× extra factory calls.
-- **Orphaned singleton instances**: When two imported modules declare the same type, `commitBatch` now checks `_isSingletonAlreadyRegistered` *before* calling `factoryFunction`, completely preventing duplicate factory calls and leaked instances (open streams, duplicate subscriptions).
+- **Orphaned singleton instances**: When two imported modules declare the same type, `commitBatch` now checks `_isSingletonAlreadyRegistered` _before_ calling `factoryFunction`, completely preventing duplicate factory calls and leaked instances (open streams, duplicate subscriptions).
 
 ---
 
@@ -124,6 +168,7 @@
 ### Added
 
 - **`Bind.lazySingleton`**: Creates singleton instances only on first access — useful for expensive resources that may not always be needed.
+
   ```dart
   i.lazySingleton<ExpensiveService>((i) => ExpensiveService());
   ```
@@ -133,6 +178,7 @@
   - Child routes automatically inherit transitions from parent modules.
   - Platform-specific styles: Cupertino (iOS/macOS) and Material (Android).
   - Chainable effects: `GoTransitions.slide.toRight.withFade`.
+
   ```dart
   ModuleRoute('/home', module: HomeModule(),
     transition: GoTransitions.fadeUpwards,

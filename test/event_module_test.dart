@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router_modular/go_router_modular.dart';
-import 'package:go_router_modular/src/events/modular_event.dart' as EventListenerMixin;
-import 'package:go_router_modular/src/internal/setup.dart';
+import 'package:go_router_modular/src/shared/setup.dart';
 
 // Eventos de teste
 class TestEvent {
@@ -119,7 +118,7 @@ void main() {
 
     setUp(() {
       // Clear event module state between tests to avoid interference
-      EventListenerMixin.clearEventModuleState();
+      clearEventModuleState();
 
       testModule = TestEventModule();
 
@@ -136,8 +135,8 @@ void main() {
       SetupModular.instance.setDebugModel(SetupModel(
         debugLogEventBus: false,
         debugLogGoRouter: false,
-        debugLogGoRouterModular: false,
         autoDisposeEvents: true,
+        debugLogGoRouterModular: false,
       ));
     });
 
@@ -633,8 +632,8 @@ void main() {
         SetupModular.instance.setDebugModel(SetupModel(
           debugLogEventBus: false,
           debugLogGoRouter: false,
-          debugLogGoRouterModular: false,
           autoDisposeEvents: false,
+          debugLogGoRouterModular: false,
         ));
 
         final module = TestEventModule();
@@ -885,8 +884,8 @@ void main() {
         SetupModular.instance.setDebugModel(SetupModel(
           debugLogEventBus: false,
           debugLogGoRouter: false,
-          debugLogGoRouterModular: false,
           autoDisposeEvents: false,
+          debugLogGoRouterModular: false,
         ));
 
         final module = TestEventModule();
@@ -918,8 +917,8 @@ void main() {
         SetupModular.instance.setDebugModel(SetupModel(
           debugLogEventBus: false,
           debugLogGoRouter: false,
-          debugLogGoRouterModular: false,
           autoDisposeEvents: true,
+          debugLogGoRouterModular: false,
         ));
 
         final module = TestEventModule();
@@ -969,8 +968,8 @@ void main() {
         SetupModular.instance.setDebugModel(SetupModel(
           debugLogEventBus: true,
           debugLogGoRouter: false,
-          debugLogGoRouterModular: false,
           autoDisposeEvents: true,
+          debugLogGoRouterModular: false,
         ));
 
         final module = TestEventModule();

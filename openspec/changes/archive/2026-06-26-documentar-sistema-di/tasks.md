@@ -16,7 +16,7 @@
 
 ## 3. Verificação da capability dependency-injection-protection contra o código
 
-- [ ] 3.1 Confirmar detecção de ciclo real A→B→A com `GoRouterModularException` e mensagem de cadeia (`bind_locator.dart`, `bind_search_protection.dart`)
+- [ ] 3.1 Confirmar detecção de ciclo real A→B→A com `ModularException` e mensagem de cadeia (`bind_locator.dart`, `bind_search_protection.dart`)
 - [ ] 3.2 Confirmar bypass de self-reference legítima restrito à invocação mais recente (`bind_locator.dart`, `bind_search_protection.dart`)
 - [ ] 3.3 Confirmar limite de tentativas de busca como salvaguarda e limpeza de estado ao exceder (`bind_search_protection.dart`)
 - [ ] 3.4 Confirmar bloqueio de factory por identidade com contador aninhado (`bind_search_protection.dart`, `bind_locator.dart`)
@@ -28,7 +28,7 @@
 - [ ] 4.2 Confirmar registro em batch com coleta recursiva de imports antes do `initState` (`injection_manager.dart`)
 - [ ] 4.3 Confirmar rastreamento bidirecional módulo↔bind via `BindIdentifier` (`bind_context_tracker.dart`, `bind_identifier.dart`)
 - [ ] 4.4 Confirmar descarte de bind apenas quando o último módulo o libera e proteção do AppModule (`injection_manager.dart`, `bind_context_tracker.dart`)
-- [ ] 4.5 Confirmar serialização de registro/descarte pela `OperationQueue` e propagação de `GoRouterModularException` (`operation_queue.dart`, `injection_manager.dart`)
+- [ ] 4.5 Confirmar serialização de registro/descarte pela `OperationQueue` e propagação de `ModularException` (`operation_queue.dart`, `injection_manager.dart`)
 - [ ] 4.6 Confirmar reset de testes e o comportamento de `FakeInjector`/`BindTemplate` (`injection_manager.dart`, `fake_injector.dart`, `bind_template.dart`)
 
 ## 5. Cobertura de testes (mapear cenários ↔ testes existentes)

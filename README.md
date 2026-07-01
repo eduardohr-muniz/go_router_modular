@@ -17,7 +17,7 @@
 
 **GoRouter Modular** brings modular architecture on top of **GoRouter** with per-module **dependency injection** and auto-dispose. Perfect for **micro frontends** and large-scale apps. 🚀
 
-> 📖 **[Documentation](https://eduardohr-muniz.github.io/go_router_modular)**
+> 📖 **[Documentation](https://eduardohr-muniz.github.io/go_router_modular/en)**
 
 <div align="center">
 
@@ -28,7 +28,7 @@ GoRouter Modular is inspired by the modular architecture approach from [flutter_
 
 ---
 
-<a href="https://eduardohr-muniz.github.io/go_router_modular">
+<a href="https://eduardohr-muniz.github.io/go_router_modular/en">
   <img src="https://img.shields.io/badge/📖%20Read%20the%20Docs-4A90E2?style=for-the-badge&logoColor=white" alt="Read the Docs" height="48" />
 </a>
 
@@ -47,6 +47,26 @@ GoRouter Modular is inspired by the modular architecture approach from [flutter_
 
 ---
 
+## 🤖 Agent Skill
+
+This repo ships an **Agent Skill** that teaches AI coding agents (Claude Code, Cursor, Codex, OpenCode, and others) the recommended conventions for this package — per-feature route files (`MyRouteRelative` + `MyRoute`), **named-only navigation**, typed binds via the `..` cascade, synchronous modules, and `kDebugMode`-gated logs. The agent then applies them automatically when you scaffold routes, modules, or navigation.
+
+**Install it into your project with one command** (via the [`skills`](https://github.com/vercel-labs/skills) CLI):
+
+```bash
+npx skills add https://github.com/eduardohr-muniz/go_router_modular --skill go-router-modular
+```
+
+The CLI detects your installed agents and drops the skill into the right place (e.g. `.claude/skills/`). Add `-g` to install it globally for every project.
+
+**Optional — events add-on.** If your app uses the event system (`EventModule`, `ModularEvent`, `ModularEventMixin`) for decoupled cross-module communication, install the separate events skill too:
+
+```bash
+npx skills add https://github.com/eduardohr-muniz/go_router_modular --skill go-router-modular-events
+```
+
+---
+
 ## 🤝 Contributing
 
 Contributions are very welcome! Open an issue to discuss major changes and submit a PR with clear descriptions of the edits.
@@ -61,7 +81,7 @@ This project is distributed under the **MIT** license. See [`LICENSE`](LICENSE) 
 
 ### 🎉 **Happy Coding with GoRouter Modular!** 🎉
 
-*Transform your Flutter app into a scalable, modular masterpiece* ✨
+_Transform your Flutter app into a scalable, modular masterpiece_ ✨
 
 <a href="https://github.com/eduardohr-muniz/go_router_modular/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=eduardohr-muniz/go_router_modular" alt="Contributors" />

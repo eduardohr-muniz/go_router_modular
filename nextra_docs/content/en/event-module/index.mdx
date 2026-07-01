@@ -1,0 +1,152 @@
+---
+title: Overview
+---
+
+import { Callout } from 'nextra/components'
+
+# Event Module
+
+`EventModule` lets a module react to typed events tied to its own lifecycle.
+Register handlers when the module is entered, fire events from anywhere, and let
+the package cancel everything automatically when the module is disposed.
+
+## EventModule
+
+Extend `EventModule` (a `Module` with event support) and override `listen()` to
+register handlers:
+
+```dart filename="lib/src/modules/cart/cart_module.dart"
+class CartModule extends EventModule {
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute('/', child: (context, state) => const CartPage()),
+      ];
+
+  @override
+  void listen() {
+    on<ProductAdded>((event, context) {
+      // react to the event
+    });
+  }
+}
+```
+
+`listen()` runs when the module initializes. The optional `onAfterListen()` runs
+right after `listen()` if you need a post-registration hook.
+
+### Registering handlers
+
+```dart
+on<T>(
+  void Function(T event, BuildContext? context) callback, {
+  bool? autoDispose,
+  bool exclusive = false,
+});
+```
+
+- `context` is the modular navigator's current context and **may be null** (the
+  navigator might not be mounted yet). Always null-check before using it.
+- `autoDispose`: when omitted, follows the global setting
+  (`autoDisposeEventsBus` from `Modular.configure`, default `true`) — the
+  listener is cancelled when the module is disposed. Pass `false` to keep it
+  alive after disposal.
+- `exclusive`: see [Regular vs exclusive listeners](#regular-vs-exclusive-listeners).
+- Registering `on<T>` twice for the same type on the same module replaces the
+  previous handler.
+
+<Callout type="info">
+  There is a deprecated `broadcast` parameter that maps to `exclusive` — use
+  `exclusive` instead.
+</Callout>
+
+## Firing events
+
+Fire an event from anywhere — a controller, a widget, another module:
+
+```dart
+ModularEvent.fire<ProductAdded>(ProductAdded(product));
+```
+
+`ModularEvent.fire<T>(T event, {EventBus? eventBus})` dispatches on the global
+`defaultModularEventBus` unless you pass a custom bus.
+
+## Custom event bus
+
+By default every `EventModule` shares the global `defaultModularEventBus`. Pass a
+custom `EventBus` to isolate a module's events from the rest of the app:
+
+```dart
+class CartModule extends EventModule {
+  CartModule() : super(eventBus: cartEventBus);
+  // ...
+}
+```
+
+Events fired on one bus never reach listeners on another bus, even for the same
+event type.
+
+## Composition
+
+To make one module also run another event module's handlers, call the other
+module's `listen()` **synchronously** inside your own `listen()`:
+
+```dart
+class EventModuleA extends EventModule {
+  @override
+  void listen() {
+    on<EventA>((event, context) { /* ... */ });
+    EventModuleB().listen(); // compose B's handlers into A
+  }
+}
+```
+
+The composed (child) handlers inherit the **host** module's dispose scope: they
+are cancelled together with the host, and re-creating the host does not
+duplicate them.
+
+<Callout type="warning">
+  The composed `listen()` call must be **synchronous** inside your `listen()` —
+  not inside an `await` or a `Future` callback. Otherwise the child handlers
+  won't attach to the host's scope and won't be disposed with it.
+</Callout>
+
+## Regular vs exclusive listeners
+
+- **Regular** (`exclusive: false`, the default): every module that listens to a
+  type receives the event.
+- **Exclusive** (`exclusive: true`): a FIFO queue per (bus, type) — only **one**
+  listener is active and receives events at a time. When the active one is
+  disposed, the next in the queue automatically becomes active. Useful when only
+  the top-most / current screen should handle an event.
+
+## Global listeners
+
+To listen without a module — with manual cleanup — use the `ModularEvent`
+singleton:
+
+```dart
+ModularEvent.instance.on<ProductAdded>((event, context) {
+  // ...
+});
+
+// later
+ModularEvent.instance.dispose<ProductAdded>();
+```
+
+`ModularEvent.instance.on<T>(callback, {EventBus? eventBus, bool exclusive = false})`
+registers the listener and `dispose<T>({EventBus? eventBus})` cancels it. These
+are not tied to any module lifecycle, so you must dispose them yourself.
+
+## Choosing an approach
+
+| Approach | Scope | Cleanup |
+| --- | --- | --- |
+| `EventModule` | Module-scoped business reactions | Tied to module lifecycle |
+| [`ModularEventMixin`](/en/event-module/widget-mixin) | Widget-scoped UI reactions | Tied to widget lifecycle |
+| `ModularEvent.instance` | Global | Manual |
+
+## Next steps
+
+- [ModularEventMixin](/en/event-module/widget-mixin)
+- [Testing Events](/en/testing/event-testing)
+- [Dependency Injection](/en/dependency-injection)

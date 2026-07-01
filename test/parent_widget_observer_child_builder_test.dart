@@ -19,7 +19,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/widgets/parent_widget_observer.dart';
+import 'package:go_router_modular/src/ui/parent_widget_observer.dart';
 import 'package:go_router_modular/go_router_modular.dart';
 
 // ---------------------------------------------------------------------------

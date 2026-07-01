@@ -2,18 +2,18 @@
 
 ### Requirement: Assert de configuração guia o desenvolvedor quando configure não foi chamado
 
-O sistema SHALL fornecer `GoRouterModularConfigureAssert.goRouterModularConfigureAssert()`, que retorna uma mensagem-guia explicando como chamar `GoRouterModular.configure` no `main.dart` e usar `ModularApp.router` no widget de app. A mensagem MUST ser usada como texto de `assert` ao acessar o `routerConfig` e os `params` antes de a configuração ter sido feita, em `lib/src/core/config/go_router_modular_configure.dart`. Quando a configuração já ocorreu (router/params não nulos), o `assert` MUST NOT disparar.
+O sistema SHALL fornecer `ModularConfigureAssert.goRouterModularConfigureAssert()`, que retorna uma mensagem-guia explicando como chamar `Modular.configure` no `main.dart` e usar `ModularApp.router` no widget de app. A mensagem MUST ser usada como texto de `assert` ao acessar o `routerConfig` e os `params` antes de a configuração ter sido feita, em `lib/src/core/config/go_router_modular_configure.dart`. Quando a configuração já ocorreu (router/params não nulos), o `assert` MUST NOT disparar.
 
 Arquivos de referência: `lib/src/internal/asserts/go_router_modular_configure_assert.dart`, `lib/src/core/config/go_router_modular_configure.dart` (acessos a `_router` e `_params`).
 
 #### Scenario: Acesso antes de configure dispara assert com a mensagem-guia
 
-- **WHEN** `routerConfig` ou `params` é acessado em modo debug antes de `GoRouterModular.configure`
+- **WHEN** `routerConfig` ou `params` é acessado em modo debug antes de `Modular.configure`
 - **THEN** o `assert` falha exibindo a mensagem de `goRouterModularConfigureAssert()`
 
 #### Scenario: Acesso após configure não dispara assert
 
-- **WHEN** `GoRouterModular.configure` já foi chamado e `routerConfig` é acessado
+- **WHEN** `Modular.configure` já foi chamado e `routerConfig` é acessado
 - **THEN** nenhum `assert` é disparado
 
 ### Requirement: Log interno iLog é um helper dormente controlado por flag de compilação

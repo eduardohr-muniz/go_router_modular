@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/bind.dart';
 import 'package:go_router_modular/src/di/injector.dart';
-import 'package:go_router_modular/src/exceptions/exception.dart';
+import 'package:go_router_modular/src/shared/exception.dart';
 
 /// Regressão: padrão clássico "factory sem tipo + get<Interface>" deve
 /// continuar funcionando sem breaking change.
@@ -11,7 +11,7 @@ import 'package:go_router_modular/src/exceptions/exception.dart';
 ///
 /// ```dart
 /// i.addFactory((i) => ServiceImpl()); // Dart infere T = ServiceImpl
-/// i.get<IService>();                   // ❌ lançava GoRouterModularException
+/// i.get<IService>();                   // ❌ lançava ModularException
 /// ```
 ///
 /// Ao mesmo tempo, o motor NÃO deve invocar o factory durante lookups
@@ -155,13 +155,11 @@ void main() {
 
       expect(
         () => Bind.get<IUnrelated>(),
-        throwsA(isA<GoRouterModularException>()),
+        throwsA(isA<ModularException>()),
       );
 
-      expect(ServiceImpl.constructed, 0,
-          reason: 'factory NÃO deve ser invocado para lookup de tipo não relacionado');
-      expect(ServiceImpl.sideEffectsLog, isEmpty,
-          reason: 'nenhum efeito colateral deve vazar');
+      expect(ServiceImpl.constructed, 0, reason: 'factory NÃO deve ser invocado para lookup de tipo não relacionado');
+      expect(ServiceImpl.sideEffectsLog, isEmpty, reason: 'nenhum efeito colateral deve vazar');
     });
 
     test('múltiplos lookups não relacionados: zero invocações acumuladas', () {
@@ -225,8 +223,7 @@ void main() {
         Bind.get<IUnrelated>();
       } catch (_) {}
 
-      expect(ServiceImpl.constructed, builtInCommit,
-          reason: 'singleton não deve ser reinvocado para lookup não relacionado');
+      expect(ServiceImpl.constructed, builtInCommit, reason: 'singleton não deve ser reinvocado para lookup não relacionado');
     });
   });
 }

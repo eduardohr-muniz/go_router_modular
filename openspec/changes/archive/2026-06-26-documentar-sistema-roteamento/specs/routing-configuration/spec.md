@@ -2,7 +2,7 @@
 
 ### Requirement: Configuração e construção do GoRouter
 
-O sistema SHALL expor `GoRouterModular.configure` como ponto único de inicialização do roteamento, recebendo o `appModule` e a `initialRoute` obrigatórios, além de parâmetros opcionais repassados ao `GoRouter` (`redirect`, `errorBuilder`, `observers`, `navigatorKey`, `debugLogDiagnostics`, entre outros). A configuração MUST construir as rotas a partir do `appModule` no nível top-level e MUST retornar uma instância única de `GoRouter` (chamadas subsequentes retornam a mesma instância).
+O sistema SHALL expor `Modular.configure` como ponto único de inicialização do roteamento, recebendo o `appModule` e a `initialRoute` obrigatórios, além de parâmetros opcionais repassados ao `GoRouter` (`redirect`, `errorBuilder`, `observers`, `navigatorKey`, `debugLogDiagnostics`, entre outros). A configuração MUST construir as rotas a partir do `appModule` no nível top-level e MUST retornar uma instância única de `GoRouter` (chamadas subsequentes retornam a mesma instância).
 
 Arquivos de referência: `lib/src/core/config/go_router_modular_configure.dart`, `lib/src/core/module/module.dart`.
 

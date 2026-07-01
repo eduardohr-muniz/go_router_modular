@@ -41,7 +41,7 @@ Optou-se por `public-api-surface` (o que o pacote expõe ao consumidor) e `inter
 
 ### Decisão 2: Documentar a política de hide/show como requisito normativo
 
-O re-export com `hide GoRouter, ShellRoute` e `hide GoTransition` é intencional: os tipos modulares (`GoRouterModular`, `ShellModularRoute`, `GoTransition` modular) substituem os originais. A spec o registra como requisito com cenários verificáveis.
+O re-export com `hide GoRouter, ShellRoute` e `hide GoTransition` é intencional: os tipos modulares (`Modular`, `ShellModularRoute`, `GoTransition` modular) substituem os originais. A spec o registra como requisito com cenários verificáveis.
 
 - **Por quê:** essa ocultação é fácil de quebrar acidentalmente (um export descuidado reintroduz colisão de nomes). Documentá-la cria um ponto de regressão detectável.
 - **Alternativa considerada:** tratar como detalhe trivial. Rejeitada porque a ocultação é parte do contrato público e da ergonomia do pacote.

@@ -1,0 +1,33 @@
+{
+  "skill_name": "go-router-modular",
+  "evals": [
+    {
+      "id": 0,
+      "name": "new-feature-list-detail",
+      "prompt": "I'm using go_router_modular in my Flutter app. Create a new 'products' feature module with two screens: a products list at the root and a product detail screen that takes a product id in the path. Wire up the routes and the module. Show me the feature files.",
+      "expected_output": "A products_module.dart and a products_route.dart. products_route.dart has ProductsRouteRelative (path/name constants: relative path, *Module, *Named, param$id key, productDetail$id path) and ProductsRoute (of(context), kebab-case names, go/push + a push-detail method passing pathParameters, and a static getProductIdParam(state) reader). The module's ChildRoutes each set path from a relative constant and name from a *Named constant. binds is synchronous.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "navigate-between-pages",
+      "prompt": "In my go_router_modular app I have a HomePage and I want to add a button that navigates to the user profile screen, which lives at /profile and shows a userId from the path. Write the navigation code.",
+      "expected_output": "Navigation goes through a *Route class using context.goNamed/pushNamed (e.g. ProfileRoute.of(context).pushProfile(userId: ...)), NOT context.go('/profile') with a raw path string. Path parameters are passed through the named method.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "module-with-dependencies",
+      "prompt": "Using go_router_modular, set up a 'checkout' module that depends on a CartRepository and a CheckoutCubit, and imports a shared PaymentModule. Show me the module definition.",
+      "expected_output": "A Module whose binds(Injector i) registers CartRepository and CheckoutCubit synchronously (void binds, no async/await/Future), and imports() returns [PaymentModule()] synchronously. No async module unless an awaited resource is clearly required.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "bottom-nav-tabs",
+      "prompt": "Using go_router_modular, build the app's main screen with a bottom navigation bar with 3 tabs \u2014 Home, Search, Profile \u2014 where each tab keeps its own navigation stack and state. Show the route setup.",
+      "expected_output": "A module whose routes use StatefulShellModularRoute with three ModuleBranch (or ModularBranch) entries, a builder receiving navigationShell, and tab switching via navigationShell.goBranch. No manual Navigator/MaterialPageRoute for the tabs. Shell used because tabs need preserved per-branch state.",
+      "files": []
+    }
+  ]
+}

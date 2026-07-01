@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/bind.dart';
 import 'package:go_router_modular/src/di/injector.dart';
-import 'package:go_router_modular/src/exceptions/exception.dart';
+import 'package:go_router_modular/src/shared/exception.dart';
 
 /// The supported pattern for "factory bind reachable through an interface":
 /// **type the factory with the interface explicitly**.
@@ -66,8 +66,7 @@ void main() {
       Bind.registerBatch(binds);
       Bind.commitBatch(injector);
 
-      expect(_ServiceImpl.constructed, 0,
-          reason: 'factory must not be invoked until a real get happens');
+      expect(_ServiceImpl.constructed, 0, reason: 'factory must not be invoked until a real get happens');
     });
 
     test('factory semantics preserved: each get<IService> builds a new instance', () {
@@ -80,8 +79,7 @@ void main() {
 
       final a = Bind.get<_IService>();
       final b = Bind.get<_IService>();
-      expect(identical(a, b), isFalse,
-          reason: 'factory binds must produce a fresh instance per call');
+      expect(identical(a, b), isFalse, reason: 'factory binds must produce a fresh instance per call');
       expect(_ServiceImpl.constructed, 2);
     });
 
@@ -93,8 +91,7 @@ void main() {
       Bind.registerBatch(binds);
       Bind.commitBatch(injector);
 
-      expect(() => Bind.get<_IUnrelated>(),
-          throwsA(isA<GoRouterModularException>()));
+      expect(() => Bind.get<_IUnrelated>(), throwsA(isA<ModularException>()));
 
       expect(_ServiceImpl.constructed, 0);
     });

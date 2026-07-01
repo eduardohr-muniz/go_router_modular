@@ -1,0 +1,106 @@
+---
+title: Micro Frontends
+---
+
+import { Callout } from 'nextra/components'
+
+# Micro Frontends
+
+`go_router_modular` enables **team-based modularity within a single Flutter
+app**. Each feature is a self-contained `Module` — owning its routes, its
+dependencies, and its logic — that teams can build and evolve independently.
+
+<Callout type="warning">
+  This is **not** a federated / runtime micro-frontend system. There is no
+  cross-package remote loading and no module registry: every module is statically
+  imported into one Dart codebase and compiled together. What you get is strong
+  *in-app* modularity, not independently deployed frontends.
+</Callout>
+
+## A feature module owns its boundary
+
+Each team's feature is a `Module` that declares its own routes and binds. Nothing
+leaks out unless it is exported, and the dependencies are disposed automatically
+when the feature is left:
+
+```dart filename="lib/src/modules/checkout/checkout_module.dart"
+class CheckoutModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    i
+      ..addSingleton<CheckoutController>((i) => CheckoutController())
+      ..addLazySingleton<PaymentGateway>((i) => StripeGateway());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute('/', child: (context, state) => const CheckoutPage()),
+      ];
+}
+```
+
+## Mounting team modules in the AppModule
+
+The `AppModule` composes the app by mounting each team's module under a route via
+`ModuleRoute`. Teams own their module folders; the app just wires them in:
+
+```dart filename="lib/src/app_module.dart"
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        ModuleRoute('/', module: HomeModule()),
+        ModuleRoute('/cart', module: CartModule()),       // team: cart
+        ModuleRoute('/checkout', module: CheckoutModule()), // team: checkout
+        ModuleRoute('/account', module: AccountModule()),  // team: account
+      ];
+}
+```
+
+Each module loads on demand when its route is entered and is disposed when left,
+so a team's dependencies never linger in another team's screens.
+
+## Cross-module communication without coupling
+
+Modules should not import each other directly. Instead, they communicate through
+the [event system](/en/event-module): one module fires a typed event, another
+reacts to it — neither knows the other exists.
+
+```dart filename="lib/src/modules/cart/cart_module.dart"
+// Cart team fires an event when an item is added.
+ModularEvent.fire<ProductAdded>(ProductAdded(productId: '42'));
+```
+
+```dart filename="lib/src/modules/account/account_module.dart"
+// Account team reacts, with no import of the cart module.
+class AccountModule extends EventModule {
+  @override
+  void listen() {
+    on<ProductAdded>((event, context) {
+      // e.g. update loyalty points
+    });
+  }
+}
+```
+
+This keeps domain boundaries clean: the only shared surface is the event type.
+
+## When this pattern helps
+
+- **Large teams** working on the same app who need clear ownership boundaries.
+- **Clear domain boundaries** (cart, checkout, account, …) where each domain has
+  its own routes, state, and dependencies.
+- Wanting **automatic per-feature lifecycle** so dependencies are isolated and
+  disposed without manual cleanup.
+
+## What it is not
+
+- Not independently deployable frontends — it's one compiled binary.
+- No runtime/remote module loading and no module registry.
+- Not a replacement for backend-style micro-frontend orchestration; it is an
+  in-app architecture pattern.
+
+## Next steps
+
+- [Routes & Modules](/en/routes/routes-system)
+- [Event Module](/en/event-module)
+- [Dependency Injection](/en/dependency-injection)

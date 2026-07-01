@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/bind.dart';
 import 'package:go_router_modular/src/di/injector.dart';
-import 'package:go_router_modular/src/exceptions/exception.dart';
+import 'package:go_router_modular/src/shared/exception.dart';
 
 // Classes de teste
 class HttpClient {
@@ -74,7 +74,7 @@ void main() {
         // Busca sem key deve lançar exceção (bind não encontrado)
         expect(
           () => Bind.get<HttpClient>(),
-          throwsA(isA<GoRouterModularException>()),
+          throwsA(isA<ModularException>()),
         );
 
         // Busca com key deve funcionar
@@ -105,7 +105,7 @@ void main() {
         // Busca com key deve lançar exceção (bind não encontrado)
         expect(
           () => Bind.get<ApiClient>(key: 'api-client-key'),
-          throwsA(isA<GoRouterModularException>()),
+          throwsA(isA<ModularException>()),
         );
       });
 
@@ -126,7 +126,7 @@ void main() {
         // Busca com key deve lançar exceção (bind não encontrado)
         expect(
           () => Bind.get<ApiClient>(key: 'api-client-key'),
-          throwsA(isA<GoRouterModularException>()),
+          throwsA(isA<ModularException>()),
         );
 
         // Busca sem key deve funcionar

@@ -1,0 +1,118 @@
+---
+title: Examples
+---
+
+import { Callout } from 'nextra/components'
+
+# Transition Examples
+
+A gallery of copy-paste `ChildRoute` snippets. Every transition comes from
+`GoTransitions`, re-exported by `go_router_modular`.
+
+## Basic fade
+
+```dart
+ChildRoute(
+  '/details',
+  child: (context, state) => const DetailsPage(),
+  transition: GoTransitions.fade,
+  transitionDuration: const Duration(milliseconds: 300),
+)
+```
+
+## Slide with fade
+
+```dart
+ChildRoute(
+  '/demo',
+  child: (context, state) => const DemoPage(),
+  transition: GoTransitions.slide.toRight.withFade,
+  transitionDuration: const Duration(milliseconds: 800),
+)
+```
+
+## Scale with rotation
+
+```dart
+ChildRoute(
+  '/profile',
+  child: (context, state) => const ProfilePage(),
+  transition: GoTransitions.scale.withRotation,
+  transitionDuration: const Duration(milliseconds: 500),
+)
+```
+
+## Slow dramatic combo
+
+```dart
+ChildRoute(
+  '/reveal',
+  child: (context, state) => const RevealPage(),
+  transition: GoTransitions.rotate.withScale.withFade,
+  transitionDuration: const Duration(milliseconds: 1200),
+)
+```
+
+## Inheritance
+
+A `ChildRoute` without its own `transition` inherits the one from its parent
+`ModuleRoute` (or the global default). Here `/list` inherits, while `/list/item`
+overrides:
+
+```dart
+class CatalogModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        // Inherits the parent transition / global default.
+        ChildRoute('/list', child: (context, state) => const ListPage()),
+        // Overrides with its own transition.
+        ChildRoute(
+          '/list/item',
+          child: (context, state) => const ItemPage(),
+          transition: GoTransitions.slide.toLeft.withFade,
+        ),
+      ];
+}
+```
+
+## Complete module example
+
+```dart filename="lib/src/modules/home/home_module.dart"
+import 'dart:async';
+import 'package:go_router_modular/go_router_modular.dart';
+
+class HomeModule extends Module {
+  @override
+  FutureOr<void> binds(Injector i) {
+    i.addSingleton<HomeService>((i) => HomeService());
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute(
+          '/',
+          child: (context, state) => const HomePage(),
+          transition: GoTransitions.fadeUpwards,
+          transitionDuration: const Duration(milliseconds: 300),
+        ),
+        ChildRoute(
+          '/demo',
+          child: (context, state) => const DemoPage(),
+          transition: GoTransitions.slide.toRight.withFade,
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      ];
+}
+```
+
+<Callout type="info">
+  Want the same animation for an entire app? Set `defaultTransition` in
+  `Modular.configure` instead of repeating it on every route. See the
+  [overview](/en/routes/transitions).
+</Callout>
+
+## Next steps
+
+- [Transitions overview](/en/routes/transitions)
+- [Shell Routes](/en/routes/shell-route)
+- [Routes & Modules](/en/routes/routes-system)

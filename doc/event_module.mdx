@@ -124,28 +124,28 @@ ModularEvent.instance.on<UserLoginEvent>((UserLoginEvent event, BuildContext? co
 
 ## Installation & Setup
 
-### 1. Configure GoRouterModular in main.dart
+### 1. Configure Modular in main.dart
 
-The EventModule system is configured through `GoRouterModular.configure()` in your `main.dart`:
+The EventModule system is configured through `Modular.configure()` in your `main.dart`:
 
 ```dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Configure GoRouterModular with EventBus settings
-  await GoRouterModular.configure(
+
+  // Configure Modular with EventBus settings
+  await Modular.configure(
     appModule: AppModule(), // Your root module
     initialRoute: '/login',
-    
+
     // EventBus Configuration
     debugLogEventBus: true,     // Enable event logging (🔥🎭 logs)
     autoDisposeEventsBus: true, // Auto-dispose listeners when modules are destroyed
-    
+
     // Other GoRouter settings
     debugLogDiagnosticsGoRouter: false,
     delayDisposeMilliseconds: 1000,
   );
-  
+
   runApp(MyApp());
 }
 ```
@@ -158,7 +158,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'My App',
-      routerConfig: GoRouterModular.routerConfig,
+      routerConfig: Modular.routerConfig,
     );
   }
 }
@@ -243,7 +243,7 @@ class ShoppingModule extends EventModule {
     // Regular listeners (all receive events)
     on<AddToCartEvent>((AddToCartEvent event, BuildContext? context) {
       _cartService.addItem(event.item);
-      
+
       // Fire another event
       ModularEvent.fire(ShoppingCartUpdatedEvent(
         userId: event.userId,
@@ -251,7 +251,7 @@ class ShoppingModule extends EventModule {
         totalPrice: _cartService.totalPrice,
         timestamp: DateTime.now(),
       ));
-      
+
       // Navigate if needed
       if (context != null && event.goToCart) {
         context.go('/cart');
@@ -260,7 +260,7 @@ class ShoppingModule extends EventModule {
 
     on<RemoveFromCartEvent>((RemoveFromCartEvent event, BuildContext? context) {
       _cartService.removeItem(event.itemId);
-      
+
       // Fire cart updated event
       ModularEvent.fire(ShoppingCartUpdatedEvent(
         userId: event.userId,
@@ -269,7 +269,7 @@ class ShoppingModule extends EventModule {
         timestamp: DateTime.now(),
       ));
     });
-    
+
     // Exclusive listener (only one active at a time)
     on<ProcessPaymentEvent>((ProcessPaymentEvent event, BuildContext? context) {
       // Only one payment can be processed at a time
@@ -277,7 +277,7 @@ class ShoppingModule extends EventModule {
       print('Processing payment for ${event.amount}');
       _processPayment(event.paymentData);
     }, exclusive: true);
-    
+
     // Persistent listener (survives module disposal)
     on<AppStartEvent>((AppStartEvent event, BuildContext? context) {
       // Initialize cart when app starts
@@ -381,11 +381,11 @@ on<NavigationEvent>((NavigationEvent event, BuildContext? context) {
   if (context != null) {
     // Safe to navigate
     context.go(event.route);
-    
+
     // Access other context features
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
-    
+
     // Show dialogs
     showDialog(
       context: context,
@@ -413,7 +413,7 @@ class TemporaryModule extends EventModule {
       print('Handling temporary event: ${event.data}');
       // This listener will be automatically disposed
     }, autoDispose: true);
-    
+
     // Survives module disposal (use carefully!)
     on<GlobalEvent>((GlobalEvent event, BuildContext? context) {
       print('Handling global event: ${event.message}');
@@ -426,7 +426,7 @@ class TemporaryModule extends EventModule {
     // Clean up custom resources
     _customSubscription?.cancel();
     _timer?.cancel();
-    
+
     // Parent handles event subscriptions automatically
     super.dispose();
   }
@@ -505,18 +505,18 @@ ModularEvent.instance.on<MyEvent>((MyEvent event, BuildContext? context) {
 void dispose<T>({EventBus? eventBus})
 ```
 
-### GoRouterModular Configuration Parameters
+### Modular Configuration Parameters
 
 ```dart
-// Available EventBus configuration parameters in GoRouterModular.configure()
-await GoRouterModular.configure(
+// Available EventBus configuration parameters in Modular.configure()
+await Modular.configure(
   appModule: AppModule(),                // Required: Root module
   initialRoute: '/home',                // Required: Initial route
-  
+
   // EventBus specific parameters
   debugLogEventBus: true,               // Enable 🔥🎭 event logs (default: false)
   autoDisposeEventsBus: true,           // Auto-dispose listeners (default: true)
-  
+
   // Other parameters
   delayDisposeMilliseconds: 1000,       // Delay before disposing modules (default: 1000)
   debugLogDiagnosticsGoRouter: false,   // GoRouter debug logs (default: false)
@@ -697,18 +697,20 @@ class UserUpdatedEvent {
 #### Breaking Changes
 
 1. **`broadcast` parameter deprecated**:
+
    ```dart
    // OLD (deprecated)
    on<MyEvent>((event, context) { }, broadcast: true);
-   
+
    // NEW
    on<MyEvent>((event, context) { }, exclusive: true);
    ```
 
 2. **Automatic context injection**:
+
    ```dart
     // OLD: Manual context passing
-    on<MyEvent>((event) { 
+    on<MyEvent>((event) {
     final context = MyApp.navigatorKey.currentContext;
     // Use context...
     });
@@ -720,7 +722,7 @@ class UserUpdatedEvent {
        context.go('/new-route');
      }
     });
-    ```
+   ```
 
 #### Migration Steps
 
@@ -738,6 +740,7 @@ class UserUpdatedEvent {
 **Problem**: Event listeners not receiving events
 
 **Solutions**:
+
 ```dart
 // Check if module is properly initialized
 class MyModule extends EventModule {
@@ -757,6 +760,7 @@ on<UserLoginEvent>((UserLoginEvent event, BuildContext? context) { }); // Listen
 **Problem**: Memory not being released
 
 **Solutions**:
+
 ```dart
 // Ensure proper disposal
 @override
@@ -774,6 +778,7 @@ on<MyEvent>((MyEvent event, BuildContext? context) { }, autoDispose: true); // D
 **Problem**: `context` is null in event handlers
 
 **Solutions**:
+
 ```dart
 on<NavigationEvent>((NavigationEvent event, BuildContext? context) {
   if (context != null) {
@@ -796,6 +801,7 @@ on<NavigationEvent>((NavigationEvent event, BuildContext? context) {
 **Problem**: Multiple exclusive listeners receiving events
 
 **Solutions**:
+
 ```dart
 // Ensure all listeners use the same EventBus
 class Module1 extends EventModule {
@@ -824,7 +830,7 @@ setUp(() {
 
 ```dart
 // Configure in main.dart
-await GoRouterModular.configure(
+await Modular.configure(
   appModule: AppModule(),
   initialRoute: '/home',
   debugLogEventBus: true, // Enable event logging
@@ -850,10 +856,11 @@ setUp(() {
 ## Support
 
 For issues, feature requests, or questions:
+
 - 📖 [Documentation](https://github.com/your-repo/wiki)
 - 🐛 [Issue Tracker](https://github.com/your-repo/issues)
 - 💬 [Discussions](https://github.com/your-repo/discussions)
 
 ---
 
-*Built with ❤️ for the Flutter community*
+_Built with ❤️ for the Flutter community_

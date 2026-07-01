@@ -1,0 +1,242 @@
+---
+title: Boas Práticas
+---
+
+import { Callout } from 'nextra/components'
+
+# Boas Práticas de Roteamento
+
+A convenção recomendada para organizar rotas e navegação em um app
+`go_router_modular`. Segui-la mantém os literais de rota em um só lugar, deixa
+refatorações seguras e mantém seus módulos rápidos para iniciar. Esta página é
+uma orientação opinativa — para a API por baixo, veja
+[Rotas e Módulos](/pt/routes/routes-system) e [Navegação](/pt/routes/navigation).
+
+## As três regras
+
+1. **Navegue só por nome.** Nunca chame `context.go('/caminho-cru')`. Toda
+   navegação passa pela classe `*Route` da feature, que delega para
+   `goNamed`/`pushNamed`. Strings de path cru espalham literais de rota pelo app
+   e quebram silenciosamente quando um path muda; uma rota nomeada mais um único
+   arquivo de constantes significam um só lugar para editar.
+2. **Todo `ChildRoute` declara um `name`.** Sem `name`, a navegação nomeada não
+   consegue resolver a rota. O nome fica no `ChildRoute` folha.
+3. **Mantenha os módulos síncronos.** Prefira `binds(Injector i)` e `imports()`
+   síncronos. Um módulo `async`/que retorna `Future` atrasa o registro das rotas
+   e o primeiro frame; use só quando for realmente inevitável.
+
+## Um arquivo de rota por feature
+
+Ao lado do `<feature>_module.dart` de cada feature, mantenha um
+`<feature>_route.dart` com **duas classes** de papéis distintos e semânticos:
+
+- `<Feature>RouteRelative` — constantes de path/nome, chaves de parâmetro e os
+  leitores estáticos de path param (ex.: `getMyIdParam(state)`). Sem navegação,
+  sem context. Manter o leitor aqui o coloca junto da chave de parâmetro que ele lê.
+- `<Feature>Route` — a superfície de navegação, construída a partir de um
+  `BuildContext` (`MyRoute.of(context)`). Ela responde "como eu vou até lá?" e é
+  o único lugar que chama `goNamed`/`pushNamed`.
+
+```dart
+// lib/src/modules/my/my_route.dart
+import 'package:flutter/widgets.dart';
+import 'package:go_router_modular/go_router_modular.dart';
+
+/// Constantes de path/nome, chaves de parâmetro e leitores estáticos. Sem navegação aqui.
+class MyRouteRelative {
+  MyRouteRelative._();
+
+  // params
+  static const String param$id = 'id';
+
+  /// Path de montagem deste módulo dentro do módulo pai.
+  static const String myModule = '/my';
+
+  /// Path relativo montado como ChildRoute (geralmente '/').
+  static const String my = '/';
+  static const String myNamed = 'my-feature';
+
+  /// Path relativo com um path param.
+  static const String myDetail$id = '/detail/:${param$id}';
+  static const String myDetailNamed = 'detail';
+
+  /// Lê o path param `id` do estado de rota atual.
+  static String getMyIdParam(GoRouterState state) =>
+      state.pathParameters[param$id] as String;
+}
+
+/// Ponto de entrada de navegação. Construído a partir de um BuildContext.
+class MyRoute {
+  MyRoute.of(this.context);
+  final BuildContext context;
+
+  void go() => context.goNamed(MyRouteRelative.myNamed);
+  void push() => context.pushNamed(MyRouteRelative.myNamed);
+
+  // Rota com parâmetro: os argumentos passam pelo método, nunca pelo call site.
+  void pushMyDetail({required String id}) => context.pushNamed(
+        MyRouteRelative.myDetailNamed,
+        pathParameters: {MyRouteRelative.param$id: id},
+      );
+}
+```
+
+## Regra 1 — navegue só por nome
+
+Sempre navegue pela classe `*Route` da feature. Passe `pathParameters` e `extra`
+pelos métodos dela, para que os call sites nunca montem strings de rota ou mapas
+de parâmetros.
+
+```dart
+// ❌ Incorreto — strings de path cru espalhadas pelos call sites.
+context.go('/my');
+context.push('/my/detail/42');
+
+// ✅ Correto — nomeado, pela classe de navegação.
+MyRoute.of(context).go();
+MyRoute.of(context).pushMyDetail(id: '42');
+```
+
+<Callout type="warning">
+  Um `context.go('/my')` cru quebra silenciosamente no dia em que o path muda. Os
+  literais de rota pertencem a `*RouteRelative` e a nenhum outro lugar.
+</Callout>
+
+## Regra 2 — `name` no `ChildRoute` e composição de módulos
+
+Em `Module.routes`, defina o `path` de cada `ChildRoute` por uma constante
+relativa e seu `name` pela constante `*Named` correspondente. Leia os path params
+pelo leitor estático de `*RouteRelative`.
+
+```dart
+class MyModule extends Module {
+  @override
+  void binds(Injector i) {
+    i
+      // DataSources
+      ..addSingleton<MyDataSource>((i) => MyDataSource(i.get<DioClient>()))
+      // Repositories
+      ..addSingleton<MyRepository>((i) => MyRepository(i.get<MyDataSource>()))
+      // Controllers
+      ..add<MyController>((i) => MyController(i.get<MyRepository>()));
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute(
+          MyRouteRelative.my,
+          name: MyRouteRelative.myNamed,
+          child: (context, _) => MyPage(controller: Modular.get<MyController>()),
+        ),
+        ChildRoute(
+          MyRouteRelative.myDetail$id,
+          name: MyRouteRelative.myDetailNamed,
+          child: (context, state) => MyDetailPage(
+            controller: Modular.get<MyController>(),
+            id: MyRouteRelative.getMyIdParam(state),
+          ),
+        ),
+      ];
+}
+```
+
+A constante `*Module` define onde este módulo é montado no pai, via `ModuleRoute`:
+
+```dart
+// No módulo pai:
+ModuleRoute(MyRouteRelative.myModule, module: MyModule());
+```
+
+`ModuleRoute` também aceita um `name` se você precisar mirar o ponto de montagem
+do módulo; prefira nomear o `ChildRoute` folha para onde você realmente navega.
+
+## Regra 3 — módulos síncronos, binds via cascade `..`
+
+Prefira `binds`/`imports` síncronos. Eles registram imediatamente, então as rotas
+ficam prontas sem atrasar o primeiro frame. Use um **corpo em bloco** para
+`binds` e registre no injetor com o operador cascade (`..`) — um `i` seguido de
+uma cadeia de `..addX`, agrupados por camada com comentários. Sempre passe o
+**tipo explícito** para que o bind seja indexado por aquele tipo exato e resolva
+por lookup direto.
+
+```dart
+@override
+void binds(Injector i) {
+  i
+    // Services
+    ..addSingleton<AnalyticsService>((i) => AnalyticsService())
+    // DataSources
+    ..addSingleton<MyRemoteDataSource>((i) => MyRemoteDataSource(i.get<DioClient>()))
+    // Repositories
+    ..addSingleton<MyRepository>((i) => MyRepository(i.get<MyRemoteDataSource>()))
+    // Controllers
+    ..add<MyController>((i) => MyController(i.get<MyRepository>()));
+}
+
+@override
+List<Module> imports() => [SharedModule()];
+```
+
+Quando uma dependência precisa de um recurso aguardado, **não torne o módulo
+assíncrono.** Em vez disso, dê `await` nele em `main()` antes do
+`Modular.configure`, e então passe a instância pronta para o `AppModule` pelo
+construtor e registre-a de forma síncrona.
+
+```dart
+// lib/main.dart
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Resolva recursos assíncronos antes de configurar.
+  final prefs = await SharedPreferences.getInstance();
+
+  await Modular.configure(
+    appModule: AppModule(prefs: prefs), // passe pra dentro
+    initialRoute: '/',
+  );
+
+  runApp(const AppWidget());
+}
+```
+
+<Callout type="info">
+  O pacote _suporta_ um `binds` `async`
+  (`Future<void> binds(Injector i) async {...}`), mas prefira içar o trabalho
+  aguardado para o `main()` — módulos assíncronos atrasam o registro das rotas e
+  o primeiro frame. Recorra ao `binds` async só quando um recurso aguardado
+  realmente não puder ser içado, e mantenha o trabalho aguardado mínimo.
+</Callout>
+
+## Convenções de nomenclatura
+
+| Elemento                       | Convenção                                   | Exemplo                    |
+| ------------------------------ | ------------------------------------------- | -------------------------- |
+| Classe de constantes + leitores | sufixo `*RouteRelative`                    | `MyRouteRelative`          |
+| Classe de navegação            | sufixo `*Route` (criada via `.of(context)`) | `MyRoute`, `ProfileRoute`  |
+| String de nome de rota         | kebab-case                                  | `my-feature`, `detail`     |
+| Constante de chave de parâmetro | prefixo `param$`                           | `param$id`                 |
+| Constante de path relativo     | o nome da feature/folha                     | `my`                       |
+| Constante de montagem de módulo | sufixo `*Module`                           | `myModule`                 |
+| Constante de nome              | sufixo `*Named`                             | `myNamed`, `myDetailNamed` |
+| Path com parâmetro             | sufixo `*$<param>`                          | `myDetail$id`              |
+
+## Checklist
+
+- Cada feature com rotas tem um `*_route.dart` ao lado do `*_module.dart`, com uma
+  classe `*RouteRelative` (constantes/leitores) e uma classe `*Route` (navegação).
+- Todo `ChildRoute` tem `path` (de uma constante relativa) e `name` (de uma
+  constante `*Named`).
+- Sem `context.go('/...')` / `context.push('/...')` com strings de path cru — a
+  navegação passa por `*Route`.
+- Path params são lidos pelo leitor estático de `*RouteRelative`, não por
+  `state.pathParameters[...]` inline no call site.
+- `binds`/`imports` são síncronos; recursos assíncronos são aguardados em
+  `main()` e passados para o `AppModule` pelo construtor.
+- Binds e lookups são **tipados**: `addSingleton<T>`/`add<T>` no registro, e
+  `i.get<T>()` / `Modular.get<T>()` na resolução.
+
+## Próximos passos
+
+- [Rotas e Módulos](/pt/routes/routes-system)
+- [Navegação](/pt/routes/navigation)
+- [Injeção de Dependência](/pt/dependency-injection)

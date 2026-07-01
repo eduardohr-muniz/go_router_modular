@@ -1,0 +1,170 @@
+---
+title: Shell Routes
+---
+
+import { Callout } from 'nextra/components'
+
+# Shell Routes
+
+A shell wraps a set of routes in a shared layout — a bottom navigation bar, a
+side rail, a persistent app bar. There are two kinds, and the difference is
+whether each tab keeps its own navigation stack and state.
+
+## Which one?
+
+| | `ShellModularRoute` | `StatefulShellModularRoute` |
+| --- | --- | --- |
+| Navigator | Single, shared | One per branch |
+| State across siblings | Not preserved | Preserved per branch |
+| Use case | One layout around a group of pages | Bottom-nav / tabs |
+
+## ShellModularRoute
+
+One Navigator, one shared layout. The `builder` receives the active page as
+`child` — render it inside your scaffold. State is **not** preserved when you
+move between sibling routes.
+
+```dart filename="lib/src/app_module.dart"
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        ShellModularRoute(
+          builder: (context, state, child) => Scaffold(
+            body: child,
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: 0,
+              onTap: (i) => context.go(i == 0 ? '/home' : '/settings'),
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+              ],
+            ),
+          ),
+          routes: [
+            ChildRoute('/home', child: (context, state) => const HomePage()),
+            ChildRoute('/settings', child: (context, state) => const SettingsPage()),
+          ],
+        ),
+      ];
+}
+```
+
+## StatefulShellModularRoute
+
+Bottom nav / tabs where each branch has its **own** Navigator and its state is
+**preserved** when you switch tabs. The `builder` receives a
+`StatefulNavigationShell` — render it as the body and use it to switch branches.
+
+```dart filename="lib/src/app_module.dart"
+class AppModule extends Module {
+  @override
+  List<ModularRoute> get routes => [
+        StatefulShellModularRoute(
+          builder: (context, state, navigationShell) =>
+              ScaffoldWithNavBar(navigationShell: navigationShell),
+          branches: [
+            ModularBranch(
+              routes: [
+                ChildRoute('/home', child: (context, state) => const HomePage()),
+              ],
+            ),
+            ModuleBranch('/settings', module: SettingsModule()),
+          ],
+        ),
+      ];
+}
+```
+
+```dart filename="lib/src/widgets/scaffold_with_nav_bar.dart"
+class ScaffoldWithNavBar extends StatelessWidget {
+  const ScaffoldWithNavBar({super.key, required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: navigationShell.currentIndex,
+        onTap: (index) => navigationShell.goBranch(
+          index,
+          initialLocation: index == navigationShell.currentIndex,
+        ),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+        ],
+      ),
+    );
+  }
+}
+```
+
+Tapping the active tab again with `initialLocation: true` pops that branch back
+to its root.
+
+### Branches
+
+A branch holds at least one route. Use `ModularBranch` for an explicit list of
+routes, or `ModuleBranch` as a shortcut for a single nested module.
+
+```dart
+// Explicit routes
+ModularBranch(
+  routes: [
+    ChildRoute('/home', child: (context, state) => const HomePage()),
+  ],
+)
+
+// Shortcut: a branch that is just one ModuleRoute
+ModuleBranch('/settings', module: SettingsModule())
+```
+
+`ModuleBranch('/settings', module: SettingsModule())` is equivalent to
+`ModularBranch(routes: [ModuleRoute('/settings', module: SettingsModule())])`.
+Each branch path must be **unique** among the shell's branches.
+
+### Branch transitions
+
+By default branches switch with an `IndexedStack` (no animation). To animate the
+switch, pass `navigatorContainerBuilder` using one of the
+`StatefulShellBranchTransitions` presets:
+
+```dart
+StatefulShellModularRoute(
+  navigatorContainerBuilder:
+      StatefulShellBranchTransitions.withGoTransition(GoTransitions.fade),
+  builder: (context, state, navigationShell) =>
+      ScaffoldWithNavBar(navigationShell: navigationShell),
+  branches: [ /* ... */ ],
+)
+```
+
+Available presets:
+
+- `StatefulShellBranchTransitions.withGoTransition(GoTransition transition, {Duration? transitionDuration, Duration? reverseTransitionDuration})` — reuse any `GoTransitions.*` animation between branches.
+- `StatefulShellBranchTransitions.animatedFadeBetweenBranches({Duration? duration, Curve curve = Curves.easeOut})` — cross-fade.
+- `StatefulShellBranchTransitions.animatedFadeScaleBetweenBranches({Duration? duration, Curve curve = Curves.easeOut, double inactiveScale = 1.05})` — fade with a slight scale.
+
+<Callout type="info">
+  `navigatorContainerBuilder` replaces the default container, so it takes
+  precedence over the route's `transition` / duration parameters. Transitions on
+  the `ChildRoute`/`ModuleRoute` pages inside a branch still apply within that
+  branch's stack.
+</Callout>
+
+## Dependency lifecycle
+
+| Event | What happens to binds |
+| --- | --- |
+| Enter the shell | Shell binds register. |
+| First visit to a branch | That branch's module binds register (lazy). |
+| Switch between branches | Nothing is disposed — state is kept. |
+| Leave the shell | All shell and branch binds are disposed. |
+
+## Next steps
+
+- [Routes & Modules](/en/routes/routes-system)
+- [Navigation](/en/routes/navigation)
+- [Page Transitions](/en/routes/transitions)

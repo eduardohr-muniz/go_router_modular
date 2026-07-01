@@ -154,14 +154,14 @@ Arquivos de referência: `lib/src/core/bind/bind.dart`, `lib/src/core/bind/bind_
 
 ### Requirement: Exceção clara ao resolver bind não encontrado
 
-O sistema SHALL lançar `GoRouterModularException` quando uma resolução obrigatória (`get`) não encontrar o bind solicitado, com mensagem que identifica o tipo requisitado.
+O sistema SHALL lançar `ModularException` quando uma resolução obrigatória (`get`) não encontrar o bind solicitado, com mensagem que identifica o tipo requisitado.
 
 Arquivos de referência: `lib/src/core/bind/bind_locator.dart`, `lib/src/exceptions/exception.dart`.
 
 #### Scenario: get de tipo inexistente lança exceção informativa
 
 - **WHEN** `get<TipoInexistente>()` é chamado e nenhuma estratégia encontra o bind
-- **THEN** o sistema lança `GoRouterModularException`
+- **THEN** o sistema lança `ModularException`
 - **AND** a mensagem identifica o tipo `TipoInexistente`
 
 ### Requirement: Descarte polimórfico de instâncias

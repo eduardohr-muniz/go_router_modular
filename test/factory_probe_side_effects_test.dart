@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/bind.dart';
 import 'package:go_router_modular/src/di/injector.dart';
-import 'package:go_router_modular/src/exceptions/exception.dart';
+import 'package:go_router_modular/src/shared/exception.dart';
 
 /// Compatibility search MUST cache singleton probes — re-running a singleton
 /// factory on every interface lookup would silently break singleton identity
@@ -67,12 +67,10 @@ void main() {
       expect(afterCommit, 1, reason: 'eager singleton built once during commit');
 
       for (var i = 0; i < 5; i++) {
-        expect(() => Bind.get<_IUnrelated>(),
-            throwsA(isA<GoRouterModularException>()));
+        expect(() => Bind.get<_IUnrelated>(), throwsA(isA<ModularException>()));
       }
 
-      expect(_SideEffectful.constructed, afterCommit,
-          reason: 'cached singleton must not be rebuilt by probes');
+      expect(_SideEffectful.constructed, afterCommit, reason: 'cached singleton must not be rebuilt by probes');
     },
   );
 
@@ -90,8 +88,7 @@ void main() {
 
       final viaConcrete = Bind.get<_UnrelatedConcrete>();
       final viaInterface = Bind.get<_IUnrelated>();
-      expect(identical(viaConcrete, viaInterface), isTrue,
-          reason: 'interface lookup must reuse the canonical singleton');
+      expect(identical(viaConcrete, viaInterface), isTrue, reason: 'interface lookup must reuse the canonical singleton');
     },
   );
 }

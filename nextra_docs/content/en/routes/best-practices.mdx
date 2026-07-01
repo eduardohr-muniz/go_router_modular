@@ -1,0 +1,242 @@
+---
+title: Best Practices
+---
+
+import { Callout } from 'nextra/components'
+
+# Routing Best Practices
+
+The recommended convention for organizing routes and navigation in a
+`go_router_modular` app. Following it keeps route literals in one place, makes
+refactors safe, and keeps your modules fast to boot. This page is opinionated
+guidance — for the underlying API, see [Routes & Modules](/en/routes/routes-system)
+and [Navigation](/en/routes/navigation).
+
+## The three rules
+
+1. **Navigate only by name.** Never call `context.go('/raw-path')`. Every
+   navigation goes through a feature's `*Route` class, which delegates to
+   `goNamed`/`pushNamed`. Raw path strings scatter route literals across the app
+   and break silently when a path changes; a named route plus a single constants
+   file means one place to edit.
+2. **Every `ChildRoute` declares a `name`.** Without `name`, named navigation
+   can't resolve the route. The name lives on the leaf `ChildRoute`.
+3. **Keep modules synchronous.** Prefer synchronous `binds(Injector i)` and
+   `imports()`. An `async`/`Future`-returning module delays route registration
+   and the first frame; use it only when genuinely unavoidable.
+
+## A route file per feature
+
+Next to each feature's `<feature>_module.dart`, keep a `<feature>_route.dart`
+holding **two classes** with distinct, semantic jobs:
+
+- `<Feature>RouteRelative` — path/name constants, param keys, and the static
+  path-param readers (e.g. `getMyIdParam(state)`). No navigation, no context.
+  Keeping the reader here puts it next to the param key it reads.
+- `<Feature>Route` — the navigation surface, built from a `BuildContext`
+  (`MyRoute.of(context)`). It answers "how do I go there?" and is the only place
+  that calls `goNamed`/`pushNamed`.
+
+```dart
+// lib/src/modules/my/my_route.dart
+import 'package:flutter/widgets.dart';
+import 'package:go_router_modular/go_router_modular.dart';
+
+/// Path/name constants, param keys, and the static param readers. No navigation here.
+class MyRouteRelative {
+  MyRouteRelative._();
+
+  // params
+  static const String param$id = 'id';
+
+  /// Mount path of this module inside the parent module.
+  static const String myModule = '/my';
+
+  /// Relative path mounted as a ChildRoute (usually '/').
+  static const String my = '/';
+  static const String myNamed = 'my-feature';
+
+  /// Relative path with a path param.
+  static const String myDetail$id = '/detail/:${param$id}';
+  static const String myDetailNamed = 'detail';
+
+  /// Reads the `id` path param from the current route state.
+  static String getMyIdParam(GoRouterState state) =>
+      state.pathParameters[param$id] as String;
+}
+
+/// Navigation entry point. Built from a BuildContext.
+class MyRoute {
+  MyRoute.of(this.context);
+  final BuildContext context;
+
+  void go() => context.goNamed(MyRouteRelative.myNamed);
+  void push() => context.pushNamed(MyRouteRelative.myNamed);
+
+  // Route with a parameter: arguments go through the method, never the call site.
+  void pushMyDetail({required String id}) => context.pushNamed(
+        MyRouteRelative.myDetailNamed,
+        pathParameters: {MyRouteRelative.param$id: id},
+      );
+}
+```
+
+## Rule 1 — navigate only by name
+
+Always navigate through the feature's `*Route` class. Pass `pathParameters` and
+`extra` through its methods, so call sites never assemble route strings or
+parameter maps.
+
+```dart
+// ❌ Incorrect — raw path strings scattered across call sites.
+context.go('/my');
+context.push('/my/detail/42');
+
+// ✅ Correct — named, via the navigation class.
+MyRoute.of(context).go();
+MyRoute.of(context).pushMyDetail(id: '42');
+```
+
+<Callout type="warning">
+  A raw `context.go('/my')` breaks silently the day the path changes. Route
+  literals belong in `*RouteRelative` and nowhere else.
+</Callout>
+
+## Rule 2 — `name` on `ChildRoute`, and module composition
+
+In `Module.routes`, set each `ChildRoute`'s `path` from a relative constant and
+its `name` from the matching `*Named` constant. Read path params via the
+`*RouteRelative` static reader.
+
+```dart
+class MyModule extends Module {
+  @override
+  void binds(Injector i) {
+    i
+      // DataSources
+      ..addSingleton<MyDataSource>((i) => MyDataSource(i.get<DioClient>()))
+      // Repositories
+      ..addSingleton<MyRepository>((i) => MyRepository(i.get<MyDataSource>()))
+      // Controllers
+      ..add<MyController>((i) => MyController(i.get<MyRepository>()));
+  }
+
+  @override
+  List<ModularRoute> get routes => [
+        ChildRoute(
+          MyRouteRelative.my,
+          name: MyRouteRelative.myNamed,
+          child: (context, _) => MyPage(controller: Modular.get<MyController>()),
+        ),
+        ChildRoute(
+          MyRouteRelative.myDetail$id,
+          name: MyRouteRelative.myDetailNamed,
+          child: (context, state) => MyDetailPage(
+            controller: Modular.get<MyController>(),
+            id: MyRouteRelative.getMyIdParam(state),
+          ),
+        ),
+      ];
+}
+```
+
+The `*Module` constant defines where this module is mounted in its parent via
+`ModuleRoute`:
+
+```dart
+// In the parent module:
+ModuleRoute(MyRouteRelative.myModule, module: MyModule());
+```
+
+`ModuleRoute` also accepts a `name` if you need to target the module mount point
+itself; prefer naming the leaf `ChildRoute` you actually navigate to.
+
+## Rule 3 — synchronous modules, binds via the `..` cascade
+
+Prefer synchronous `binds`/`imports`. They register immediately, so routes are
+ready without delaying the first frame. Use a **block body** for `binds` and
+register on the injector with the cascade operator (`..`) — one `i` followed by a
+chain of `..addX`, grouped by layer with comments. Always pass the **explicit
+type** so the bind is indexed under that exact type and resolves via direct
+lookup.
+
+```dart
+@override
+void binds(Injector i) {
+  i
+    // Services
+    ..addSingleton<AnalyticsService>((i) => AnalyticsService())
+    // DataSources
+    ..addSingleton<MyRemoteDataSource>((i) => MyRemoteDataSource(i.get<DioClient>()))
+    // Repositories
+    ..addSingleton<MyRepository>((i) => MyRepository(i.get<MyRemoteDataSource>()))
+    // Controllers
+    ..add<MyController>((i) => MyController(i.get<MyRepository>()));
+}
+
+@override
+List<Module> imports() => [SharedModule()];
+```
+
+When a dependency needs an awaited resource, **do not make the module async.**
+Instead, `await` it in `main()` before `Modular.configure`, then pass the ready
+instance into `AppModule` through its constructor and register it synchronously.
+
+```dart
+// lib/main.dart
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Resolve async resources up front, before configuring.
+  final prefs = await SharedPreferences.getInstance();
+
+  await Modular.configure(
+    appModule: AppModule(prefs: prefs), // pass it in
+    initialRoute: '/',
+  );
+
+  runApp(const AppWidget());
+}
+```
+
+<Callout type="info">
+  The package _does_ support an `async` `binds`
+  (`Future<void> binds(Injector i) async {...}`), but prefer hoisting awaited
+  work into `main()` — async modules delay route registration and the first
+  frame. Reach for async `binds` only when an awaited resource genuinely cannot
+  be hoisted, and keep the awaited work minimal.
+</Callout>
+
+## Naming conventions
+
+| Element                   | Convention                                  | Example                    |
+| ------------------------- | ------------------------------------------- | -------------------------- |
+| Constants + readers class | suffix `*RouteRelative`                     | `MyRouteRelative`          |
+| Navigation class          | suffix `*Route` (built via `.of(context)`)  | `MyRoute`, `ProfileRoute`  |
+| Route name string         | kebab-case                                  | `my-feature`, `detail`     |
+| Param key constant        | prefix `param$`                             | `param$id`                 |
+| Relative path constant    | the feature/leaf name                       | `my`                       |
+| Module mount constant     | suffix `*Module`                            | `myModule`                 |
+| Name constant             | suffix `*Named`                             | `myNamed`, `myDetailNamed` |
+| Param-bearing path        | suffix `*$<param>`                          | `myDetail$id`              |
+
+## Checklist
+
+- Each feature with routes has a `*_route.dart` next to its `*_module.dart`, with
+  a `*RouteRelative` constants/readers class and a `*Route` navigation class.
+- Every `ChildRoute` has both `path` (from a relative constant) and `name` (from
+  a `*Named` constant).
+- No `context.go('/...')` / `context.push('/...')` with raw path strings —
+  navigation goes through `*Route`.
+- Path params are read via the `*RouteRelative` static reader, not inline
+  `state.pathParameters[...]` at the call site.
+- `binds`/`imports` are synchronous; async resources are awaited in `main()` and
+  passed into `AppModule` via its constructor.
+- Binds and lookups are **typed**: `addSingleton<T>`/`add<T>` on registration,
+  and `i.get<T>()` / `Modular.get<T>()` on resolution.
+
+## Next steps
+
+- [Routes & Modules](/en/routes/routes-system)
+- [Navigation](/en/routes/navigation)
+- [Dependency Injection](/en/dependency-injection)

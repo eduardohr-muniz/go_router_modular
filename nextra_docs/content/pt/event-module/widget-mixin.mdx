@@ -1,0 +1,79 @@
+---
+title: ModularEventMixin
+---
+
+import { Callout } from 'nextra/components'
+
+# ModularEventMixin
+
+O `ModularEventMixin` permite que um widget reaja a eventos tipados atrelados ao
+seu próprio ciclo de vida. Registre ouvintes no `initState` e o mixin cancela
+todos eles automaticamente no `dispose()` — sem limpeza manual.
+
+## Uso
+
+Aplique o mixin a um `State` e registre ouvintes com `on`:
+
+```dart filename="lib/src/widgets/cart_badge.dart"
+class CartBadge extends StatefulWidget {
+  const CartBadge({super.key});
+
+  @override
+  State<CartBadge> createState() => _CartBadgeState();
+}
+
+class _CartBadgeState extends State<CartBadge> with ModularEventMixin {
+  int _count = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    on<ProductAdded>((event, context) {
+      setState(() => _count++);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Text('$_count');
+}
+```
+
+Dispare eventos para ele de qualquer lugar:
+
+```dart
+ModularEvent.fire<ProductAdded>(ProductAdded(product));
+```
+
+## Registrando ouvintes
+
+```dart
+on<E>(
+  void Function(E event, BuildContext? context) callback, {
+  EventBus? eventBus,
+  bool exclusive = false,
+});
+```
+
+- `context` é `mounted ? context : null` — sempre verifique nulo antes de usar.
+- Registrar `on<E>` duas vezes para o mesmo tipo substitui o ouvinte anterior.
+- `eventBus`: omita para usar o barramento global `defaultModularEventBus`; passe
+  um `EventBus` customizado para isolar os ouvintes deste widget.
+- `exclusive`: quando `true`, usa um stream broadcast para o tipo.
+
+<Callout type="info">
+  Todas as subscriptions registradas pelo mixin são canceladas automaticamente
+  no `dispose()` do widget. Você nunca as cancela manualmente.
+</Callout>
+
+## Escolhendo uma abordagem
+
+| Abordagem | Escopo | Limpeza |
+| --- | --- | --- |
+| [`EventModule`](/pt/event-module) | Reações de negócio no escopo do módulo | Atrelada ao ciclo de vida do módulo |
+| `ModularEventMixin` | Reações de UI no escopo do widget | Atrelada ao ciclo de vida do widget |
+| `ModularEvent.instance` | Global | Manual |
+
+## Próximos passos
+
+- [Módulo de Eventos](/pt/event-module)
+- [Testes de Eventos](/pt/testing/event-testing)

@@ -1,10 +1,11 @@
-# 🎭 EventModule: Como uma Central Telefônica Mágica! 
+# 🎭 EventModule: Como uma Central Telefônica Mágica!
 
 Imagine que o EventModule é como uma **central telefônica mágica** da sua cidade! 📞✨
 
 ## 🏠 O que é um EventModule?
 
 Pense no EventModule como **casas diferentes** na sua cidade. Cada casa (módulo) pode:
+
 - 👂 **Escutar** ligações telefônicas especiais
 - 📢 **Mandar** mensagens para outras casas
 - 🔔 **Receber** notificações importantes
@@ -78,6 +79,7 @@ class NotificationModule extends EventModule {
 Imagine que você tem um **rádio muito especial** que só pode tocar uma música por vez! 🎵
 
 ### 📻 Modo Normal (Non-Exclusive)
+
 ```dart
 // 🎶 TODAS as casas escutam a mesma música ao mesmo tempo
 on<MusicEvent>((event, context) {
@@ -86,11 +88,13 @@ on<MusicEvent>((event, context) {
 ```
 
 **O que acontece:**
+
 - Casa do João: 🎵 "Tocando: Parabéns pra você"
-- Casa da Maria: 🎵 "Tocando: Parabéns pra você"  
+- Casa da Maria: 🎵 "Tocando: Parabéns pra você"
 - Casa do Pedro: 🎵 "Tocando: Parabéns pra você"
 
 ### 📻 Modo Exclusive (Fila do Rádio)
+
 ```dart
 // 🎯 Apenas UMA casa pode ouvir por vez!
 on<MusicEvent>((event, context) {
@@ -99,6 +103,7 @@ on<MusicEvent>((event, context) {
 ```
 
 **O que acontece:**
+
 1. 🏠 **Casa do João** entra na fila primeiro → 🎵 Ele escuta a música
 2. 🏠 **Casa da Maria** entra na fila → ⏳ Fica esperando
 3. 🏠 **Casa do Pedro** entra na fila → ⏳ Fica esperando
@@ -127,6 +132,7 @@ Se João sair de casa (dispose), o rádio **automaticamente** vai para Maria:
 ## 🎪 Exemplos do Mundo Real
 
 ### 🔐 Sistema de Login
+
 ```dart
 class LoginModule extends EventModule {
   @override
@@ -138,7 +144,7 @@ class LoginModule extends EventModule {
       context?.go('/dashboard');
     });
 
-    // Quando alguém faz logout  
+    // Quando alguém faz logout
     on<LogoutEvent>((event, context) {
       print('👋 Tchau, ${event.username}!');
       // Voltar para tela de login
@@ -153,6 +159,7 @@ ModularEvent.fire(LogoutEvent(username: 'Ana'));
 ```
 
 ### 🛒 Carrinho de Compras
+
 ```dart
 class ShoppingModule extends EventModule {
   @override
@@ -179,6 +186,7 @@ ModularEvent.fire(PurchaseEvent(total: 500.0));
 ```
 
 ### 🎮 Sistema de Jogo
+
 ```dart
 class GameModule extends EventModule {
   @override
@@ -205,26 +213,31 @@ ModularEvent.fire(SoundEvent(soundName: 'coin.wav'));
 ## 🎯 Regras Importantes
 
 ### 1. 🏠 Limpeza Automática
+
 Quando uma casa é demolida (`dispose()`), ela **automaticamente**:
+
 - 🧹 Para de escutar todos os eventos
 - 🗑️ Limpa toda a memória
 - 📻 Se estava no rádio exclusive, passa para o próximo
 
 ### 2. 🌐 Context Mágico
+
 O `context` é como um **GPS mágico** que te mostra onde você está:
+
 ```dart
 on<NavigationEvent>((event, context) {
   if (context != null) {
     // 🗺️ Você sabe onde está! Pode navegar
     context.go('/new-page');
   } else {
-    // 🤷‍♂️ Você não sabe onde está... 
+    // 🤷‍♂️ Você não sabe onde está...
     print('Ops! Não sei onde estou');
   }
 });
 ```
 
 ### 3. 🔄 AutoDispose
+
 ```dart
 // 🔒 Esta escuta vai embora quando a casa for demolida
 on<MyEvent>((event, context) {
@@ -244,7 +257,7 @@ on<MyEvent>((event, context) {
 class BirthdayEvent {
   final String personName;
   final int age;
-  
+
   BirthdayEvent({required this.personName, required this.age});
 }
 
@@ -254,7 +267,7 @@ class BirthdayModule extends EventModule {
   void listen() {
     on<BirthdayEvent>((event, context) {
       print('🎉 Parabéns ${event.personName}! ${event.age} anos!');
-      
+
       if (context != null) {
         showDialog(
           context: context,
@@ -281,6 +294,7 @@ ModularEvent.fire(BirthdayEvent(personName: 'Maria', age: 10));
 ## 🚀 Dicas de Ouro
 
 ### ✨ Boas Práticas
+
 ```dart
 // ✅ BOM: Sempre verificar context
 on<NavigationEvent>((event, context) {
@@ -301,16 +315,17 @@ on<NavigationEvent>((event, context) {
 ```
 
 ### 🎪 Exemplo Completo: App de Loja
+
 ```dart
 // 📱 App completo com eventos
 class ShopApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return GoRouterModularApp(
+    return ModularApp(
       title: '🛍️ Minha Loja',
       modules: [
         LoginModule(),      // Cuida do login
-        ShoppingModule(),   // Cuida das compras  
+        ShoppingModule(),   // Cuida das compras
         NotificationModule(), // Cuida das notificações
       ],
     );
@@ -330,7 +345,7 @@ class ShoppingModule extends EventModule {
     // Quando adiciona ao carrinho
     on<AddToCartEvent>((event, context) {
       print('🛒 ${event.productName} adicionado!');
-      
+
       // Mostrar notificação
       ModularEvent.fire(NotificationEvent(
         message: '${event.productName} no seu carrinho!'
@@ -355,6 +370,7 @@ class ShoppingModule extends EventModule {
 ## 🎊 Conclusão
 
 O EventModule é como uma **cidade mágica** onde:
+
 - 🏠 **Casas** (módulos) podem escutar eventos
 - 📢 **Gritos** (events) espalham informações
 - 📞 **Central telefônica** (EventBus) conecta tudo
@@ -365,4 +381,4 @@ O EventModule é como uma **cidade mágica** onde:
 
 ---
 
-*"Com grandes poderes vêm grandes responsabilidades... sempre faça dispose dos seus módulos!"* 🕷️
+_"Com grandes poderes vêm grandes responsabilidades... sempre faça dispose dos seus módulos!"_ 🕷️

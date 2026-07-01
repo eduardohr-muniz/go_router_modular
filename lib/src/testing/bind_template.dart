@@ -1,4 +1,4 @@
-import 'package:go_router_modular/src/core/bind/bind.dart';
+import 'package:go_router_modular/src/di/bind.dart';
 
 /// Coleção imutável de registros de DI que será reaplicada a cada [setUp].
 ///

@@ -43,6 +43,7 @@ EventModule provides the **communication backbone** for microfrontends, enabling
 ```
 
 **Key Capabilities:**
+
 - ✅ **Technology Agnostic** - Works with any Flutter-based microfrontend
 - ✅ **Type-Safe Communication** - Compile-time verification of event contracts
 - ✅ **Loose Coupling** - Modules communicate without direct dependencies
@@ -54,6 +55,7 @@ EventModule provides the **communication backbone** for microfrontends, enabling
 ### Traditional Monolith vs Microfrontends
 
 #### Monolithic Frontend
+
 ```dart
 // ❌ Single large application
 class MonolithApp extends StatelessWidget {
@@ -64,7 +66,7 @@ class MonolithApp extends StatelessWidget {
         body: Column(
           children: [
             ECommerceSection(),    // 50,000 lines
-            PaymentSection(),      // 30,000 lines  
+            PaymentSection(),      // 30,000 lines
             UserProfileSection(),  // 25,000 lines
             AnalyticsSection(),    // 15,000 lines
             // Total: 120,000 lines in single app
@@ -77,6 +79,7 @@ class MonolithApp extends StatelessWidget {
 ```
 
 **Problems:**
+
 - 🐌 **Slow builds** (5-10 minutes)
 - 🚫 **Technology lock-in** (single framework)
 - 👥 **Team conflicts** (merge hell)
@@ -84,25 +87,27 @@ class MonolithApp extends StatelessWidget {
 - 📦 **Large bundles** (slow loading)
 
 #### Microfrontend Architecture
+
 ```dart
 // ✅ Modular, independent applications
 class ShellApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: GoRouterModular.routerConfig,
+      routerConfig: Modular.routerConfig,
     );
   }
 }
 
 // Independent modules
 class ECommerceModule extends EventModule { }    // Team A - 10,000 lines
-class PaymentModule extends EventModule { }      // Team B - 8,000 lines  
+class PaymentModule extends EventModule { }      // Team B - 8,000 lines
 class UserModule extends EventModule { }         // Team C - 6,000 lines
 class AnalyticsModule extends EventModule { }    // Team D - 4,000 lines
 ```
 
 **Benefits:**
+
 - ⚡ **Fast builds** (30 seconds per module)
 - 🎯 **Technology freedom** (best tool for the job)
 - 👥 **Team autonomy** (independent development)
@@ -139,16 +144,17 @@ class MicrofrontendBus {
 ### 1. Decoupled Architecture
 
 #### Without EventModule (Tight Coupling)
+
 ```dart
 // ❌ Direct dependencies between modules
 class ECommerceModule {
   final PaymentModule paymentModule;
   final UserModule userModule;
   final AnalyticsModule analyticsModule;
-  
+
   ECommerceModule({
     required this.paymentModule,    // Direct dependency
-    required this.userModule,       // Direct dependency  
+    required this.userModule,       // Direct dependency
     required this.analyticsModule,  // Direct dependency
   });
 
@@ -162,12 +168,14 @@ class ECommerceModule {
 ```
 
 **Problems:**
+
 - 🔗 **Tight coupling** - modules know about each other
 - 🐛 **Fragile** - changes break other modules
 - 🧪 **Hard to test** - requires all dependencies
 - 📦 **Bundle bloat** - everything loads together
 
 #### With EventModule (Loose Coupling)
+
 ```dart
 // ✅ Event-driven, loosely coupled
 class ECommerceModule extends EventModule {
@@ -192,6 +200,7 @@ class ECommerceModule extends EventModule {
 ```
 
 **Benefits:**
+
 - 🔓 **Loose coupling** - modules don't know each other
 - 🛡️ **Resilient** - modules can fail independently
 - 🧪 **Easy testing** - mock events, not dependencies
@@ -217,7 +226,7 @@ class ECommerceModule extends EventModule {
   }
 }
 
-// Team B: Payment (develops independently)  
+// Team B: Payment (develops independently)
 class PaymentModule extends EventModule {
   @override
   List<ModularRoute> get routes => [
@@ -299,7 +308,7 @@ class ShellApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Microfrontend Shell',
-      routerConfig: GoRouterModular.routerConfig,
+      routerConfig: Modular.routerConfig,
     );
   }
 }
@@ -336,7 +345,7 @@ class UserLoginEvent {
   final String email;
   final String role;
   final DateTime loginTime;
-  
+
   UserLoginEvent({
     required this.userId,
     required this.email,
@@ -349,7 +358,7 @@ class UserLogoutEvent {
   final String userId;
   final DateTime logoutTime;
   final String reason;
-  
+
   UserLogoutEvent({
     required this.userId,
     required this.logoutTime,
@@ -363,7 +372,7 @@ class ProductAddedToCartEvent {
   final String productId;
   final int quantity;
   final double price;
-  
+
   ProductAddedToCartEvent({
     required this.userId,
     required this.productId,
@@ -378,7 +387,7 @@ class OrderCompletedEvent {
   final double totalAmount;
   final List<OrderItem> items;
   final DateTime completedAt;
-  
+
   OrderCompletedEvent({
     required this.orderId,
     required this.userId,
@@ -400,7 +409,7 @@ class RetailPlatformModule extends Module {
     ProductCatalogModule(),
     ShoppingCartModule(),
     CheckoutModule(),
-    
+
     // Support modules
     CustomerServiceModule(),
     ReviewsModule(),
@@ -416,7 +425,7 @@ class AdminPlatformModule extends Module {
     OrderManagementModule(),
     UserManagementModule(),
     AnalyticsModule(),
-    
+
     // Reporting modules
     SalesReportModule(),
     CustomerReportModule(),
@@ -515,14 +524,14 @@ class SharedStateModule extends EventModule {
         email: event.email,
         role: event.role,
       );
-      
+
       // Broadcast state change
       ModularEvent.fire(UserStateUpdatedEvent(user: _currentUser!));
     });
 
     on<CartUpdatedEvent>((CartUpdatedEvent event, BuildContext? context) {
       _cart = event.cart;
-      
+
       // Broadcast to interested modules
       ModularEvent.fire(CartStateUpdatedEvent(cart: _cart));
     });
@@ -561,7 +570,7 @@ class ProductCatalogModule extends EventModule {
   void _performSearch(String query, Map<String, dynamic> filters) {
     // Search logic
     final results = productService.search(query, filters);
-    
+
     // Broadcast results
     ModularEvent.fire(ProductSearchResultsEvent(
       query: query,
@@ -595,7 +604,7 @@ class ShoppingCartModule extends EventModule {
 
   void _addToCart(String productId, int quantity) {
     cartService.addItem(productId, quantity);
-    
+
     // Notify other modules
     ModularEvent.fire(CartUpdatedEvent(
       userId: cartService.userId,
@@ -635,7 +644,7 @@ class PaymentModule extends EventModule {
   Future<void> _processPayment(PaymentMethod method, double amount) async {
     try {
       final result = await paymentService.process(method, amount);
-      
+
       if (result.success) {
         ModularEvent.fire(PaymentSuccessEvent(
           transactionId: result.transactionId,
@@ -678,7 +687,7 @@ class AccountModule extends EventModule {
   Future<void> _processTransfer(String fromAccount, String toAccount, double amount) async {
     // Business logic
     final result = await accountService.transfer(fromAccount, toAccount, amount);
-    
+
     if (result.success) {
       // Notify interested modules
       ModularEvent.fire(TransferCompletedEvent(
@@ -708,7 +717,7 @@ class FraudDetectionModule extends EventModule {
 
   void _analyzeFraudRisk(TransferCompletedEvent event) {
     final riskScore = fraudService.calculateRisk(event);
-    
+
     if (riskScore > 0.8) {
       ModularEvent.fire(SuspiciousActivityEvent(
         userId: event.fromAccount,
@@ -856,7 +865,7 @@ name: Deploy ECommerce Module
 on:
   push:
     paths:
-      - 'modules/ecommerce/**'
+      - "modules/ecommerce/**"
 
 jobs:
   deploy:
@@ -864,10 +873,10 @@ jobs:
     steps:
       - name: Build Module
         run: flutter build web
-      
+
       - name: Deploy to CDN
         run: aws s3 sync build/web s3://cdn/ecommerce-module
-      
+
       - name: Update Module Registry
         run: curl -X POST api/modules/ecommerce/deploy
 ```
@@ -905,7 +914,7 @@ class ModuleRegistry {
   static bool isCompatible(String module1, String module2) {
     final mod1 = _modules[module1];
     final mod2 = _modules[module2];
-    
+
     return mod1?.compatibleVersions.contains(mod2?.version) ?? false;
   }
 }
@@ -917,7 +926,7 @@ class ModuleRegistry {
 // Route traffic between module versions
 class ModuleRouter {
   static String _currentEnvironment = 'blue';
-  
+
   static Module getModule(String moduleName) {
     switch (_currentEnvironment) {
       case 'blue':
@@ -931,7 +940,7 @@ class ModuleRouter {
 
   static void switchEnvironment() {
     _currentEnvironment = _currentEnvironment == 'blue' ? 'green' : 'blue';
-    
+
     // Notify all modules about environment switch
     ModularEvent.fire(EnvironmentSwitchedEvent(
       newEnvironment: _currentEnvironment,
@@ -1016,7 +1025,7 @@ class ModulePerformanceMonitor extends EventModule {
   static void _recordResponseTime(String moduleId, String requestId) {
     // Calculate and store response time
     final responseTime = _calculateResponseTime(moduleId, requestId);
-    
+
     _moduleResponseTimes[moduleId] ??= [];
     _moduleResponseTimes[moduleId]!.add(responseTime);
 
@@ -1048,7 +1057,7 @@ class ModuleHealthChecker extends EventModule {
 
   void _performHealthChecks() {
     final modules = ['ecommerce', 'payment', 'user', 'analytics'];
-    
+
     for (final moduleId in modules) {
       ModularEvent.fire(HealthCheckRequestEvent(
         moduleId: moduleId,
@@ -1060,7 +1069,7 @@ class ModuleHealthChecker extends EventModule {
   void _handleModuleError(ModuleErrorEvent event) {
     // Log error
     logger.error('Module ${event.moduleId} error: ${event.error}');
-    
+
     // Notify monitoring system
     ModularEvent.fire(ModuleUnhealthyEvent(
       moduleId: event.moduleId,
@@ -1083,7 +1092,7 @@ class UserRegistrationCompletedEvent {
   final UserProfile profile;
   final DateTime registrationDate;
   final String source; // web, mobile, api
-  
+
   UserRegistrationCompletedEvent({
     required this.userId,
     required this.email,
@@ -1111,7 +1120,7 @@ class GenericUserEvent {
 // ✅ GOOD: Clear module boundaries
 class OrderModule extends EventModule {
   // Responsible for: order lifecycle, order validation, order status
-  
+
   @override
   void listen() {
     on<CreateOrderEvent>((CreateOrderEvent event, BuildContext? context) {
@@ -1126,7 +1135,7 @@ class OrderModule extends EventModule {
 
 class PaymentModule extends EventModule {
   // Responsible for: payment processing, payment methods, refunds
-  
+
   @override
   void listen() {
     on<ProcessPaymentEvent>((ProcessPaymentEvent event, BuildContext? context) {
@@ -1152,7 +1161,7 @@ class RobustModule extends EventModule {
     on<ProcessDataEvent>((ProcessDataEvent event, BuildContext? context) async {
       try {
         await _processData(event.data);
-        
+
         ModularEvent.fire(DataProcessedEvent(
           dataId: event.dataId,
           result: 'success',
@@ -1193,7 +1202,7 @@ class ECommerceModuleTest {
   void setUp() {
     module = ECommerceModule();
     firedEvents = [];
-    
+
     // Mock event firing
     ModularEvent.fire = (event) => firedEvents.add(event);
   }
@@ -1223,11 +1232,12 @@ class ECommerceModuleTest {
 ### From Monolith to Microfrontends
 
 #### Phase 1: Identify Boundaries
+
 ```dart
 // Current monolith
 class MonolithApp {
   // User management: 15,000 lines
-  // Product catalog: 25,000 lines  
+  // Product catalog: 25,000 lines
   // Shopping cart: 10,000 lines
   // Payment processing: 20,000 lines
   // Order management: 18,000 lines
@@ -1238,12 +1248,13 @@ class MonolithApp {
 // UserModule: 15,000 lines
 // ProductModule: 25,000 lines
 // CartModule: 10,000 lines
-// PaymentModule: 20,000 lines  
+// PaymentModule: 20,000 lines
 // OrderModule: 18,000 lines
 // AnalyticsModule: 12,000 lines
 ```
 
 #### Phase 2: Extract Modules
+
 ```dart
 // Step 1: Create EventModule structure
 class UserModule extends EventModule {
@@ -1262,6 +1273,7 @@ ModularEvent.fire(UserLoginRequestEvent(
 ```
 
 #### Phase 3: Gradual Migration
+
 ```dart
 // Hybrid approach during migration
 class HybridModule extends EventModule {
@@ -1292,19 +1304,21 @@ class HybridModule extends EventModule {
 **Challenge**: Monolithic e-commerce platform with 8 teams
 
 #### Before Microfrontends
+
 - **Build Time**: 15 minutes
 - **Deployment**: Weekly (risky)
 - **Team Dependencies**: High
 - **Bug Impact**: Entire platform down
 
 #### Implementation
+
 ```dart
 // Module structure
 class TechMartShell extends Module {
   @override
   List<Module> get imports => [
     ProductCatalogModule(),    // Team A
-    UserAccountModule(),       // Team B  
+    UserAccountModule(),       // Team B
     ShoppingCartModule(),      // Team C
     CheckoutModule(),          // Team D
     OrderTrackingModule(),     // Team E
@@ -1327,7 +1341,7 @@ class PurchaseFlow {
     // Cart module updates
     // Recommendation module suggests accessories
     // Analytics module tracks behavior
-    
+
     // User proceeds to checkout
     ModularEvent.fire(InitiateCheckoutEvent(
       userId: 'user123',
@@ -1343,6 +1357,7 @@ class PurchaseFlow {
 ```
 
 #### Results After Implementation
+
 - **Build Time**: 2 minutes per module
 - **Deployment**: Daily (safe)
 - **Team Independence**: 95%
@@ -1354,6 +1369,7 @@ class PurchaseFlow {
 **Challenge**: Legacy banking system modernization
 
 #### Module Architecture
+
 ```dart
 class BankingPlatform extends Module {
   @override
@@ -1388,6 +1404,7 @@ class BankingEvents {
 ```
 
 #### Security Benefits
+
 - **Isolated failures**: One module compromise doesn't affect others
 - **Audit trails**: All inter-module communication logged
 - **Compliance**: Each module meets specific regulations
@@ -1409,4 +1426,4 @@ By following the patterns and practices outlined in this guide, development team
 
 ---
 
-*"Microfrontends with EventModule: Where independent modules create harmonious applications."* 🎼
+_"Microfrontends with EventModule: Where independent modules create harmonious applications."_ 🎼
