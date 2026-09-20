@@ -10,6 +10,7 @@ import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
 import 'package:go_router_modular/src/di/injection_manager.dart';
 import 'package:go_router_modular/src/shared/asserts/modular_configure_assert.dart';
 import 'package:go_router_modular/src/shared/setup.dart';
+import 'package:go_router_modular/src/shared/telemetry.dart';
 import 'package:go_router_modular/src/module/module.dart';
 import 'package:go_router_modular/src/routing/route_builder.dart';
 import 'package:go_transitions/go_transitions.dart';
@@ -66,6 +67,7 @@ class Modular {
     _derivedRouter = null;
     _params = null;
     modularRouteModules.clear();
+    ModularTelemetry.reset();
     InjectionManager.instance.resetForTesting();
   }
 
@@ -219,8 +221,32 @@ class Modular {
   ///   - `defaultTransitionDuration`: Configures the default duration for all transitions.
   ///   - `defaultTransitionCurve`: Configures the default curve for all transitions.
   ///   - `delayDisposeMilliseconds`: Time to wait before disposing a module in milliseconds.
+  ///   - `onTelemetry`: Observes the modular runtime — every change in a
+  ///     module's bind lifecycle and every message on the event bus. Runs in
+  ///     release too, and an exception it throws is swallowed, so telemetry
+  ///     never breaks a navigation.
+  ///   - `telemetryFilter`: Chooses what reaches `onTelemetry`. Applied before
+  ///     the event is built, so what is filtered out costs nothing.
   ///
   /// - **Returns**: A future instance of [GoRouter].
+  ///
+  /// - **Telemetry**: forward only module injection and disposal, without
+  ///   naming the binds:
+  ///   ```dart
+  ///   await Modular.configure(
+  ///     appModule: AppModule(),
+  ///     initialRoute: '/',
+  ///     onTelemetry: (e) => Sentry.addBreadcrumb(Breadcrumb(data: e.toMap())),
+  ///     telemetryFilter: const ModularTelemetryFilter.injections(),
+  ///   );
+  ///   ```
+  ///   Or watch one feature end to end, binds and events included:
+  ///   ```dart
+  ///   telemetryFilter: ModularTelemetryFilter(
+  ///     module: (name) => name.startsWith('Checkout'),
+  ///     event: (name) => name.startsWith('Checkout'),
+  ///   ),
+  ///   ```
   ///
   /// - **Example**:
   ///   ```dart
@@ -254,8 +280,20 @@ class Modular {
     int delayDisposeMilliseconds = 1000,
     bool debugLogEventBus = false,
     bool autoDisposeEventsBus = true,
+    ModularTelemetryCallback? onTelemetry,
+    ModularTelemetryFilter? telemetryFilter,
   }) async {
-    if (_router != null) return _router!;
+    if (_router != null) {
+      // The router is already built, so the rest of the configuration is a
+      // no-op — but telemetry is a pure observer, and attaching it after
+      // bootstrap is legitimate, so an explicit listener still takes effect.
+      // Omitting `onTelemetry` keeps whatever is attached instead of dropping
+      // it silently.
+      if (onTelemetry != null) ModularTelemetry.setListener(onTelemetry, filter: telemetryFilter);
+      return _router!;
+    }
+    // Registered before the AppModule, so its own injection is reported too.
+    ModularTelemetry.setListener(onTelemetry, filter: telemetryFilter);
     modularDefaultTransition = defaultTransition;
 
     // Afeta GoTransition.defaultDuration usada por rotas sem duração explícita e por

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router_modular/go_router_modular.dart';
+import 'package:go_router_modular/src/routing/history/browser_history.dart';
 
 /// Regressão: a MESMA instância de módulo empilhada mais de uma vez na pilha de
 /// navegação (A → B → A) não deve ter seus binds descartados ao dar pop na
@@ -52,8 +53,26 @@ class _Page extends StatelessWidget {
       Scaffold(body: Center(child: Text(title)));
 }
 
+/// Histórico inerte: `go` sempre recusa o movimento.
+///
+/// Sem isso, ao rodar em Chrome estes testes pegam a implementação REAL de
+/// [BrowserHistory]. Aí `go(-1)` mexe no histórico da página de teste, retorna
+/// `true`, e o provider arma o watchdog de 1s à espera de um `popstate` que o
+/// relógio falso do `testWidgets` nunca entrega — o teste termina com timer
+/// pendente. Estes testes são sobre contagem de referências, não sobre o
+/// histórico do navegador, então a plataforma fica fixa nos dois alvos.
+class _InertBrowserHistory extends BrowserHistory {
+  const _InertBrowserHistory();
+
+  @override
+  bool go(int delta) => false;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() => debugBrowserHistoryOverride = const _InertBrowserHistory());
+  tearDownAll(() => debugBrowserHistoryOverride = null);
 
   Future<void> settle(WidgetTester tester) async {
     await tester.pumpAndSettle();

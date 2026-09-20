@@ -1,3 +1,10 @@
+@TestOn('vm')
+library;
+
+/// Inspeciona os arquivos de lib/ com dart:io para validar o layering do
+/// pacote. É análise estática de código-fonte: não há o que rodar num navegador,
+/// onde dart:io não existe.
+
 /// Guarda de arquitetura: ausência dos ciclos entre áreas centrais que a
 /// refatoração de camadas eliminou.
 ///

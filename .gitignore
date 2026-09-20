@@ -35,3 +35,6 @@ go-router-modular-workspace/
 .claude/skills/openspec-*
 .claude/skills/go-router-modular
 .claude/skills/go-router-modular-events
+
+# Editors
+.zed/

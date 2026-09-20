@@ -132,6 +132,9 @@ class ModularTestScope {
   /// Deve ser chamado no `setUp` de cada grupo de testes.
   void setUp() {
     InjectionManager.instance.resetForTesting();
+    // Este arquivo É a API de teste do pacote: chamar um membro
+    // @visibleForTesting aqui é o uso pretendido, não um vazamento.
+    // ignore: invalid_use_of_visible_for_testing_member
     clearEventModuleState();
     _template.registerAll();
   }
@@ -142,6 +145,7 @@ class ModularTestScope {
   void tearDown() {
     _recorder.dispose();
     InjectionManager.instance.resetForTesting();
+    // ignore: invalid_use_of_visible_for_testing_member
     clearEventModuleState();
   }
 }
