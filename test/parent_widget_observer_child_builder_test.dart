@@ -54,7 +54,6 @@ void main() {
               builder: (context, _, __) => ParentWidgetObserver(
                 module: module,
                 onDispose: (_) {},
-                didChangeDependencies: (_) {},
                 childBuilder: (_) {
                   buildCount++;
                   return const Text('child');
@@ -86,7 +85,6 @@ void main() {
             home: ParentWidgetObserver(
               module: module,
               onDispose: (_) {},
-              didChangeDependencies: (_) {},
               child: const Text('shell-child'),
             ),
           ),
@@ -107,7 +105,6 @@ void main() {
             home: ParentWidgetObserver(
               module: module,
               onDispose: (m) => disposedModule = m,
-              didChangeDependencies: (_) {},
               childBuilder: (_) => const Text('child'),
             ),
           ),

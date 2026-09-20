@@ -130,6 +130,26 @@ context?.go('/login');
 Deep links, a barra de URL e o voltar/avançar do navegador funcionam — é
 `go_router` por baixo, então parâmetros de caminho e de query trafegam pela URL.
 
+O botão voltar do navegador se comporta como o botão voltar das outras
+plataformas. O `go_router` puro cria uma entrada de histórico por mudança de
+URL, então depois de `context.go('/b')` o voltar do navegador reabriria `/a` —
+uma página que o `go` já tinha tirado da pilha (e cujo módulo já foi
+descartado). O go_router_modular mantém o histórico do navegador espelhado na
+pilha de páginas:
+
+| Navegação | Pilha de páginas | Histórico do navegador |
+| --- | --- | --- |
+| `go('/b')` a partir de `/a` | `[/b]` | entrada `/a` **substituída** — o voltar sai do app, como no mobile |
+| `push('/b')` ou `go('/a/x')` (rota aninhada) | `[/a, /b]` | entrada nova — o voltar faz pop para `/a` |
+| `pop()` / voltar da AppBar | `[/a]` | o navegador recua uma entrada, nada é re-parseado |
+| `go('/c')` a partir de `[/a, /a/x]` | `[/c]` | o histórico colapsa numa única entrada `/c` |
+
+O voltar do navegador sobre uma página ainda montada só faz o pop (guards não
+reexecutam). O avançar sobre uma página que já foi removida navega para a URL
+como um `go` novo, então guards, redirects e binds do módulo rodam de novo.
+Não há nada para configurar — `context.go`, `push`, `pop` e as variantes
+`Async` se comportam igual em todas as plataformas.
+
 ## Próximos passos
 
 - [Rotas e Módulos](/pt/routes/routes-system)

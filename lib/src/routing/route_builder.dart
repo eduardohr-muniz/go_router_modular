@@ -17,12 +17,11 @@ class ModularRouteBuilder {
   ModularRouteBuilder(this.module);
 
   List<RouteBase> buildRoutes({String modulePath = '', bool topLevel = false}) {
-    final lifecycle = ModuleRouteLifecycle(module);
+    const lifecycle = ModuleRouteLifecycle();
     const childBuilder = ChildRouteBuilder();
     final moduleBuilder = ModuleRouteBuilder(
       lifecycle: lifecycle,
-      buildNested: (nestedModule, nestedPath) => ModularRouteBuilder(nestedModule)
-          .buildRoutes(modulePath: nestedPath, topLevel: false),
+      buildNested: (nestedModule, nestedPath) => ModularRouteBuilder(nestedModule).buildRoutes(modulePath: nestedPath, topLevel: false),
     );
     final shellBuilder = ModularShellRouteBuilder(
       parentModule: module,
@@ -36,10 +35,7 @@ class ModularRouteBuilder {
           .whereType<ChildRoute>()
           .where((route) => RoutePathNormalizer.adjustRoute(route.path) != '/')
           .map((route) => childBuilder.build(childRoute: route, topLevel: topLevel)),
-      ...module.routes
-          .whereType<ModuleRoute>()
-          .map((moduleRoute) => moduleBuilder.build(
-              module: moduleRoute, modulePath: modulePath, topLevel: topLevel)),
+      ...module.routes.whereType<ModuleRoute>().map((moduleRoute) => moduleBuilder.build(module: moduleRoute, modulePath: modulePath, topLevel: topLevel)),
       ...shellBuilder.buildShellRoutes(topLevel, modulePath),
       ...shellBuilder.buildStatefulShellRoutes(topLevel, modulePath),
     ];

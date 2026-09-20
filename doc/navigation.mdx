@@ -53,6 +53,8 @@ ChildRoute(
 
 For web applications, GoRouter Modular integrates seamlessly with Flutter's navigation system using `RouteInformationParser` and `RouterDelegate`. This ensures that browser navigation (back/forward buttons, URL changes) works as expected.
 
+The browser history is kept mirrored on the page stack, so the browser back button behaves like the platform back button: `go` replaces the current history entry (back does not reopen the page `go` removed), `push` and nested `go` add an entry (back pops), and `pop` moves the browser back one entry without re-parsing the route.
+
 You don't need to configure this manually—GoRouter Modular handles it for you under the hood. However, if you want to customize the behavior, you can access the underlying router:
 
 ```dart

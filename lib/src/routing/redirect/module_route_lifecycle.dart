@@ -16,10 +16,7 @@ import 'package:go_router_modular/src/ui/modular_loader.dart';
 /// Extraído de `route_builder.dart` para isolar a responsabilidade de ciclo de
 /// vida/redirect da construção de rotas (Single Responsibility).
 class ModuleRouteLifecycle {
-  ModuleRouteLifecycle(this.parentModule);
-
-  /// Módulo que está construindo estas rotas (usado para a proteção de transição).
-  final Module parentModule;
+  const ModuleRouteLifecycle();
 
   FutureOr<String?> redirectAndInjectBinds(
     BuildContext context,
@@ -47,17 +44,17 @@ class ModuleRouteLifecycle {
     return null;
   }
 
-  void disposeModule(Module mod) {
-    if (parentModule.didChangeGoingReference.contains(mod)) return;
-    InjectionManager.instance.unregisterModule(mod);
+  /// The module's page was created: claim the reference the redirect opened.
+  void claimModule(Module mod) {
+    InjectionManager.instance.claimModuleReference(mod);
   }
 
-  /// Descarta os módulos das branches e, em seguida, o próprio módulo do shell.
-  void disposeStatefulShellModule(Module shellMod, List<Module> branchModules) {
-    for (final branchModule in branchModules) {
-      if (parentModule.didChangeGoingReference.contains(branchModule)) continue;
-      InjectionManager.instance.unregisterModule(branchModule);
-    }
-    disposeModule(shellMod);
+  /// The module's page was disposed: release the reference.
+  ///
+  /// [InjectionManager]'s reference counting is what keeps a module that is
+  /// still on the stack (A to B back to A, or a running transition) from being
+  /// disposed too early.
+  void disposeModule(Module mod) {
+    InjectionManager.instance.unregisterModule(mod);
   }
 }

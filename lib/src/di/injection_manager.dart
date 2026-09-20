@@ -28,6 +28,17 @@ class InjectionManager {
   /// mais de uma vez na pilha de navegação (ex.: A → B → A).
   final Map<Module, int> _referenceCount = Map<Module, int>.identity();
 
+  /// Modules holding a navigation reference no page has claimed yet.
+  ///
+  /// A module route's `redirect` runs on **every** navigation that goes through
+  /// it (sibling routes, restores after a pop, guards that redirect away), but
+  /// only creates a page when the route actually enters the stack. To keep the
+  /// count balanced, a redirect opens at most **one** pending reference per
+  /// module; the page's `ParentWidgetObserver` claims it from `initState`
+  /// ([claimModuleReference]), and the ones nobody claimed expire once the
+  /// navigation settles ([expireUnclaimedNavigationReferences]).
+  final Set<Module> _pendingNavigationReferences = Set<Module>.identity();
+
   bool get _debugLog => SetupModular.instance.debugLogGoRouterModular;
 
   /// Defensive resolver for bind introspection (tracking, logging, validation).
@@ -55,6 +66,40 @@ class InjectionManager {
     _tracker.clear();
     _bindsToValidate.clear();
     _referenceCount.clear();
+    _pendingNavigationReferences.clear();
+  }
+
+  /// Active reference count of [module], for diagnostics and tests.
+  int referenceCountOf(Module module) => _referenceCount[module] ?? 0;
+
+  /// Expires the navigation references no page has claimed.
+  ///
+  /// Call it at the end of the frame that builds the pages of a resolved
+  /// navigation, with the modules [present] in the committed configuration. A
+  /// pending reference is released when the module left the configuration (a
+  /// guard redirected away) or when it already has an owning page (a sibling
+  /// route, or a restore after a pop, where the existing page will not claim
+  /// again). A module that is present and still has no owner stays pending,
+  /// because its page sits below the top and the Navigator only builds it once
+  /// it becomes visible.
+  Future<void> expireUnclaimedNavigationReferences({required Set<Module> present}) {
+    if (_pendingNavigationReferences.isEmpty) return Future<void>.value();
+    final unclaimed = <Module>[];
+    for (final module in _pendingNavigationReferences) {
+      // The pending reference is already in the count; the rest are pages.
+      final ownedByPages = (_referenceCount[module] ?? 0) - 1;
+      final pageStillToBeBuilt = present.contains(module) && ownedByPages <= 0;
+      if (pageStillToBeBuilt) continue;
+      unclaimed.add(module);
+    }
+    if (unclaimed.isEmpty) return Future<void>.value();
+    _pendingNavigationReferences.removeAll(unclaimed);
+    return _queue.enqueue(() async {
+      for (final module in unclaimed) {
+        if (module.runtimeType == _tracker.appModule?.runtimeType) continue;
+        await _unregisterModuleInternal(module);
+      }
+    });
   }
 
   // ==================== MODULE REGISTRATION ====================
@@ -70,6 +115,11 @@ class InjectionManager {
   }
 
   Future<void> _registerBindsModuleInternal(Module module) async {
+    // A navigation whose reference is still pending does not add another one:
+    // at most one pending reference per module.
+    if (_pendingNavigationReferences.contains(module) && (_referenceCount[module] ?? 0) > 0) return;
+    _pendingNavigationReferences.add(module);
+
     // Reference counting: only the first reference (0→1) does the actual
     // registration; subsequent references of the same instance just count.
     final referenceCount = (_referenceCount[module] ?? 0) + 1;
@@ -148,6 +198,21 @@ class InjectionManager {
 
   // ==================== MODULE UNREGISTRATION ====================
 
+  /// Claims [module]'s pending navigation reference on behalf of a page that
+  /// was just created, or counts a new reference when there is none, which
+  /// happens for a page built without a redirect, such as a second instance of
+  /// the module on the stack.
+  ///
+  /// Synchronous on purpose: it runs from the page's `initState`, after the
+  /// redirect has already registered the module.
+  void claimModuleReference(Module module) {
+    if (_pendingNavigationReferences.remove(module)) return;
+    if (!_referenceCount.containsKey(module)) return;
+    _referenceCount[module] = _referenceCount[module]! + 1;
+  }
+
+  /// Releases the reference of a disposed page, and disposes the module once
+  /// the count reaches zero.
   Future<void> unregisterModule(Module module) async {
     if (module.runtimeType == _tracker.appModule?.runtimeType) return;
     return _queue.enqueue(() => _unregisterModuleInternal(module));
@@ -164,6 +229,8 @@ class InjectionManager {
       return;
     }
     _referenceCount.remove(module);
+    // With no references left there is no pending navigation to claim.
+    _pendingNavigationReferences.remove(module);
 
     module.dispose();
     _unregisterBinds(module);

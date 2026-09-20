@@ -56,6 +56,19 @@ class Modular {
   /// overrides through [copyRouterConfig].
   static ModularRouterParams? _params;
 
+  /// Disposes the router and the injection container so that the next
+  /// [configure] builds everything from scratch. For tests only.
+  @visibleForTesting
+  static void resetForTesting() {
+    _router?.dispose();
+    _derivedRouter?.dispose();
+    _router = null;
+    _derivedRouter = null;
+    _params = null;
+    modularRouteModules.clear();
+    InjectionManager.instance.resetForTesting();
+  }
+
   /// Retrieves a registered dependency from the injection container.
   ///
   /// - [T]: The type of the dependency to return.
@@ -296,6 +309,12 @@ class Modular {
       requestFocus: requestFocus,
       restorationScopeId: restorationScopeId,
       routerNeglect: routerNeglect,
+      // Expiring the unclaimed navigation references once the pages are built
+      // is what keeps the module reference count balanced across sibling
+      // routes, restores after a pop, and guards that redirect away.
+      onNavigationSettled: (configuration) => InjectionManager.instance.expireUnclaimedNavigationReferences(
+        present: modulesInConfiguration(configuration),
+      ),
     );
 
     _router = _params!.build();
