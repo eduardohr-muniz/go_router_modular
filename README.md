@@ -39,6 +39,22 @@
 | 🎭 **Event System** | Decoupled, event-driven communication between modules |
 | 🚀 **Lazy Loading** | Modules load on demand with efficient memory management |
 | 🛡️ **Type Safety** | Fully type-safe with compile-time checks |
+| 🌐 **Web that feels like mobile** | Browser back/forward follow the page stack, not the URL history |
+
+---
+
+## 🌐 On the web, navigation finally feels like mobile
+
+The only Flutter router where the **browser back button is the platform back button**. The history mirrors your page stack instead of logging every URL change:
+
+| | |
+|---|---|
+| `go` | **replaces** the current entry — back never reopens a page you already left |
+| `push` | **adds** an entry — back pops it, exactly like the device button |
+| `pop` | steps the browser back — nothing is re-parsed, guards don't re-run |
+| `forward` | onto a removed page, re-navigates it properly — guards, redirects and module binds all run again |
+
+No page ever comes back without its module. Zero configuration, no `Router.neglect`.
 
 ---
 
