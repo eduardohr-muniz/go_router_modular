@@ -3,7 +3,9 @@ import 'package:go_router_modular/src/module/module.dart';
 
 class ParentWidgetObserver extends StatefulWidget {
   final void Function(Module module) onDispose;
-  final void Function(Module module) didChangeDependencies;
+
+  /// Called once from `initState`, when the module's page enters the stack.
+  final void Function(Module module)? onInit;
   final Module module;
 
   /// Pre-built widget — use for shell/stateful-shell routes where the child
@@ -19,12 +21,11 @@ class ParentWidgetObserver extends StatefulWidget {
   const ParentWidgetObserver({
     super.key,
     required this.onDispose,
-    required this.didChangeDependencies,
     required this.module,
+    this.onInit,
     this.child,
     this.childBuilder,
-  }) : assert(child != null || childBuilder != null,
-            'Provide either child or childBuilder');
+  }) : assert(child != null || childBuilder != null, 'Provide either child or childBuilder');
 
   @override
   State<ParentWidgetObserver> createState() => _ParentWidgetObserverState();
@@ -34,15 +35,15 @@ class _ParentWidgetObserverState extends State<ParentWidgetObserver> {
   Widget? _cachedChild;
 
   @override
-  void dispose() {
-    widget.onDispose(widget.module);
-    super.dispose();
+  void initState() {
+    super.initState();
+    widget.onInit?.call(widget.module);
   }
 
   @override
-  void didChangeDependencies() {
-    widget.didChangeDependencies(widget.module);
-    super.didChangeDependencies();
+  void dispose() {
+    widget.onDispose(widget.module);
+    super.dispose();
   }
 
   @override

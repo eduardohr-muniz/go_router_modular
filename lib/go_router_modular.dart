@@ -26,6 +26,13 @@ export 'src/ui/route_extension.dart';
 // Exceptions exports
 export 'src/shared/exception.dart';
 
+// Telemetry exports
+// `ModularTelemetry` itself stays internal: the listener is registered through
+// `Modular.configure(onTelemetry: ...)`, so exporting its mutable static state
+// would only let an app silently drop or forge events.
+export 'src/shared/telemetry.dart'
+    show ModularBusTelemetryEvent, ModularModuleTelemetryEvent, ModularTelemetryCallback, ModularTelemetryEvent, ModularTelemetryFilter, ModularTelemetryKind, ModularTelemetryTrigger;
+
 // Widgets exports
 export 'src/ui/material_app_router.dart';
 export 'src/ui/modular_loader.dart';

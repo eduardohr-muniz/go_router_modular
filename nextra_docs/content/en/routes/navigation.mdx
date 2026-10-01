@@ -128,6 +128,25 @@ context?.go('/login');
 Deep links, the URL bar, and browser back/forward all work — it's `go_router`
 under the hood, so path and query parameters round-trip through the URL.
 
+The browser's back button behaves like the platform back button. Plain
+`go_router` creates one browser history entry per URL change, so after
+`context.go('/b')` the browser back button would reopen `/a` — a page that
+`go` had already removed from the stack (and whose module had been disposed).
+go_router_modular keeps the browser history mirrored on the page stack instead:
+
+| Navigation | Page stack | Browser history |
+| --- | --- | --- |
+| `go('/b')` from `/a` | `[/b]` | `/a` entry **replaced** — back leaves the app, as on mobile |
+| `push('/b')` or `go('/a/x')` (nested route) | `[/a, /b]` | new entry — back pops to `/a` |
+| `pop()` / AppBar back | `[/a]` | browser goes back one entry, nothing is re-parsed |
+| `go('/c')` from `[/a, /a/x]` | `[/c]` | history collapses to a single `/c` entry |
+
+Pressing browser back on a page that is still mounted just pops it (guards do
+not re-run). Pressing forward onto a page that was already removed navigates to
+its URL as a fresh `go`, so guards, redirects and module binds all run again.
+No configuration is needed — `context.go`, `push`, `pop` and the `Async`
+variants behave the same on every platform.
+
 ## Next steps
 
 - [Routes & Modules](/en/routes/routes-system)

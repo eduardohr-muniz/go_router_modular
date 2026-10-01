@@ -8,6 +8,7 @@ import 'package:go_router_modular/src/di/operation_queue.dart';
 import 'package:go_router_modular/src/di/bind_context_tracker.dart';
 import 'package:go_router_modular/src/shared/exception.dart';
 import 'package:go_router_modular/src/shared/setup.dart';
+import 'package:go_router_modular/src/shared/telemetry.dart';
 
 /// Manages module lifecycle: registration, bind injection, and disposal.
 class InjectionManager {
@@ -28,7 +29,51 @@ class InjectionManager {
   /// mais de uma vez na pilha de navegação (ex.: A → B → A).
   final Map<Module, int> _referenceCount = Map<Module, int>.identity();
 
+  /// Modules holding a navigation reference no page has claimed yet.
+  ///
+  /// A module route's `redirect` runs on **every** navigation that goes through
+  /// it (sibling routes, restores after a pop, guards that redirect away), but
+  /// only creates a page when the route actually enters the stack. To keep the
+  /// count balanced, a redirect opens at most **one** pending reference per
+  /// module; the page's `ParentWidgetObserver` claims it from `initState`
+  /// ([claimModuleReference]), and the ones nobody claimed expire once the
+  /// navigation settles ([expireUnclaimedNavigationReferences]).
+  final Set<Module> _pendingNavigationReferences = Set<Module>.identity();
+
   bool get _debugLog => SetupModular.instance.debugLogGoRouterModular;
+
+  /// Reports one change in a module's bind lifecycle to the `onTelemetry`
+  /// listener of `Modular.configure`. No listener, no work.
+  ///
+  /// The filter decides before anything is built, and [binds] is a callback so
+  /// that naming the binds — which walks the module's identifiers and builds a
+  /// string for each, the only part that is not O(1) — happens only when
+  /// somebody asked for them.
+  void _emit(
+    ModularTelemetryKind kind,
+    ModularTelemetryTrigger trigger,
+    Module module, {
+    List<String> Function()? binds,
+  }) {
+    if (!ModularTelemetry.hasListener) return;
+    final name = module.runtimeType.toString();
+    if (!ModularTelemetry.wantsModule(kind, name)) return;
+    final wantsBinds = binds != null && ModularTelemetry.filter.includeBinds;
+    ModularTelemetry.emit(
+      ModularModuleTelemetryEvent(
+        kind: kind,
+        trigger: trigger,
+        module: name,
+        instanceId: identityHashCode(module),
+        referenceCount: _referenceCount[module] ?? 0,
+        binds: wantsBinds ? binds() : const <String>[],
+      ),
+    );
+  }
+
+  List<String> _trackedBindNames(Module module) => _labelsOf(_tracker.moduleBindTypes[module] ?? const <BindIdentifier>{});
+
+  List<String> _labelsOf(Iterable<BindIdentifier> ids) => ids.map((id) => id.label).toList();
 
   /// Defensive resolver for bind introspection (tracking, logging, validation).
   ///
@@ -55,6 +100,40 @@ class InjectionManager {
     _tracker.clear();
     _bindsToValidate.clear();
     _referenceCount.clear();
+    _pendingNavigationReferences.clear();
+  }
+
+  /// Active reference count of [module], for diagnostics and tests.
+  int referenceCountOf(Module module) => _referenceCount[module] ?? 0;
+
+  /// Expires the navigation references no page has claimed.
+  ///
+  /// Call it at the end of the frame that builds the pages of a resolved
+  /// navigation, with the modules [present] in the committed configuration. A
+  /// pending reference is released when the module left the configuration (a
+  /// guard redirected away) or when it already has an owning page (a sibling
+  /// route, or a restore after a pop, where the existing page will not claim
+  /// again). A module that is present and still has no owner stays pending,
+  /// because its page sits below the top and the Navigator only builds it once
+  /// it becomes visible.
+  Future<void> expireUnclaimedNavigationReferences({required Set<Module> present}) {
+    if (_pendingNavigationReferences.isEmpty) return Future<void>.value();
+    final unclaimed = <Module>[];
+    for (final module in _pendingNavigationReferences) {
+      // The pending reference is already in the count; the rest are pages.
+      final ownedByPages = (_referenceCount[module] ?? 0) - 1;
+      final pageStillToBeBuilt = present.contains(module) && ownedByPages <= 0;
+      if (pageStillToBeBuilt) continue;
+      unclaimed.add(module);
+    }
+    if (unclaimed.isEmpty) return Future<void>.value();
+    _pendingNavigationReferences.removeAll(unclaimed);
+    return _queue.enqueue(() async {
+      for (final module in unclaimed) {
+        if (module.runtimeType == _tracker.appModule?.runtimeType) continue;
+        await _unregisterModuleInternal(module, ModularTelemetryTrigger.unclaimedNavigationExpired);
+      }
+    });
   }
 
   // ==================== MODULE REGISTRATION ====================
@@ -62,21 +141,32 @@ class InjectionManager {
   Future<void> registerAppModule(Module module) async {
     if (_tracker.appModule != null) return;
     _tracker.appModule = module;
-    await registerBindsModule(module);
+    await registerBindsModule(module, ModularTelemetryTrigger.bootstrap);
   }
 
-  Future<void> registerBindsModule(Module module) async {
-    return _queue.enqueue(() => _registerBindsModuleInternal(module));
+  Future<void> registerBindsModule(Module module, [ModularTelemetryTrigger trigger = ModularTelemetryTrigger.navigation]) async {
+    return _queue.enqueue(() => _registerBindsModuleInternal(module, trigger));
   }
 
-  Future<void> _registerBindsModuleInternal(Module module) async {
+  Future<void> _registerBindsModuleInternal(Module module, ModularTelemetryTrigger trigger) async {
+    // A navigation whose reference is still pending does not add another one:
+    // at most one pending reference per module.
+    if (_pendingNavigationReferences.contains(module) && (_referenceCount[module] ?? 0) > 0) return;
+    _pendingNavigationReferences.add(module);
+
     // Reference counting: only the first reference (0→1) does the actual
     // registration; subsequent references of the same instance just count.
     final referenceCount = (_referenceCount[module] ?? 0) + 1;
     _referenceCount[module] = referenceCount;
-    if (referenceCount > 1) return;
+    if (referenceCount > 1) {
+      _emit(ModularTelemetryKind.referenceOpened, trigger, module);
+      return;
+    }
 
-    if (_tracker.moduleBindTypes.containsKey(module)) return;
+    if (_tracker.moduleBindTypes.containsKey(module)) {
+      _emit(ModularTelemetryKind.referenceOpened, trigger, module);
+      return;
+    }
 
     // Collect binds from module and its imports
     _injector.startRegistering();
@@ -105,6 +195,13 @@ class InjectionManager {
     _validateModuleScope(module, recordedDependencies);
 
     module.initState(_injector);
+
+    _emit(
+      ModularTelemetryKind.injected,
+      trigger,
+      module,
+      binds: () => _trackedBindNames(module),
+    );
 
     if (_debugLog) _logRegisteredBinds(module, allBinds);
 
@@ -148,12 +245,31 @@ class InjectionManager {
 
   // ==================== MODULE UNREGISTRATION ====================
 
-  Future<void> unregisterModule(Module module) async {
-    if (module.runtimeType == _tracker.appModule?.runtimeType) return;
-    return _queue.enqueue(() => _unregisterModuleInternal(module));
+  /// Claims [module]'s pending navigation reference on behalf of a page that
+  /// was just created, or counts a new reference when there is none, which
+  /// happens for a page built without a redirect, such as a second instance of
+  /// the module on the stack.
+  ///
+  /// Synchronous on purpose: it runs from the page's `initState`, after the
+  /// redirect has already registered the module.
+  void claimModuleReference(Module module) {
+    if (_pendingNavigationReferences.remove(module)) {
+      _emit(ModularTelemetryKind.referenceClaimed, ModularTelemetryTrigger.pageMounted, module);
+      return;
+    }
+    if (!_referenceCount.containsKey(module)) return;
+    _referenceCount[module] = _referenceCount[module]! + 1;
+    _emit(ModularTelemetryKind.referenceOpened, ModularTelemetryTrigger.pageMounted, module);
   }
 
-  Future<void> _unregisterModuleInternal(Module module) async {
+  /// Releases the reference of a disposed page, and disposes the module once
+  /// the count reaches zero.
+  Future<void> unregisterModule(Module module) async {
+    if (module.runtimeType == _tracker.appModule?.runtimeType) return;
+    return _queue.enqueue(() => _unregisterModuleInternal(module, ModularTelemetryTrigger.pageDisposed));
+  }
+
+  Future<void> _unregisterModuleInternal(Module module, ModularTelemetryTrigger trigger) async {
     // Reference counting: only the last reference (1→0) does the actual
     // disposal. While other route entries still reference this instance, keep
     // its binds alive (fix for premature disposal in stacks like A → B → A).
@@ -161,13 +277,18 @@ class InjectionManager {
     if (referenceCount == 0) return;
     if (referenceCount > 1) {
       _referenceCount[module] = referenceCount - 1;
+      _emit(ModularTelemetryKind.referenceReleased, trigger, module);
       return;
     }
     _referenceCount.remove(module);
+    // With no references left there is no pending navigation to claim.
+    _pendingNavigationReferences.remove(module);
 
     module.dispose();
-    _unregisterBinds(module);
+    final disposedBinds = _unregisterBinds(module);
     _tracker.moduleBindTypes.remove(module);
+
+    _emit(ModularTelemetryKind.disposed, trigger, module, binds: () => _labelsOf(disposedBinds));
 
     if (_bindsToValidate.isNotEmpty) {
       final validationsToRun = List<Function>.from(_bindsToValidate);
@@ -183,8 +304,9 @@ class InjectionManager {
     }
   }
 
-  void _unregisterBinds(Module module) {
-    if (_tracker.appModule != null && module == _tracker.appModule!) return;
+  /// Returns the binds actually disposed, for the caller's telemetry event.
+  List<BindIdentifier> _unregisterBinds(Module module) {
+    if (_tracker.appModule != null && module == _tracker.appModule!) return const <BindIdentifier>[];
 
     final bindsToDispose = _tracker.moduleBindTypes[module] ?? {};
     final disposedBinds = <BindIdentifier>[];
@@ -207,6 +329,7 @@ class InjectionManager {
     }
 
     bindsToDispose.clear();
+    return disposedBinds;
   }
 
   // ==================== VALIDATION ====================

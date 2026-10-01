@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router_modular/src/routing/modular_router_runtime.dart';
 import 'package:go_router_modular/src/events/event_state.dart';
 import 'package:go_router_modular/src/shared/setup.dart';
+import 'package:go_router_modular/src/shared/telemetry.dart';
 
 /// Default global EventBus used by the modular event system.
 final EventBus _eventBus = EventBus();
@@ -48,20 +49,22 @@ class ModularEvent {
     bool exclusive = false,
   }) {
     exclusive = broadcast ?? exclusive;
-    eventBus ??= _eventBus;
-    final busId = _getBusId(eventBus);
+    final bus = eventBus ??= _eventBus;
+    final busId = _getBusId(bus);
 
     _state.subscriptions[busId] ??= {};
     _state.subscriptions[busId]?[T]?.cancel();
 
     if (exclusive) {
-      _state.subscriptions[busId]![T] = eventBus.on<T>().asBroadcastStream().listen((event) {
+      _state.subscriptions[busId]![T] = bus.on<T>().asBroadcastStream().listen((event) {
         if (_debugLog) log('📨 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        _emit(ModularTelemetryKind.eventReceived, event.runtimeType, bus);
         return callback(event, _navigatorContext);
       });
     } else {
-      _state.subscriptions[busId]![T] = eventBus.on<T>().listen((event) {
+      _state.subscriptions[busId]![T] = bus.on<T>().listen((event) {
         if (_debugLog) log('📨 Event received: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+        _emit(ModularTelemetryKind.eventReceived, event.runtimeType, bus);
         return callback(event, _navigatorContext);
       });
     }
@@ -70,6 +73,22 @@ class ModularEvent {
   static void fire<T>(T event, {EventBus? eventBus}) {
     eventBus ??= _eventBus;
     if (_debugLog) log('🔥 Event fired: ${event.runtimeType}', name: 'EVENT GO_ROUTER_MODULAR');
+    _emit(ModularTelemetryKind.eventFired, event.runtimeType, eventBus);
     eventBus.fire(event);
+  }
+
+  /// Reports one message on the bus to the `onTelemetry` listener of
+  /// `Modular.configure`. Filtered out (or no listener), no work.
+  ///
+  /// The payload is deliberately left out: only its `runtimeType` travels,
+  /// because events routinely carry personal data and telemetry usually leaves
+  /// the device.
+  static void _emit(ModularTelemetryKind kind, Type payload, EventBus bus) {
+    if (!ModularTelemetry.wantsAnyEvent) return;
+    final name = payload.toString();
+    if (!ModularTelemetry.wantsEvent(kind, name)) return;
+    ModularTelemetry.emit(
+      ModularBusTelemetryEvent(kind: kind, event: name, busId: bus.hashCode),
+    );
   }
 }

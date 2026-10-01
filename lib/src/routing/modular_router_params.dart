@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:go_router_modular/src/routing/history/modular_go_router.dart';
 
 /// Snapshot imutável dos parâmetros usados para construir o [GoRouter] modular.
 ///
@@ -28,6 +29,7 @@ class ModularRouterParams {
     required this.requestFocus,
     required this.restorationScopeId,
     required this.routerNeglect,
+    this.onNavigationSettled,
   });
 
   final List<RouteBase> routes;
@@ -47,6 +49,11 @@ class ModularRouterParams {
   final bool requestFocus;
   final String? restorationScopeId;
   final bool routerNeglect;
+
+  /// Notified at the end of the frame that builds the pages of every resolved
+  /// navigation. Set by the composition root (`Modular.configure`) and carried
+  /// forward by [copyWith]; it cannot be overridden.
+  final void Function(RouteMatchList configuration)? onNavigationSettled;
 
   ModularRouterParams copyWith({
     List<RouteBase>? routes,
@@ -85,11 +92,12 @@ class ModularRouterParams {
       requestFocus: requestFocus ?? this.requestFocus,
       restorationScopeId: restorationScopeId ?? this.restorationScopeId,
       routerNeglect: routerNeglect ?? this.routerNeglect,
+      onNavigationSettled: onNavigationSettled,
     );
   }
 
   GoRouter build() {
-    return GoRouter(
+    return ModularGoRouter(
       routes: routes,
       initialLocation: initialLocation,
       debugLogDiagnostics: debugLogDiagnostics,
@@ -107,6 +115,7 @@ class ModularRouterParams {
       requestFocus: requestFocus,
       restorationScopeId: restorationScopeId,
       routerNeglect: routerNeglect,
+      onNavigationSettled: onNavigationSettled,
     );
   }
 }

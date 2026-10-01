@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # `flutter analyze` at the root walks into `example/` too, so the example
+      # needs its own resolved dependencies or every import there is an error.
+      - name: Install example dependencies
+        run: flutter pub get --directory example
+
+      - name: Analyze
+        # `browser_history_web_test.dart` is @TestOn('browser'), so the VM suite
+        # skips it silently — only the analyzer catches a break there.
+        run: flutter analyze --fatal-infos
+
+      - name: Test (VM)
+        run: flutter test
+
+      # The whole suite runs on Chrome too. Each platform skips what it cannot
+      # run: the source-inspection suites are @TestOn('vm') (they need dart:io),
+      # and browser_history_web_test.dart is @TestOn('browser').
+      - name: Test (Chrome)
+        run: flutter test --platform chrome

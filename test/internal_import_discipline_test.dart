@@ -1,3 +1,9 @@
+@TestOn('vm')
+library;
+
+/// Varre lib/src/ com dart:io atrás de imports do barril público. É análise
+/// estática de código-fonte: dart:io não existe no navegador.
+
 /// Guarda de arquitetura: nenhum arquivo sob `lib/src/` pode importar o barril
 /// público `package:go_router_modular/go_router_modular.dart`.
 ///

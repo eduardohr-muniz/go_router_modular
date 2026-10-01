@@ -27,80 +27,63 @@ class ModuleRouteBuilder {
   /// Constrói as rotas de um submódulo (delegado ao orquestrador) — evita ciclo.
   final List<RouteBase> Function(Module module, String modulePath) buildNested;
 
-  GoRoute build(
-      {required ModuleRoute module,
-      required String modulePath,
-      required bool topLevel}) {
-    final childRoute = module.module.routes
-        .whereType<ChildRoute>()
-        .where((route) => RoutePathNormalizer.adjustRoute(route.path) == '/')
-        .firstOrNull;
-    final isShell =
-        module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
-    final isStatefulShell =
-        module.module.routes.whereType<StatefulShellModularRoute>().isNotEmpty;
+  GoRoute build({required ModuleRoute module, required String modulePath, required bool topLevel}) {
+    final childRoute = module.module.routes.whereType<ChildRoute>().where((route) => RoutePathNormalizer.adjustRoute(route.path) == '/').firstOrNull;
+    final isShell = module.module.routes.whereType<ShellModularRoute>().isNotEmpty;
+    final isStatefulShell = module.module.routes.whereType<StatefulShellModularRoute>().isNotEmpty;
 
     if (!isShell && !isStatefulShell) {
-      assert(childRoute != null,
-          ModuleAssert.childRouteAssert(module.module.runtimeType.toString()));
+      assert(childRoute != null, ModuleAssert.childRouteAssert(module.module.runtimeType.toString()));
     }
 
     if (isStatefulShell) {
-      final statefulRoute =
-          module.module.routes.whereType<StatefulShellModularRoute>().first;
-      final firstBranchInitialLocation =
-          _resolveFirstBranchLocation(statefulRoute, module.path);
+      final statefulRoute = module.module.routes.whereType<StatefulShellModularRoute>().first;
+      final firstBranchInitialLocation = _resolveFirstBranchLocation(statefulRoute, module.path);
 
-      return GoRoute(
-        path: RoutePathNormalizer.normalizePath(
-            path: module.path, topLevel: topLevel),
-        name: module.name,
-        routes: buildNested(module.module, module.path),
-        redirect: (context, state) async {
-          final result = await lifecycle.redirectAndInjectBinds(
-            context,
-            state,
-            module: module.module,
-            redirect: resolveGuards(module.guards),
-          );
-          if (result != null) return result;
+      return _owned(
+          module.module,
+          GoRoute(
+            path: RoutePathNormalizer.normalizePath(path: module.path, topLevel: topLevel),
+            name: module.name,
+            routes: buildNested(module.module, module.path),
+            redirect: (context, state) async {
+              final result = await lifecycle.redirectAndInjectBinds(
+                context,
+                state,
+                module: module.module,
+                redirect: resolveGuards(module.guards),
+              );
+              if (result != null) return result;
 
-          // Se a rota exata é o path do módulo, redirecionar para a primeira branch
-          final currentPath = state.uri.path;
-          final normalizedModulePath = RoutePathNormalizer.normalizePath(
-              path: module.path, topLevel: topLevel);
-          if (currentPath == normalizedModulePath ||
-              currentPath == '$normalizedModulePath/') {
-            final target = firstBranchInitialLocation;
-            if (target != currentPath &&
-                target != '$currentPath/' &&
-                currentPath != '$target/') {
-              return target;
-            }
-          }
-          return null;
-        },
-      );
+              // Se a rota exata é o path do módulo, redirecionar para a primeira branch
+              final currentPath = state.uri.path;
+              final normalizedModulePath = RoutePathNormalizer.normalizePath(path: module.path, topLevel: topLevel);
+              if (currentPath == normalizedModulePath || currentPath == '$normalizedModulePath/') {
+                final target = firstBranchInitialLocation;
+                if (target != currentPath && target != '$currentPath/' && currentPath != '$target/') {
+                  return target;
+                }
+              }
+              return null;
+            },
+          ));
     }
 
     if (isShell) {
-      return GoRoute(
-        path: RoutePathNormalizer.normalizePath(
-            path: module.path, topLevel: topLevel),
-        name: module.name,
-        routes: buildNested(module.module, module.path),
-        redirect: (context, state) => lifecycle.redirectAndInjectBinds(
-            context, state,
-            module: module.module, redirect: resolveGuards(module.guards)),
-      );
+      return _owned(
+          module.module,
+          GoRoute(
+            path: RoutePathNormalizer.normalizePath(path: module.path, topLevel: topLevel),
+            name: module.name,
+            routes: buildNested(module.module, module.path),
+            redirect: (context, state) => lifecycle.redirectAndInjectBinds(context, state, module: module.module, redirect: resolveGuards(module.guards)),
+          ));
     }
 
     final nonNullChildRoute = childRoute!;
-    moduleBuilder(BuildContext context, GoRouterState state) =>
-        ParentWidgetObserver(
+    moduleBuilder(BuildContext context, GoRouterState state) => ParentWidgetObserver(
+          onInit: (mod) => lifecycle.claimModule(mod),
           onDispose: (mod) => lifecycle.disposeModule(mod),
-          didChangeDependencies: (mod) =>
-              lifecycle.parentModule.onDidChangeGoingReference(mod),
           module: module.module,
           childBuilder: (_) => nonNullChildRoute.child(context, state),
         );
@@ -126,45 +109,51 @@ class ModuleRouteBuilder {
         transition: transition,
         builder: moduleBuilder,
         parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
-        redirect: (context, state) => lifecycle.redirectAndInjectBinds(
-            context, state,
-            module: module.module, redirect: indexRedirect),
+        redirect: (context, state) => lifecycle.redirectAndInjectBinds(context, state, module: module.module, redirect: indexRedirect),
         topLevel: topLevel,
         transitionDuration: nonNullChildRoute.transitionDuration,
         onExit: nonNullChildRoute.onExit,
       );
 
-      return GoRoute(
-        path: route.path,
-        name: route.name,
-        pageBuilder: route.pageBuilder,
-        parentNavigatorKey: route.parentNavigatorKey,
-        redirect: route.redirect,
-        routes: childRoutes.isNotEmpty ? childRoutes : const [],
-        onExit: route.onExit,
-      );
+      return _owned(
+          module.module,
+          GoRoute(
+            path: route.path,
+            name: route.name,
+            pageBuilder: route.pageBuilder,
+            parentNavigatorKey: route.parentNavigatorKey,
+            redirect: route.redirect,
+            routes: childRoutes.isNotEmpty ? childRoutes : const [],
+            onExit: route.onExit,
+          ));
     }
 
-    return GoRoute(
-      path: RoutePathNormalizer.normalizePath(
-          path: fullPath, topLevel: topLevel),
-      name: moduleName,
-      builder: moduleBuilder,
-      parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
-      redirect: (context, state) => lifecycle.redirectAndInjectBinds(
-        context,
-        state,
-        module: module.module,
-        redirect: indexRedirect,
-      ),
-      routes: childRoutes.isNotEmpty ? childRoutes : const [],
-      onExit: nonNullChildRoute.onExit,
-    );
+    return _owned(
+        module.module,
+        GoRoute(
+          path: RoutePathNormalizer.normalizePath(path: fullPath, topLevel: topLevel),
+          name: moduleName,
+          builder: moduleBuilder,
+          parentNavigatorKey: nonNullChildRoute.parentNavigatorKey,
+          redirect: (context, state) => lifecycle.redirectAndInjectBinds(
+            context,
+            state,
+            module: module.module,
+            redirect: indexRedirect,
+          ),
+          routes: childRoutes.isNotEmpty ? childRoutes : const [],
+          onExit: nonNullChildRoute.onExit,
+        ));
+  }
+
+  /// Registra o módulo dono da rota (ver [modularRouteModules]).
+  static GoRoute _owned(Module module, GoRoute route) {
+    modularRouteModules[route] = module;
+    return route;
   }
 
   /// Resolve o caminho da primeira rota da primeira branch de um stateful shell.
-  static String _resolveFirstBranchLocation(
-      StatefulShellModularRoute statefulRoute, String modulePath) {
+  static String _resolveFirstBranchLocation(StatefulShellModularRoute statefulRoute, String modulePath) {
     final firstBranch = statefulRoute.branches.first;
 
     if (firstBranch.initialLocation != null) {
